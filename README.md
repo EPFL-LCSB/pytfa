@@ -2,6 +2,11 @@
 
 Thermodynamic constraints for flux-based reactions, in Python.
 
+Implements:
+Henry, Christopher S., Linda J. Broadbelt, and Vassily Hatzimanikatis.
+"Thermodynamics-based metabolic flux analysis."
+Biophysical journal 92.5 (2007): 1792-1805.
+
 ## Requirements
 
 This module requires `cobrapy` to work properly. You might also want to install
