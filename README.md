@@ -1,13 +1,6 @@
 # pyTFA
 
-</p>
-<p align="center">
-    <a href='http://pytfa.readthedocs.io/en/latest/?badge=latest'>
-    <img src='https://readthedocs.org/projects/pytfa/badge/?version=latest' alt='Documentation Status' />
-    </a>
-</p>
-
-<p align="center"><sup><strong>An image server for legible and concise information. Our <a href="http://shields.io/">Homepage</a> | <a href="https://twitter.com/shields_io">Twitter</a></strong></sup></p>
+[![Documentation Status](https://readthedocs.org/projects/pytfa/badge/?version=latest)](http://pytfa.readthedocs.io/en/latest/?badge=latest)
 
 Thermodynamic constraints for flux-based reactions, in Python.
 
