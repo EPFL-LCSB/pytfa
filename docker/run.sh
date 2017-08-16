@@ -1,0 +1,4 @@
+docker run 	--rm -it 			\
+		-v $(pwd)/work:/home/pytfa/work \
+		-v $(pwd)/..:/src/pytfa	\
+		pytfa_docker

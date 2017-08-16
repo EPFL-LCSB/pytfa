@@ -1,0 +1,12 @@
+bokeh>=0.12.1
+cobra
+ipdb
+lxml
+openpyxl
+pymysql
+pytest
+scipy
+sqlalchemy
+tabulate
+sphinx
+sphinx-rtd-theme
