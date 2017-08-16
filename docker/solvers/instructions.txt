@@ -1,0 +1,21 @@
+# For CPLEX
+
+Place here the folder /ibm that is installed by CPLEX (usually in /opt).
+You actually only need the following substructure (makes the container lighter):
+.
+└───ibm
+    └───ILOG
+        └───CPLEX_Studio1271
+            └───cplex
+                ├───bin
+                ├───include
+                ├───lib
+                └───python
+				
+# For Gurobi
+
+Place here the tarball you got from the website, and modify accordingly the files:
+	../utils/install_gurobi.sh 
+	../utils/activate_gurobi.sh
+
+You will need a license key to put in the template in ../utils/activate_gurobi.sh
