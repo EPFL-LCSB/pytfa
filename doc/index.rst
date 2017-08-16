@@ -9,8 +9,7 @@ Welcome to pytfa's documentation!
 pyTFA enables you to add thermodynamic constraints to your COBRApy models to find more accurate results.
 
 .. toctree::
-
-:numbered:
+   :numbered:
    :maxdepth: 2
    :caption: Contents:
 
