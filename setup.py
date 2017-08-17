@@ -6,6 +6,7 @@
 """
 
 from setuptools import setup
+import os
 from pip.req import parse_requirements
 from pip.download import PipSession
 
