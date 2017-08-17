@@ -770,7 +770,6 @@ class ThermoModel(Model):
         variables = pd.Series(data=self.solver.primal_values)
         solution = Solution(objective_value=objective_value,
                             status=status,
-                            reactions=variables.index,
                             fluxes=variables)
         return solution
 
