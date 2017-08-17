@@ -13,6 +13,7 @@ pyTFA enables you to add thermodynamic constraints to your COBRApy models to fin
    :maxdepth: 2
    :caption: Contents:
 
+   quickstart
    model
    thermoDB
    pytfa
