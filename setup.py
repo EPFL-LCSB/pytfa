@@ -19,12 +19,14 @@ from pip.download import PipSession
 #     reqs = [str(ir.req) for ir in install_reqs]
 #     return reqs
 
+version_tag = '0.6.1-a3'
+
 setup(name='pytfa',
-      version='0.6.1-a2',
+      version=version_tag,
       author='pyTFA team',
       author_email='softwares.lcsb@epfl.ch',
       url='https://github.com/EPFL-LCSB/pytfa/',
-      download_url='https://github.com/EPFL-LCSB/pytfa/archive/0.6.1-a2.tar.gz',
+      download_url='https://github.com/EPFL-LCSB/pytfa/archive/'+version_tag+'.tar.gz',
       install_requires=['cobra>0.6',
                         'bokeh>=0.12.1',
                         'optlang',
