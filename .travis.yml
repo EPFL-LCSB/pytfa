@@ -6,7 +6,10 @@ branches:
  - master
  - devel
 
+install:
+ - pip install -e .
+
 script: py.test
 
 after_success:
-- if [[ $TRAVIS_OS_NAME == "linux" ]]; then pip install codecov; codecov; fi
+ - if [[ $TRAVIS_OS_NAME == "linux" ]]; then pip install codecov; codecov; fi
