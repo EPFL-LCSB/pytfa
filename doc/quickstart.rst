@@ -4,6 +4,7 @@ Quick start
 Three tutorial files detail thoroughly normal usages of the pytfa package. They
 can be found at::
 
+    pytfa
     └── tutorials
         ├── figure_paper.py
         ├── glycolysis_example.py
