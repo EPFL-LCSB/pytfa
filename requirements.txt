@@ -2,3 +2,4 @@ cobra>0.6,<=0.8.1
 bokeh>=0.12.1
 optlang
 pytest
+scipy
