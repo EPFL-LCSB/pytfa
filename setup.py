@@ -11,7 +11,7 @@ with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 setup(name='pytfa',
-      version='1.1.0',
+      version='0.6.0',
       author='pyTFA team',
       install_requires=requirements,
       py_modules=['pytfa'],
