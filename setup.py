@@ -10,6 +10,8 @@ import os
 from pip.req import parse_requirements
 from pip.download import PipSession
 
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 def read_requirements():
     '''parses requirements from requirements.txt'''
     reqs_path = os.path.join(__location__, 'requirements.txt')
