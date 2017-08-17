@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pytfa/badge/?version=latest)](http://pytfa.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master)](https://travis-ci.org/EPFL-LCSB/pytfa)
-[![PyPI](https://img.shields.io/pypi/v/pytfa.svg)]()
+[![PyPI](https://img.shields.io/pypi/v/pytfa.svg)](https://pypi.org/project/pytfa/)
 
 Thermodynamic constraints for flux-based reactions, in Python.
 
