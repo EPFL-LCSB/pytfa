@@ -4,7 +4,7 @@ python:
 branches:
  only:
  - master
- - devel
+ - dev
 
 install:
  - pip install -e .
