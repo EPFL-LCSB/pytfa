@@ -17,8 +17,6 @@ Usage: python lpdiff.py file1.py file2.py
 import sys
 import re
 
-from IPython.core.debugger import Tracer
-
 FLOAT_PRECISION = 10**-3
 
 # Regular expressions database, used to parse the data from LP files
