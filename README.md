@@ -2,36 +2,63 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pytfa/badge/?version=latest)](http://pytfa.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master)](https://travis-ci.org/EPFL-LCSB/pytfa)
-[![PyPI](https://img.shields.io/pypi/v/pytfa.svg)]()
+[![Codecov](https://img.shields.io/codecov/c/github/codecov/pytfa.svg)](https://codecov.io/gh/EPFL-LCSB/pytfa)
+[![PyPI](https://img.shields.io/pypi/v/pytfa.svg)](https://pypi.org/project/pytfa/)
 
-Thermodynamic constraints for flux-based reactions, in Python.
+Thermodynamics-based Flux Analysis, in Python.
 
 Implements:
 Henry, Christopher S., Linda J. Broadbelt, and Vassily Hatzimanikatis.
 "Thermodynamics-based metabolic flux analysis."
 Biophysical journal 92.5 (2007): 1792-1805.
+[DOI: https://doi.org/10.1529/biophysj.106.093138](https://doi.org/10.1529/biophysj.106.093138)
 
 ## Requirements
 
-This module requires `cobrapy` to work properly. You might also want to install
+**NOTE :** This module requires Python 3.5. Other Python versions might work, but are not officially supported.
+
+This module requires [`cobrapy`](https://github.com/opencobra/cobrapy/), as well as [`optlang`](https://github.com/biosustain/optlang) to work properly. The installer should take care of that for you. You might also want to install
 a dedicated solver. GLPK, CPLEX and Gurobi are supported.
 
 ## Container-based install
 
-You might want to use this program inside of a container. the `docker/`
+You might want to use this program inside of a container. The [`docker/`](https://github.com/EPFL-LCSB/pytfa/tree/master/docker)
 subfolder has all the necessary information and source files to set it up.
 
 # Setup
 
-**NOTE :** This step is not required if you're using the container, which bundles all this
+**NOTE :** This step is not required if you're using the container, which bundles all this.
 
 You can install this module with `pip`:
 
+**NOTE :** Because this module requires Python 3, you might have to use `pip3` instead of `pip`
+
+```bash
+pip3 install pytfa
 ```
-pip install -e /path/to/pytfa
+or from source
+```bash
+git clone https://github.com/EPFL-LCSB/pytfa.git /path/to/pytfa
+pip3 install -e /path/to/pytfa
 ```
 
-## Generating the docs
+# Quick start
+Three tutorial files detail thoroughly normal usages of the pytfa package. They can be found at:
+```
+pytfa
+└── tutorials
+    ├── figure_paper.py
+    ├── glycolysis_example.py
+    └── tutorial_sampling.py
+```
+
+More information can be found [here](http://pytfa.readthedocs.io/en/latest/quickstart.html).
+
+# Documentation
+
+Documentation is hosted at [Read the Docs](http://pytfa.readthedocs.io/en/latest/index.html)
+
+Alternatively you can also generate the docs locally.
 
 Make sure [sphinx](https://www.sphinx-doc.org/en/stable/) is installed, and
 install as well [the theme](https://github.com/rtfd/sphinx_rtd_theme) (this is
@@ -50,6 +77,8 @@ cd work/pytfa/doc && make html
 The resulting HTML files are located in `work/pytfa/doc/_build`.
 
 ## Testing the code
+
+We recommand using the [Docker container](https://github.com/EPFL-LCSB/pytfa/tree/master/docker) for testing the code, as it comes with everything bundled.
 
 Install [pytest](https://docs.pytest.org/en/latest/) if you don't already have
 it (`pip install pytest`, already included in the container), then start the
