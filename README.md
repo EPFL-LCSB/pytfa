@@ -2,6 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pytfa/badge/?version=latest)](http://pytfa.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master)](https://travis-ci.org/EPFL-LCSB/pytfa)
+[![Codecov](https://img.shields.io/codecov/c/github/codecov/pytfa.svg)](https://codecov.io/gh/EPFL-LCSB/pytfa)
 [![PyPI](https://img.shields.io/pypi/v/pytfa.svg)](https://pypi.org/project/pytfa/)
 
 Thermodynamics-based Flux Analysis, in Python.
@@ -13,12 +14,12 @@ Biophysical journal 92.5 (2007): 1792-1805.
 
 ## Requirements
 
-This module requires `cobrapy` to work properly. You might also want to install
+This module requires [`cobrapy`](https://github.com/opencobra/cobrapy/), as well as [`optlang`](https://github.com/biosustain/optlang) to work properly. The installer should take care of that for you. You might also want to install
 a dedicated solver. GLPK, CPLEX and Gurobi are supported.
 
 ## Container-based install
 
-You might want to use this program inside of a container. the `docker/`
+You might want to use this program inside of a container. The [`docker/`](https://github.com/EPFL-LCSB/pytfa/tree/master/docker)
 subfolder has all the necessary information and source files to set it up.
 
 # Setup
@@ -27,11 +28,20 @@ subfolder has all the necessary information and source files to set it up.
 
 You can install this module with `pip`:
 
+```bash
+pip install pytfa
 ```
+or from source
+```bash
+git clone https://github.com/EPFL-LCSB/pytfa.git /path/to/pytfa
 pip install -e /path/to/pytfa
 ```
 
-## Generating the docs
+# Documentation
+
+Documentation is hosted at [Read the Docs](http://pytfa.readthedocs.io/en/latest/index.html)
+
+Alternatively you can also generate the docs locally.
 
 Make sure [sphinx](https://www.sphinx-doc.org/en/stable/) is installed, and
 install as well [the theme](https://github.com/rtfd/sphinx_rtd_theme) (this is
@@ -50,6 +60,8 @@ cd work/pytfa/doc && make html
 The resulting HTML files are located in `work/pytfa/doc/_build`.
 
 ## Testing the code
+
+We recommand using the [Docker container](https://github.com/EPFL-LCSB/pytfa/tree/master/docker) for testing the code, as it comes with everything bundled.
 
 Install [pytest](https://docs.pytest.org/en/latest/) if you don't already have
 it (`pip install pytest`, already included in the container), then start the
