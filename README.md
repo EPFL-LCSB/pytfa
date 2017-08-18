@@ -11,8 +11,11 @@ Implements:
 Henry, Christopher S., Linda J. Broadbelt, and Vassily Hatzimanikatis.
 "Thermodynamics-based metabolic flux analysis."
 Biophysical journal 92.5 (2007): 1792-1805.
+[DOI: https://doi.org/10.1529/biophysj.106.093138](https://doi.org/10.1529/biophysj.106.093138)
 
 ## Requirements
+
+**NOTE :** This module requires Python 3.5. Other Python versions might work, but are not officially supported.
 
 This module requires [`cobrapy`](https://github.com/opencobra/cobrapy/), as well as [`optlang`](https://github.com/biosustain/optlang) to work properly. The installer should take care of that for you. You might also want to install
 a dedicated solver. GLPK, CPLEX and Gurobi are supported.
@@ -36,6 +39,18 @@ or from source
 git clone https://github.com/EPFL-LCSB/pytfa.git /path/to/pytfa
 pip install -e /path/to/pytfa
 ```
+
+# Quick start
+Three tutorial files detail thoroughly normal usages of the pytfa package. They can be found at:
+```
+pytfa
+└── tutorials
+    ├── figure_paper.py
+    ├── glycolysis_example.py
+    └── tutorial_sampling.py
+```
+
+More information can be found [here](http://pytfa.readthedocs.io/en/latest/quickstart.html).
 
 # Documentation
 
