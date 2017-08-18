@@ -27,17 +27,19 @@ subfolder has all the necessary information and source files to set it up.
 
 # Setup
 
-**NOTE :** This step is not required if you're using the container, which bundles all this
+**NOTE :** This step is not required if you're using the container, which bundles all this.
 
 You can install this module with `pip`:
 
+**NOTE :** Because this module requires Python 3, you might have to use `pip3` instead of `pip`
+
 ```bash
-pip install pytfa
+pip3 install pytfa
 ```
 or from source
 ```bash
 git clone https://github.com/EPFL-LCSB/pytfa.git /path/to/pytfa
-pip install -e /path/to/pytfa
+pip3 install -e /path/to/pytfa
 ```
 
 # Quick start
