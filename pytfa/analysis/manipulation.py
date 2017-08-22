@@ -60,8 +60,6 @@ def apply_directionality(tmodel,solution, inplace = True):
     else:
         _tmodel = tmodel.copy()
 
-    epsilon = _tmodel.solver.configuration.tolerances.feasibility
-
     for this_reaction in _tmodel.reactions:
 
         backward_use = _tmodel.backward_use_variable.get_by_id(this_reaction.id)

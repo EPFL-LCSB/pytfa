@@ -66,7 +66,7 @@ def import_matlab_model(path, variable_name = None):
 
     # Get the metSEEDID
     seed_id = mat_model['metSEEDID']
-    for i in range(len(metabolites)):
+    for i,_ in enumerate(metabolites):
         metabolites[i].annotation = {"seed_id":seed_id[i,0][0]}
 
     ## REACTIONS
@@ -87,8 +87,8 @@ def import_matlab_model(path, variable_name = None):
     gene_pattern = re.compile(r'x\([0-9]+\)')
 
     def gene_id_to_name(match):
-        id = int(match.group()[2:-1])
-        return mat_model['genes'][id,0][0]
+        id_ = int(match.group()[2:-1])
+        return mat_model['genes'][id_,0][0]
 
     # Add each reaction
     for i in range(mat_model['S'].shape[1]):
@@ -120,7 +120,7 @@ def import_matlab_model(path, variable_name = None):
         react_mets = {}
         # Iterate over each metabolite and see if it is part of the reaction
         # (stoechiomectric coefficient not equal to 0)
-        for j in range(len(metabolites)):
+        for j,_ in enumerate(metabolites):
             if(mat_model['S'][j,i] != 0):
                 react_mets[metabolites[j]] = mat_model['S'][j,i]
 

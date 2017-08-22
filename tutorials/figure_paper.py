@@ -5,7 +5,6 @@ import os
 import pytfa
 
 from pytfa.io import import_matlab_model, load_thermoDB,                    \
-                            read_lexicon, annotate_from_lexicon,            \
                             read_compartment_data, apply_compartment_data
 from pytfa.optim.variables import DeltaG,DeltaGstd,ThermoDisplacement
 from pytfa.analysis import  variability_analysis,           \
@@ -87,9 +86,9 @@ export_variable_for_escher(tmodel = continuous_model,
                            data = thermo_values,
                            filename = directory+'glycolysis_mean_thermo_disp.csv')
 
-average_solution = export_reactions_for_escher(tmodel,
-                                               sampling,
-                                               directory+'glycolysis_avg_fluxes')
+export_reactions_for_escher(tmodel,
+                           sampling,
+                           directory+'glycolysis_avg_fluxes.csv')
 
 
 ###########################

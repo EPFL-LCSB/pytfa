@@ -6,9 +6,9 @@
 """
 
 from setuptools import setup
-import os
-from pip.req import parse_requirements
-from pip.download import PipSession
+# import os
+# from pip.req import parse_requirements
+# from pip.download import PipSession
 
 # __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 #

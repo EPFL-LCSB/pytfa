@@ -15,7 +15,6 @@ import pytfa.io
 import csv
 import os
 import lpdiff
-import os
 import pytest
 
 ############
@@ -50,7 +49,7 @@ with open(this_directory + '/metData.csv') as csvfile:
     for row in reference_metabolites:
         # Title line
         if row[0] == 'id':
-            for i in range(len(row)):
+            for i,_ in enumerate(row):
                 columns[row[i]] = i
             continue
 
@@ -102,7 +101,7 @@ with open(this_directory + '/rxnData.csv') as csvfile:
     for rxn in rxns:
         # Title line
         if rxn[0] == 'id':
-            for i in range(len(rxn)):
+            for i,_ in enumerate(rxn):
                 columns[rxn[i]] = i
             continue
 

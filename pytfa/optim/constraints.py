@@ -46,15 +46,15 @@ class GenericConstraint:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id, expr, model, **kwargs):
+    def __init__(self, id_, expr, model, **kwargs):
         """
 
-        :param id: will be used to identify the variable
+        :param id_: will be used to identify the variable
             (name will be a concat of this and a prefix)
         :param problem: the cobra.Model.problem object
         :param kwargs: stuff you want to pass to the variable constructor
         """
-        self._id = id
+        self._id = id_
         self._model = model
         self.kwargs = kwargs
         self._name = self.make_name()
@@ -134,11 +134,11 @@ class ReactionConstraint(GenericConstraint):
         self.reaction = reaction
         model = reaction.model
 
-        GenericConstraint.__init__( self,
-                                    id=self.id,
-                                    expr=expr,
-                                    model=model,
-                                    **kwargs)
+        GenericConstraint.__init__(self,
+                                   id_=self.id,
+                                   expr=expr,
+                                   model=model,
+                                   **kwargs)
 
 
     @property
@@ -158,11 +158,11 @@ class MetaboliteConstraint(GenericConstraint):
         self.metabolite = metabolite
         model = metabolite.model
 
-        GenericConstraint.__init__( self,
-                                    id=self.id,
-                                    expr=expr,
-                                    model=model,
-                                    **kwargs)
+        GenericConstraint.__init__(self,
+                                   id_=self.id,
+                                   expr=expr,
+                                   model=model,
+                                   **kwargs)
 
     @property
     def id(self):
@@ -273,13 +273,13 @@ class ForbiddenProfile(GenericConstraint):
     FU_rxn_1 + BU_rxn_2 + ... + FU_rxn_n <= n-1
     """
 
-    def __init__(self, model, expr, id, **kwargs):
+    def __init__(self, model, expr, id_, **kwargs):
 
-        GenericConstraint.__init__( self,
-                                    id=id,
-                                    expr=expr,
-                                    model=model,
-                                    **kwargs)
+        GenericConstraint.__init__(self,
+                                   id_=id_,
+                                   expr=expr,
+                                   model=model,
+                                   **kwargs)
 
     def make_name(self):
         return 'FP_' + self.id

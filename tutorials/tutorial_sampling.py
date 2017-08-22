@@ -6,13 +6,11 @@ import pytfa
 
 from cobra.io import load_matlab_model
 
-from pytfa.io import import_matlab_model, load_thermoDB,                    \
+from pytfa.io import load_thermoDB,                    \
                             read_lexicon, annotate_from_lexicon,            \
                             read_compartment_data, apply_compartment_data
 from pytfa.optim.variables import DeltaG,DeltaGstd,ThermoDisplacement
-from pytfa.analysis import  find_bidirectional_reactions,   \
-                            find_directionality_profiles,   \
-                            variability_analysis,           \
+from pytfa.analysis import  variability_analysis,           \
                             apply_reaction_variability,     \
                             apply_generic_variability,       \
                             apply_directionality

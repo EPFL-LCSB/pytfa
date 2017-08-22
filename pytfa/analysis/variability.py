@@ -58,7 +58,7 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
     :return:
     """
 
-    raise(NotImplemented)
+    raise(NotImplementedError)
 
     this_tmodel = deepcopy(tmodel)
     this_tmodel.solver = solver
@@ -176,7 +176,7 @@ def parallel_variability_analysis(tmodel, kind='reactions', proc_num = BEST_THRE
     :return:
     """
 
-    raise(NotImplemented)
+    raise(NotImplementedError)
 
     objective = tmodel.objective
 

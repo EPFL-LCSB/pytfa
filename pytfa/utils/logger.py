@@ -17,7 +17,7 @@ def get_bistream_logger(name):
     """
     Sets up a logger that outputs INFO+ messages on stdout and DEBUG+ messages
     in the log file
-    
+
     :param name: a class __name__ attribute
     :return:
     """

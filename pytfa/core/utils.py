@@ -70,14 +70,14 @@ def check_reaction_balance(reaction, proton = None):
 
         for atom in atoms:
             try:
-                id = ['C', 'N', 'O', 'H', 'P', 'Na', 'Mg', 'S', 'Cl', 'K',
+                id_ = ['C', 'N', 'O', 'H', 'P', 'Na', 'Mg', 'S', 'Cl', 'K',
                 'Ca', 'Mn', 'Fe', 'Ni', 'Co', 'Cu', 'Zn', 'As', 'Se', 'Ag',
                 'Cd', 'W', 'Hg', 'R', 'Mo', 'X'].index(atom[0])
             except ValueError:
                 print('Warning : ' + metabolite.formula + '/' + atom[0])
                 continue
 
-            Atoms_sum[id] += metCoeff * (int(atom[1]) if atom[1] else 1)
+            Atoms_sum[id_] += metCoeff * (int(atom[1]) if atom[1] else 1)
 
     # Find unbalanced atoms
     nonNull = [i for i in range(26) if Atoms_sum[i] != 0]
