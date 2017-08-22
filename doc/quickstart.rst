@@ -7,7 +7,7 @@ can be found at::
     pytfa
     └── tutorials
         ├── figure_paper.py
-        ├── glycolysis_example.py
+        ├── relaxation_example.py
         └── tutorial_sampling.py
 
 `figure_paper.py` details how to get the figure from our paper [CITE], a simple

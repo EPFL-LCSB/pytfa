@@ -52,7 +52,7 @@ Three tutorial files detail thoroughly normal usages of the pytfa package. They 
 pytfa
 └── tutorials
     ├── figure_paper.py
-    ├── glycolysis_example.py
+    ├── relaxation_example.py
     └── tutorial_sampling.py
 ```
 
