@@ -147,8 +147,8 @@ def test_reactions_values(reaction):
 pytfa.io.writeLP(mytfa, this_directory + '/test.lp')
 
 models = [
-          lpdiff.parseFile(this_directory + '/test.lp'),
-          lpdiff.parseFile(this_directory + '/reference.lp')
+          lpdiff.parse_file(this_directory + '/test.lp'),
+          lpdiff.parse_file(this_directory + '/reference.lp')
          ]
 
 #os.remove(this_directory + '/test.lp')

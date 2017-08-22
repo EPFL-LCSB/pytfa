@@ -99,7 +99,7 @@ def process_expr(expr):
     return res
 
 
-def parseFile(path):
+def parse_file(path):
     """ Parse the content of a file and get the corresponding model
 
     :param string file: The path of the file to parse
@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
     mytfa = [None] * 2
     for i in range(2):
-        mytfa[i] = parseFile(sys.argv[i + 1])
+        mytfa[i] = parse_file(sys.argv[i + 1])
 
     # Now, let's compare !
     print(compare(mytfa, ''))
