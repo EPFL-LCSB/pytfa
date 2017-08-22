@@ -79,7 +79,7 @@ def test_metabolites_values(metabolite):
     this_model_met = metabolite['model']
     this_ref_met = metabolite['ref']
 
-    assert(this_model_met.annotation['SeedID'] == this_ref_met['seedid'])
+    assert(this_model_met.annotation['seed_id'] == this_ref_met['seedid'])
     assert(this_model_met.compartment == this_ref_met['compartment'])
 
     for thermoval in ['deltaGf_std', 'deltaGf_err',
