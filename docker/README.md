@@ -9,17 +9,17 @@ You might want to install a commercial solver. Gurobi and CPLEX are supported. S
 
 ## Running the Docker
 
-First, build the container with `build.bat` or `build.sh`.
-Then start the container with `run.bat` or `run.sh`.
+First, build the container with `build.bat` or `. build`.
+Then start the container with `run.bat` or `. run`.
 ```bash
-. build.sh
-. run.sh
+. build
+. run
 ```
 
 You can run the examples in /pytfa/tutorials:
 ```bash
 cd /pytfa/tutorials
-python glycolysis_example.py
+python relaxation_example.py
 ```
 
 You can also run them inside IPython to experiment and play with the objects:
