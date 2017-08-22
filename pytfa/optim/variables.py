@@ -51,15 +51,15 @@ class GenericVariable:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id, model, **kwargs):
+    def __init__(self, id_, model, **kwargs):
         """
 
-        :param id: will be used to identify the variable
+        :param id_: will be used to identify the variable
             (name will be a concat of this and a prefix)
         :param problem: the cobra.Model.problem object
         :param kwargs: stuff you want to pass to the variable constructor
         """
-        self._id = id
+        self._id = id_
         self._model = model
         self.kwargs = kwargs
         self._name = self.make_name()
@@ -278,9 +278,9 @@ class BinaryVariable(GenericVariable):
     Class to represent a generic binary variable
     """
 
-    def __init__(self, id, problem, **kwargs):
+    def __init__(self, id_, problem, **kwargs):
         GenericVariable.__init__(self,
-                                 id,
+                                 id_,
                                  problem,
                                  lb = 0,
                                  ub = 1,
@@ -310,7 +310,7 @@ class ReactionVariable(GenericVariable):
         model = reaction.model
 
         GenericVariable.__init__(self,
-                                 id=self.id,
+                                 id_=self.id,
                                  model=model,
                                  **kwargs)
 
@@ -332,7 +332,7 @@ class MetaboliteVariable(GenericVariable):
         model = metabolite.model
 
         GenericVariable.__init__(self,
-                                 id=self.id,
+                                 id_=self.id,
                                  model=model,
                                  **kwargs)
 

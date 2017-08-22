@@ -16,7 +16,6 @@ from collections import defaultdict
 from copy import deepcopy
 from math import log
 
-import optlang.interface
 import pandas as pd
 from cobra import Model
 from cobra.core import Solution, DictList
@@ -84,8 +83,6 @@ class ThermoModel(Model):
         else:
             self.GAS_CONSTANT = 1.9858775 / 1000  # Kcal/(K mol)
             self.Adjustment = 4.184
-
-        TEMPERATURE = temperature  # K
 
         self.RT = self.GAS_CONSTANT * self.TEMPERATURE
 
@@ -375,9 +372,6 @@ class ThermoModel(Model):
         # Is it a drain reaction ?
         NotDrain = len(rxn.metabolites) > 1
 
-        forward = rxn.forward_variable
-        reverse = rxn.reverse_variable
-
         # if the reaction is flagged with rxnThermo, and it's not a H2O
         # transport, we will add thermodynamic constraints
         if rxn.thermo['computed'] and not H2OtRxns:
@@ -415,17 +409,17 @@ class ThermoModel(Model):
 
                 # Adding the terms for the transport part
                 for seed_id, trans in transportedMets.items():
-                    for type in ['reactant', 'product']:
-                        if trans[type].formula != 'H':
-                            LC_TransMet += (self.LC_vars[trans[type]]
+                    for type_ in ['reactant', 'product']:
+                        if trans[type_].formula != 'H':
+                            LC_TransMet += (self.LC_vars[trans[type_]]
                                             * RT
                                             * trans['coeff']
                                             * (
-                                                -1 if type == 'reactant' else 1))
+                                                -1 if type_ == 'reactant' else 1))
 
-                        chem_stoich[trans[type]] += (trans['coeff']
+                        chem_stoich[trans[type_]] += (trans['coeff']
                                                      * (
-                                                         1 if type == "reactant" else -1))
+                                                         1 if type_ == "reactant" else -1))
 
                 # Also add the chemical reaction part
                 chem_stoich = {met: val for met, val in chem_stoich.items()
@@ -870,7 +864,6 @@ class ThermoModel(Model):
         new._solver = new_solver
 
         for this_var in self._var_dict.values():
-            new_solver_var = new.variables.get(this_var.name)
 
             if isinstance(this_var, ReactionVariable):
                 reaction = new.reactions.get_by_id(this_var.reaction.id)

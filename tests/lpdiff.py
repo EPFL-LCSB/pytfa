@@ -185,8 +185,8 @@ def parse_file(path):
                     continue
             elif mode == 'bin':
                 bins = regex['bin'].findall(line)
-                for bin in bins:
-                    model['bin'][var_cleanup(bin)] = True
+                for the_bin in bins:
+                    model['bin'][var_cleanup(the_bin)] = True
                 if len(bins) > 0:
                     continue
                 if line == 'End':
@@ -223,10 +223,10 @@ def compare(model, stack = None, n = 0):
         if item not in model[1]:
             print((stack + '.' if stack else '') + item + '< in 1 but not in 2')
             n += 1
-        elif type(model[0][item]) is dict:
+        elif isinstance(model[0][item],dict):
             n += compare([model[0][item], model[1][item]],
                           (stack  + '.' if stack else '') + item)
-        elif type(model[0][item]) is float:
+        elif isinstance(model[0][item],float):
             if abs(model[0][item] - model[1][item]) > FLOAT_PRECISION:
                 print((stack  + '.' if stack else '') + item + ' different :')
                 print(model[0][item], ' / ', model[1][item])

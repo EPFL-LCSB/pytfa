@@ -10,7 +10,6 @@ Sampling wrappers for pytfa models
 
 """
 
-from copy import deepcopy
 import numpy as np
 from sympy.core.singleton import S
 from time import  time

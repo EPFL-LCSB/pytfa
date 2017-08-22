@@ -8,7 +8,7 @@ FROM python:3.5
 
 # Install missing deps
 USER root
-RUN apt-get update && apt-get install -y  \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         libxml2-dev     \
         libxslt1-dev    \
 		less			\
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y  \
 ENV USER pytfa
 ENV HOME /home/$USER
 
-RUN useradd -ms /bin/bash $USER
+RUN useradd -ms "/bin/bash" "$USER"
 USER $USER
 WORKDIR $HOME
 
@@ -50,7 +50,7 @@ COPY src/ /src/
 RUN mkdir /src/pytfa
 
 COPY .bashrc $HOME
-RUN chown $USER $HOME/.bashrc
+RUN chown "$USER" "$HOME/.bashrc"
 
 #Finalizing installation
 

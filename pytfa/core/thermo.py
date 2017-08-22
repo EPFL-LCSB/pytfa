@@ -179,8 +179,8 @@ class MetaboliteThermo:
     def items(self):
         return self.__dict__.items()
 
-    def __cmp__(self, dict):
-        return cmp(self.__dict__, dict)
+    def __cmp__(self, dict_):
+        return cmp(self.__dict__, dict_)
 
     def __contains__(self, item):
         return item in self.__dict__
@@ -296,7 +296,6 @@ class MetaboliteThermo:
         if self.debug:
             print("Getting the list of pKas...")
         (deltaGspA, charge, sp_nH) = self.calcDGspA()
-        pH = 7
 
         pKaList = self.pKa
 
@@ -431,7 +430,7 @@ class MetaboliteThermo:
         if self.debug:
             print(pka_list, start, pKs)
 
-        for j in range(len(pKs)):
+        for j,_ in enumerate(pKs):
             deltaGspA -= self.RT * log(10 ** -pKs[j])
 
         if self.debug:

@@ -12,10 +12,10 @@ Plotting results
 import numpy as np
 import pandas as pd
 
-from bokeh.models import ColumnDataSource, DataRange1d, Plot, LinearAxis, \
+from bokeh.models import ColumnDataSource, DataRange1d, LinearAxis, \
     Grid,CategoricalTicker, FuncTickFormatter
 from bokeh.models.glyphs import HBar
-from bokeh.io import curdoc, show
+from bokeh.io import show
 from bokeh.plotting import figure
 
 from ..optim.variables import ThermoDisplacement
