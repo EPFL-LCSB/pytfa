@@ -7,7 +7,7 @@
 
 [![Build Status](https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master)](https://travis-ci.org/EPFL-LCSB/pytfa)
 [![Codecov](https://img.shields.io/codecov/c/github/codecov/pytfa.svg)](https://codecov.io/gh/EPFL-LCSB/pytfa)
-[![Codacy branch grade](https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg)]()
+[![Codacy branch grade](https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg)](https://api.codacy.com/project/badge/Grade/d8fd67ee134d46a69115c9b39c19be26)
 
 Thermodynamics-based Flux Analysis, in Python.
 
