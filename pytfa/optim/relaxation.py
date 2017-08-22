@@ -29,7 +29,7 @@ BIGM_DG = numerics.BIGM_DG
 BIGM_P = numerics.BIGM_P
 EPSILON = numerics.EPSILON
 
-def relax_dgo(tmodel, reactions_to_ignore = [], solver = 'optlang-glpk'):
+def relax_dgo(tmodel, reactions_to_ignore = (), solver = 'optlang-glpk'):
     """
 
     :param in_tmodel:
@@ -175,7 +175,7 @@ def relax_dgo(tmodel, reactions_to_ignore = [], solver = 'optlang-glpk'):
 
     return relaxed_model, slack_model, relax_table
 
-def relax_lc(tmodel, metabolites_to_ignore = [], solver ='optlang-glpk'):
+def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
     """
 
     :param metabolites_to_ignore:
