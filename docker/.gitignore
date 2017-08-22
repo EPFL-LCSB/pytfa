@@ -2,7 +2,7 @@
 solvers/*
 
 # Gurobi key info
-utils/activate_gurobi.sh
+gurobi.lic
 
 # LP files
 *.lp
