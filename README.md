@@ -2,9 +2,12 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pytfa.svg)](https://pypi.org/project/pytfa/)
 [![Documentation Status](https://readthedocs.org/projects/pytfa/badge/?version=latest)](http://pytfa.readthedocs.io/en/latest/?badge=latest)
+[![license](http://img.shields.io/badge/license-APACHE2-blue.svg)](https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt)
+
+
 [![Build Status](https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master)](https://travis-ci.org/EPFL-LCSB/pytfa)
 [![Codecov](https://img.shields.io/codecov/c/github/codecov/pytfa.svg)](https://codecov.io/gh/EPFL-LCSB/pytfa)
-[![license](http://img.shields.io/badge/license-APACHE2-blue.svg)](https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt)
+[![Codacy branch grade](https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg)]()
 
 Thermodynamics-based Flux Analysis, in Python.
 
