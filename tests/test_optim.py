@@ -19,7 +19,7 @@ cobra_model = create_test_model("salmonella")
 this_directory = os.path.dirname(os.path.realpath(__file__))
 
 # Load the thermo database
-thermo_data = pytfa.io.load_thermoDB(this_directory + '/DB_AlbertyUpdate.thermodb')
+thermo_data = pytfa.io.load_thermoDB(this_directory + '/../data/thermo_data.thermodb')
 tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
 
 
