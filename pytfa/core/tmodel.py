@@ -139,6 +139,8 @@ class ThermoModel(Model):
             metData = None
         else:
             metData = self.compounds_data[met.annotation['seed_id']]
+            # Override the formula
+            met.formula = metData['formula']
 
         met.thermo = MetaboliteThermo(metData,
                                       CompartmentpH,
