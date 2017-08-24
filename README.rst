@@ -66,7 +66,7 @@ package. They can be found at:
     pytfa
     └── tutorials
         ├── figure_paper.py
-        ├── relaxation_example.py
+        ├── tutorial_basics.py
         └── tutorial_sampling.py
 
 More information can be found
