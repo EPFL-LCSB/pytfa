@@ -250,7 +250,9 @@ def printLP(model):
     count = 1
 
     for var in model.variables:
-        if var.type=='binary':
+        # FIXME using the integer trick to be able to constraint binary variables
+        # if var.type=='binary':
+        if var.type in ['binary', 'integer']:
             res += var.name + '\t'
             count += 1
             # Print at most 7 variables per line
