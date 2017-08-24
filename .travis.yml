@@ -13,4 +13,4 @@ install:
 script: py.test
 
 after_success:
- - if [[ $TRAVIS_OS_NAME == "linux" ]]; then pip install codecov; codecov; fi
+ - pip install codecov; codecov;
