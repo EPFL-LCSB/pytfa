@@ -20,12 +20,12 @@ GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
 # Load the model
-cobra_model = load_matlab_model('../models/small_yeast.mat')
+cobra_model = load_matlab_model('../models/small_ecoli.mat')
 
 # Load reaction DB
 thermo_data = load_thermoDB('../data/thermo_data.thermodb')
-lexicon = read_lexicon('../models/small_yeast/lexicon.csv')
-compartment_data = read_compartment_data('../models/small_yeast/compartment_data.json')
+lexicon = read_lexicon('../models/small_ecoli/lexicon.csv')
+compartment_data = read_compartment_data('../models/small_ecoli/compartment_data.json')
 
 # Initialize the model
 tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
