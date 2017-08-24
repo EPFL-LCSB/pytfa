@@ -173,7 +173,7 @@ Here is an example script :
    :target: https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt
 .. |Build Status| image:: https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master
    :target: https://travis-ci.org/EPFL-LCSB/pytfa
-.. |Codecov| image:: https://img.shields.io/codecov/c/github/codecov/pytfa.svg
+.. |Codecov| image:: https://img.shields.io/codecov/c/github/EPFL-LCSB/pytfa.svg
    :target: https://codecov.io/gh/EPFL-LCSB/pytfa
 .. |Codacy branch grade| image:: https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg
    :target: https://api.codacy.com/project/badge/Grade/d8fd67ee134d46a69115c9b39c19be26
