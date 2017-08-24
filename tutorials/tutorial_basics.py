@@ -27,7 +27,7 @@ thermo_data = load_thermoDB('../data/thermo_data.thermodb')
 print("Done !")
 
 mytfa = pytfa.ThermoModel(thermo_data, cobra_model)
-mytfa.solver = CPLEX
+mytfa.solver = GLPK
 
 ## FBA
 fba_solution = mytfa.optimize()
