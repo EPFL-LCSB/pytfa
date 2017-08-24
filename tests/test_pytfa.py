@@ -10,7 +10,7 @@ Tests for the pytfa module
 
 
 """
-import pytfa
+
 import pytfa.io
 import csv
 import os
@@ -23,20 +23,22 @@ import pytest
 # Minimal relative difference between two values to make a test fail
 Precision = 1 * 10 ** -5
 # Objective value of the Matlab solution
-Objective_value = 0.263412914022098
+objective_value = 0.810997250260066
 
 ######## End of Settings ########
 this_directory = os.path.dirname(os.path.realpath(__file__))
 
 # Load the thermo database
-thermo_data = pytfa.io.load_thermoDB(this_directory + '/DB_AlbertyUpdate.thermodb')
+thermo_data = pytfa.io.load_thermoDB(this_directory \
+                                     + '/../data/thermo_data.thermodb')
 
 # Load the model
-model = pytfa.io.import_matlab_model(this_directory + '/benchmark_model.mat')
+model = pytfa.io.import_matlab_model(this_directory \
+                                     + '/../models/small_ecoli.mat')
 
 # Make your computations on it
 mytfa = pytfa.ThermoModel(thermo_data, model)
-mytfa.solver = 'cplex'
+mytfa.solver = 'optlang-glpk'
 mytfa.prepare()
 mytfa.convert()
 
@@ -45,7 +47,7 @@ metabolites = []
 n_mets = 0
 with open(this_directory + '/metData.csv') as csvfile:
     columns = {}
-    reference_metabolites = csv.reader(csvfile, delimiter=';')
+    reference_metabolites = csv.reader(csvfile, delimiter=',')
     for row in reference_metabolites:
         # Title line
         if row[0] == 'id':
@@ -97,7 +99,7 @@ reactions = []
 # Compare reactions
 with open(this_directory + '/rxnData.csv') as csvfile:
     columns = {}
-    rxns = csv.reader(csvfile, delimiter=';')
+    rxns = csv.reader(csvfile, delimiter=',')
     for rxn in rxns:
         # Title line
         if rxn[0] == 'id':
@@ -154,9 +156,10 @@ models = [
 
 def test_lpfiles():
     global models
+    # assert(lpdiff.compare(models) < 2)
     assert(lpdiff.compare(models) < 2)
 
 def test_objective_value():
-    global mytfa, Objective_value
+    global mytfa, objective_value
     mytfa.optimize()
-    assert(relative_error(mytfa.objective.value, Objective_value) < Precision)
+    assert(relative_error(mytfa.objective.value, objective_value) < Precision)
