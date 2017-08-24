@@ -221,8 +221,10 @@ def compare(model, stack = None, n = 0):
     # Make sure all keys in the first model are equal to those in the second
     for item in model[0]:
         if item not in model[1]:
-            print((stack + '.' if stack else '') + item + '< in 1 but not in 2')
+            print((stack + '.' if stack else '') + item + ' in 1 but not in 2')
             n += 1
+            # from IPython.core.debugger import Tracer
+            # Tracer()()
         elif isinstance(model[0][item],dict):
             n += compare([model[0][item], model[1][item]],
                           (stack  + '.' if stack else '') + item)
