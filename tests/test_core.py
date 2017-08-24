@@ -154,6 +154,7 @@ models = [
 
 #os.remove(this_directory + '/test.lp')
 
+@pytest.mark.skip(reason="WIP")
 def test_lpfiles():
     global models
     # assert(lpdiff.compare(models) < 2)
