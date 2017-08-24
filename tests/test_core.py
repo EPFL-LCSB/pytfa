@@ -45,7 +45,7 @@ mytfa.convert()
 metabolites = []
 
 n_mets = 0
-with open(this_directory + '/metData.csv') as csvfile:
+with open(this_directory + '/ref/metData.csv') as csvfile:
     columns = {}
     reference_metabolites = csv.reader(csvfile, delimiter=',')
     for row in reference_metabolites:
@@ -97,7 +97,7 @@ def test_metabolites_values(metabolite):
 n_rxns = 0
 reactions = []
 # Compare reactions
-with open(this_directory + '/rxnData.csv') as csvfile:
+with open(this_directory + '/ref/rxnData.csv') as csvfile:
     columns = {}
     rxns = csv.reader(csvfile, delimiter=',')
     for rxn in rxns:
@@ -149,7 +149,7 @@ pytfa.io.writeLP(mytfa, this_directory + '/test.lp')
 
 models = [
           lpdiff.parse_file(this_directory + '/test.lp'),
-          lpdiff.parse_file(this_directory + '/reference.lp')
+          lpdiff.parse_file(this_directory + '/ref/reference.lp')
          ]
 
 #os.remove(this_directory + '/test.lp')
