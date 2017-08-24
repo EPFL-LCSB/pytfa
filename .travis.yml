@@ -7,10 +7,13 @@ branches:
  - master
  - dev
 
+before_install:
+ - pip install pytest-cov
 install:
  - pip install -e .
 
-script: py.test
+script:
+ - py.test --cov=./
 
 after_success:
  - pip install codecov; codecov;
