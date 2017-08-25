@@ -272,6 +272,14 @@ class GenericVariable:
     def __repr__(self):
         return self.variable.__repr__()
 
+def get_binary_type():
+    """
+    FIX : We enforce type to be integer instead of binary, else optlang does
+    not allow to set the binary variable bounds to anything other than (0,1)
+    You might want to set it at (0,0) to enforce directionality for example
+    """
+    return 'integer'
+    # return 'binary'
 
 class BinaryVariable(GenericVariable):
     """
@@ -284,18 +292,8 @@ class BinaryVariable(GenericVariable):
                                  problem,
                                  lb = 0,
                                  ub = 1,
-                                 type=self.get_type(),
+                                 type=get_binary_type(),
                                  **kwargs)
-
-
-    def get_type(self):
-        """
-        FIX : We enforce type to be integer instead of binary, else optlang does
-        not allow to set the binary variable bounds to anything other than (0,1)
-        You might want to set it at (0,0) to enforce directionality for example
-        """
-        return 'integer'
-        # return 'binary'
 
     def make_name(self):
         return 'B_' + self.id

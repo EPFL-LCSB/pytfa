@@ -200,7 +200,7 @@ class ForwardDeltaGCoupling(ReactionConstraint):
 
     def make_name(self):
         return 'FU_' + self.id
-        
+
 class BackwardDeltaGCoupling(ReactionConstraint):
     """
     Class to represent thermodynamics coupling: DeltaG of reactions has to be

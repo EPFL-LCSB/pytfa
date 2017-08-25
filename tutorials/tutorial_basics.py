@@ -8,7 +8,6 @@ from cobra.core.model import SolverNotFound
 from cobra.flux_analysis import flux_variability_analysis
 
 from pytfa.io import import_matlab_model, load_thermoDB
-from pytfa.optim.relaxation import relax_dgo
 
 
 CPLEX = 'optlang-cplex'

@@ -126,10 +126,8 @@ def test_model_nrxns():
 @pytest.mark.parametrize("reaction", reactions)
 def test_reactions_values(reaction):
     global Precision
-    # Test each metabolite value
-    model_met = reaction['model']
-    met = reaction['ref']
 
+    # Test each metabolite value
     assert(relative_error(model_rxn.lower_bound,
               float(rxn[columns['lower_bound']])) < Precision)
     assert(relative_error(model_rxn.upper_bound,
