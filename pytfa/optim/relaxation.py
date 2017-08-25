@@ -29,13 +29,15 @@ BIGM_DG = numerics.BIGM_DG
 BIGM_P = numerics.BIGM_P
 EPSILON = numerics.EPSILON
 
-def relax_dgo(tmodel, reactions_to_ignore = (), solver = 'optlang-glpk'):
-    """
 
-    :param in_tmodel:
-    :type in_tmodel: pytfa.core.ThermoModel:
-    :param min_objective_value: 
-    :return: 
+def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
+    """
+    :param t_tmodel:
+    :type t_tmodel: pytfa.core.ThermoModel:
+    :param reactions_to_ignore: Iterable of reactions that should not be relaxed
+    :param solver: solver to use (e.g. 'optlang-glpk', 'optlang-cplex',
+        'optlang-gurobi'
+    :return: a model with relaxed bounds on standard Gibbs free energy
     """
 
     # Create a copy of the model on which we will perform the slack addition
@@ -68,22 +70,19 @@ def relax_dgo(tmodel, reactions_to_ignore = (), solver = 'optlang-glpk'):
     for this_neg_dg in my_neg_dg:
 
         # If there is no thermo, or relaxation forbidden, pass
-        if this_neg_dg.id in reactions_to_ignore   \
-                or this_neg_dg.id not in my_dgo:
+        if this_neg_dg.id in reactions_to_ignore or this_neg_dg.id not in my_dgo:
             continue
 
         # Create the negative and positive slack variables
         neg_slack = slack_model.add_variable(NegSlackVariable,
-                                             this_neg_dg.reaction,
-                                             lb= 0,
-                                             ub= BIGM_DG)
+                                             this_neg_dg.reaction, lb=0,
+                                             ub=BIGM_DG)
         pos_slack = slack_model.add_variable(PosSlackVariable,
-                                             this_neg_dg.reaction,
-                                             lb= 0,
-                                             ub= BIGM_DG)
+                                             this_neg_dg.reaction, lb=0,
+                                             ub=BIGM_DG)
 
-        subs_dict = {k: slack_model.variables.get(k.name) \
-                     for k in this_neg_dg.constraint.variables}
+        subs_dict = {k: slack_model.variables.get(k.name) for k in
+                     this_neg_dg.constraint.variables}
 
         # Create the new constraint by adding the slack variables to the
         # negative delta G constraint (from the initial model)
@@ -94,17 +93,14 @@ def relax_dgo(tmodel, reactions_to_ignore = (), solver = 'optlang-glpk'):
         slack_model.remove_constraint(this_neg_dg)
 
         # Add the new variant
-        slack_model.add_constraint(NegativeDeltaG,
-                                   this_neg_dg.reaction,
-                                   expr = new_expr,
-                                   lb= 0,
-                                   ub= 0)
+        slack_model.add_constraint(NegativeDeltaG, this_neg_dg.reaction,
+                                   expr=new_expr, lb=0, ub=0)
 
         # Update the objective with the new variables
         objective += (neg_slack + pos_slack)
 
     # Change the objective to minimize slack
-    set_objective(slack_model,objective)
+    set_objective(slack_model, objective)
 
     # Update variables and constraints references
     slack_model.repair()
@@ -122,20 +118,20 @@ def relax_dgo(tmodel, reactions_to_ignore = (), solver = 'optlang-glpk'):
     pos_slack_values = get_solution_value_for_variables(relaxation,
                                                         my_pos_slacks)
 
-
     for this_reaction in relaxed_model.reactions:
         # No thermo, or relaxation forbidden
-        if this_reaction.id in reactions_to_ignore \
-                or this_reaction.id not in my_dgo:
+        if this_reaction.id in reactions_to_ignore or this_reaction.id not in my_dgo:
             continue
 
         # Get the standard delta G variable
         the_dgo = my_dgo.get_by_id(this_reaction.id)
 
         # Get the relaxation
-        dgo_delta_lb = neg_slack_values[my_neg_slacks \
+        dgo_delta_lb = \
+            neg_slack_values[my_neg_slacks \
             .get_by_id(this_reaction.id).name]
-        dgo_delta_ub = pos_slack_values[my_pos_slacks \
+        dgo_delta_ub = \
+            pos_slack_values[my_pos_slacks \
             .get_by_id(this_reaction.id).name]
 
         # Apply reaction delta G standard bound change
@@ -254,21 +250,18 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
             the_met = slack_model.metabolites.get_by_id(met_id)
             stoich = this_neg_dg.reaction.metabolites[the_met]
             new_expr += slack_model.RT * stoich \
-                        * (pos_slack[this_var.name] - neg_slack[this_var.name])
+                        * \
+            (pos_slack[this_var.name] - neg_slack[this_var.name])
 
         # Remove former constraint to override it
         slack_model.remove_constraint(this_neg_dg)
 
         # Add the new variant
-        slack_model.add_constraint(NegativeDeltaG,
-                                   this_neg_dg.reaction,
-                                   expr = new_expr,
-                                   lb= 0,
-                                   ub= 0)
-
+        slack_model.add_constraint(NegativeDeltaG, this_neg_dg.reaction,
+                                   expr=new_expr, lb=0, ub=0)
 
     # Change the objective to minimize slack
-    set_objective(slack_model,objective)
+    set_objective(slack_model, objective)
 
     # Update variables and constraints references
     slack_model.repair()
@@ -286,20 +279,20 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
     pos_slack_values = get_solution_value_for_variables(relaxation,
                                                         my_pos_slacks)
 
-
     for this_met in relaxed_model.metabolites:
         # No thermo, or relaxation forbidden
-        if this_met.id in metabolites_to_ignore \
-                or this_met.id not in my_lc:
+        if this_met.id in metabolites_to_ignore or this_met.id not in my_lc:
             continue
 
         # Get the standard delta G variable
         the_lc = my_lc.get_by_id(this_met.id)
 
         # Get the relaxation
-        lc_delta_lb = neg_slack_values[my_neg_slacks \
+        lc_delta_lb = neg_slack_values[
+            my_neg_slacks \
             .get_by_id(this_met.id).name]
-        lc_delta_ub = pos_slack_values[my_pos_slacks \
+        lc_delta_ub = \
+            pos_slack_values[my_pos_slacks \
             .get_by_id(this_met.id).name]
 
         # Apply reaction delta G standard bound change

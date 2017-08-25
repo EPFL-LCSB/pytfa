@@ -693,7 +693,7 @@ class ThermoModel(Model):
         :return:
         """
 
-        # Let us not forget to remove fields that migh be empty by now
+        # Let us not forget to remove fields that might be empty by now
         if hasattr(self,'_var_kinds'):
             for k in self._var_kinds:
                 attrname = camel2underscores(k)
@@ -869,13 +869,13 @@ class ThermoModel(Model):
 
             if isinstance(this_var, ReactionVariable):
                 reaction = new.reactions.get_by_id(this_var.reaction.id)
-                nv = new.add_variable(kind = this_var.__class__,
-                                      hook = reaction)
+                new.add_variable(kind = this_var.__class__,
+                                 hook = reaction)
 
             elif isinstance(this_var, MetaboliteVariable):
                 metabolite = new.metabolites.get_by_id(this_var.metabolite.id)
-                nv = new.add_variable(kind = this_var.__class__,
-                                      hook = metabolite)
+                new.add_variable(kind = this_var.__class__,
+                                 hook = metabolite)
 
             else:
                 raise TypeError('Class {} copy not handled yet'    \

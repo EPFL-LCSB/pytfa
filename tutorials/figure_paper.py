@@ -4,8 +4,8 @@
 import os
 import pytfa
 
-from pytfa.io import import_matlab_model, load_thermoDB,                    \
-                            read_compartment_data, apply_compartment_data
+from pytfa.io import import_matlab_model, load_thermoDB
+
 from pytfa.optim.variables import DeltaG,DeltaGstd,ThermoDisplacement
 from pytfa.analysis import  variability_analysis,           \
                             apply_reaction_variability,     \

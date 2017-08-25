@@ -60,7 +60,6 @@ def check_reaction_balance(reaction, proton = None):
         if metabolite.formula == 'NA':
             return 'missing structures'
         metCharge = metabolite.thermo.charge_std
-        metFormula = metabolite.formula
         metCoeff = reaction.metabolites[metabolite]
 
         sum_charge += metCharge * metCoeff
