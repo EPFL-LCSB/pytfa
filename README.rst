@@ -179,3 +179,9 @@ Here is an example script :
    :target: https://www.codacy.com/app/realLCSB/pytfa
 .. |Code climate| image:: https://img.shields.io/codeclimate/github/EPFL-LCSB/pytfa.svg
    :target: https://codeclimate.com/github/EPFL-LCSB/pytfa
+   
+   
+License
+========
+
+The software in this repository is put under an APACHE-2.0 licensing scheme - please see the `LICENSE <https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt>`_ file for more details.
