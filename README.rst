@@ -1,6 +1,6 @@
 pyTFA
 =====
-|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |license| 
+|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |Code climate| |license| 
 
 Thermodynamics-based Flux Analysis, in Python.
 
@@ -66,7 +66,7 @@ package. They can be found at:
     pytfa
     └── tutorials
         ├── figure_paper.py
-        ├── relaxation_example.py
+        ├── tutorial_basics.py
         └── tutorial_sampling.py
 
 More information can be found
@@ -173,7 +173,15 @@ Here is an example script :
    :target: https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt
 .. |Build Status| image:: https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master
    :target: https://travis-ci.org/EPFL-LCSB/pytfa
-.. |Codecov| image:: https://img.shields.io/codecov/c/github/codecov/pytfa.svg
+.. |Codecov| image:: https://img.shields.io/codecov/c/github/EPFL-LCSB/pytfa.svg
    :target: https://codecov.io/gh/EPFL-LCSB/pytfa
 .. |Codacy branch grade| image:: https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg
-   :target: https://api.codacy.com/project/badge/Grade/d8fd67ee134d46a69115c9b39c19be26
+   :target: https://www.codacy.com/app/realLCSB/pytfa
+.. |Code climate| image:: https://img.shields.io/codeclimate/github/EPFL-LCSB/pytfa.svg
+   :target: https://codeclimate.com/github/EPFL-LCSB/pytfa
+   
+   
+License
+========
+
+The software in this repository is put under an APACHE-2.0 licensing scheme - please see the `LICENSE <https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt>`_ file for more details.

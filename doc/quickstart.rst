@@ -7,17 +7,16 @@ can be found at::
     pytfa
     └── tutorials
         ├── figure_paper.py
-        ├── relaxation_example.py
+        ├── tutorial_basics.py
         └── tutorial_sampling.py
 
 `figure_paper.py` details how to get the figure from our paper [CITE], a simple
 use case for TFA
 
-`glycolysis_example.py` shows a more realistic case with a reduced model of
-yeast, highlights differences betweeen FBA and TFA. It also cycles through several
+`tutorial_basics.py` shows a more realistic case with a reduced model of
+ecoli. It also cycles through several
 solvers (if more are installed), to show how simple it is to change your solver
-(thanks to [optlang](https://github.com/biosustain/optlang) ). Finally it generates
-plots to visualize results.
+(thanks to [optlang](https://github.com/biosustain/optlang) ).
 
 `tutorial_sampling.py` shows how to sample a variable, for example thermodynamic
 displacement, and generate plots to visualize the results.

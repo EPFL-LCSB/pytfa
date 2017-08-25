@@ -26,6 +26,6 @@ You can also run them inside IPython to experiment and play with the objects:
 
 ```bash
 ipython
-run glycolysis_example.py
+run tutorial_basics.py
 tmodel.print_info()
 ```
