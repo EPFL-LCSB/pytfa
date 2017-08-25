@@ -353,7 +353,7 @@ class ForwardUseVariable(ReactionVariable, BinaryVariable):
         ReactionVariable.__init__(self, reaction,
                                   lb = 0,
                                   ub = 1,
-                                  type=self.get_type(),
+                                  type=get_binary_type(),
                                   **kwargs)
 
     def make_name(self):
@@ -369,7 +369,7 @@ class BackwardUseVariable(ReactionVariable, BinaryVariable):
         ReactionVariable.__init__(self, reaction,
                                   lb = 0,
                                   ub = 1,
-                                  type=self.get_type(),
+                                  type=get_binary_type(),
                                   **kwargs)
 
     def make_name(self):
