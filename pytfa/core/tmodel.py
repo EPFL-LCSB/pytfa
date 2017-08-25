@@ -688,7 +688,7 @@ class ThermoModel(Model):
 
     def regenerate_variables(self):
         """
-        Generates references to the model's constraints in self._cons_dict
+        Generates references to the model's constraints in self._var_dict
         as tab-searchable attributes of the thermo model
         :return:
         """
