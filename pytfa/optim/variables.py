@@ -324,7 +324,7 @@ class ReactionVariable(GenericVariable):
 
 class MetaboliteVariable(GenericVariable):
     """
-    Class to represent a variable attached to a reaction
+    Class to represent a variable attached to a metabolite
     """
 
     def __init__(self, metabolite, **kwargs):
@@ -347,8 +347,8 @@ class MetaboliteVariable(GenericVariable):
 
 class ForwardUseVariable(ReactionVariable, BinaryVariable):
     """
-    Class to represent a use variable, a type of binary variable used to enforce
-    directionality in reaction net fluxes
+    Class to represent a forward use variable, a type of binary variable used to
+    enforce forward directionality in reaction net fluxes
     """
 
     def __init__(self, reaction, **kwargs):
@@ -363,8 +363,8 @@ class ForwardUseVariable(ReactionVariable, BinaryVariable):
 
 class BackwardUseVariable(ReactionVariable, BinaryVariable):
     """
-    Class to represent a use variable, a type of binary variable used to enforce
-    directionality in reaction net fluxes
+    Class to represent a backward use variable, a type of binary variable used
+    to enforce backward directionality in reaction net fluxes
     """
 
     def __init__(self, reaction, **kwargs):
@@ -424,7 +424,7 @@ class ThermoDisplacement(ReactionVariable):
 
 class PosSlackVariable(ReactionVariable):
     """
-    Class to represent a slack variable for relaxation problems
+    Class to represent a positive slack variable for relaxation problems
     """
 
     def __init__(self,reaction,**kwargs):
@@ -436,7 +436,7 @@ class PosSlackVariable(ReactionVariable):
 
 class NegSlackVariable(ReactionVariable):
     """
-    Class to represent a slack variable for relaxation problems
+    Class to represent a negative slack variable for relaxation problems
     """
 
     def __init__(self,reaction,**kwargs):
