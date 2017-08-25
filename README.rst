@@ -1,6 +1,6 @@
 pyTFA
 =====
-|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |license| 
+|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |Code climate| |license| 
 
 Thermodynamics-based Flux Analysis, in Python.
 
@@ -176,4 +176,6 @@ Here is an example script :
 .. |Codecov| image:: https://img.shields.io/codecov/c/github/EPFL-LCSB/pytfa.svg
    :target: https://codecov.io/gh/EPFL-LCSB/pytfa
 .. |Codacy branch grade| image:: https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg
-   :target: https://api.codacy.com/project/badge/Grade/d8fd67ee134d46a69115c9b39c19be26
+   :target: https://www.codacy.com/app/realLCSB/pytfa
+.. |Code climate| image:: https://img.shields.io/codeclimate/github/EPFL-LCSB/pytfa.svg
+   :target: https://codeclimate.com/github/EPFL-LCSB/pytfa
