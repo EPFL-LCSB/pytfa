@@ -17,6 +17,8 @@ from functools import reduce
 from .utils import find_transported_mets
 from . import std
 
+CPD_PROTON = 'cpd00067'
+
 class MetaboliteThermo:
     """
     A class representing the thermodynamic values of a metabolite
@@ -207,7 +209,7 @@ class MetaboliteThermo:
             print("Computing DGis...")
 
         # Special case for protons...
-        if self.id == 'cpd00067':
+        if self.id == CPD_PROTON:
             if self.debug:
                 print("Found proton")
             return -self.RT * log(10 ** -self.pH)
@@ -264,17 +266,17 @@ class MetaboliteThermo:
         # Init some values used here...
         prod_denom = 1
         p = 1
-        pKvalues = self.get_pka()
+        pka_values = self.get_pka()
 
         if self.debug:
-            print("pKas used : " + str(pKvalues))
+            print("pKas used : " + str(pka_values))
 
         # Make the computation...
-        if len(pKvalues) > 0:
-            if min(pKvalues) <= self.MAX_pH:
-                for i in range(len(pKvalues)):
+        if len(pka_values) > 0:
+            if min(pka_values) <= self.MAX_pH:
+                for i, this_pka in enumerate(pka_values):
                     numerator = 10 ** (-(i + 1) * self.pH)
-                    K = 10 ** (-pKvalues[i])
+                    K = 10 ** (-this_pka)
                     denominator = prod_denom * K
                     prod_denom = denominator
                     if self.debug:
@@ -297,51 +299,51 @@ class MetaboliteThermo:
             print("Getting the list of pKas...")
         (deltaGspA, charge, sp_nH) = self.calcDGspA()
 
-        pKaList = self.pKa
+        pka_list = self.pKa
 
-        pKaValues = [None] * len(pKaList)
+        pka_values = [None] * len(pka_list)
 
         # Get only useful pKas
-        pKaList = [x for x in pKaList if 3 < x < 9]
+        pka_list = [x for x in pka_list if 3 < x < 9]
         # Sort the list
-        pKaList.sort(reverse=True)
+        pka_list.sort(reverse=True)
 
         j = 0
 
-        if len(pKaList) > 1:
-            for i in range(len(pKaList)):
+        if len(pka_list) > 1:
+            for i,this_pka in enumerate(pka_list):
                 sigmanusq = 1 + (charge + i) ** 2 - (charge + i - 1) ** 2
-                if self.MAX_pH > pKaList[i] > self.MIN_pH:
-                    lnkzero = log(10 ** -pKaList[i])
-                    pKaValues[j] = -(
-                        lnkzero
-                        - sigmanusq * (1.17582 * sqrt(self.ionicStr))
-                        / (1 + 1.6 * sqrt(self.ionicStr))
-                    ) / log(10)
+                if self.MAX_pH > pka_list[i] > self.MIN_pH:
+                    pka_values[j] = self._calc_pka(this_pka,sigmanusq)
+
                     if self.debug:
-                        print("Added to pKas : " + str(pKaValues[j]))
+                        print("Added to pKas : " + str(pka_values[j]))
+
                     j += 1
 
-        elif len(pKaList) == 1:
+        elif len(pka_list) == 1:
             if self.debug:
                 print("Only one pKa to add")
+
             sigmanusq = 2 * charge
-            lnkzero = log(10 ** -pKaList[j])
-            pKaValues[j] = -(
-                lnkzero
-                - sigmanusq * (1.17582 * sqrt(self.ionicStr))
-                / (1 + 1.6 * sqrt(self.ionicStr))
-            ) / log(10)
+            pka_values[j] = self._calc_pka(pka_list[j],sigmanusq)
 
         # Only return useful values
-        pKaValues = [x for x in pKaValues if x != None]
+        pka_values = [x for x in pka_values if x != None]
 
         if self.debug:
-            print("Filtered pKa values : " + str(pKaValues))
+            print("Filtered pKa values : " + str(pka_values))
 
-        pKaValues.sort(reverse=True)
+        pka_values.sort(reverse=True)
 
-        return pKaValues
+        return pka_values
+
+    def _calc_pka(self, pka,sigmanusq):
+        lnkzero = log(10 ** -pka)
+        pka_value = -(
+            lnkzero - sigmanusq * (1.17582 * sqrt(self.ionicStr)) / (
+            1 + 1.6 * sqrt(self.ionicStr))) / log(10)
+        return pka_value
 
     def calcDGspA(self):
         """ Calculates deltaGf, charge and nH of the specie when it is at least
@@ -358,7 +360,7 @@ class MetaboliteThermo:
             print('Computing DGspA()...')
 
         # Case of the proton
-        if self.id == 'cpd00067':
+        if self.id == CPD_PROTON:
             if self.debug:
                 print('Proton found, returning standard values')
             # we do not adjust for proton so just return the values
@@ -513,7 +515,7 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
             else:
                 compartments[metType].append('')
 
-            if seed_id == 'cpd00067':
+            if seed_id == CPD_PROTON:
                 met = transportedMets[seed_id][metType]
                 pH_comp = met.thermo.pH
                 RT_sum_H_LC_tpt += ((1 if metType == 'product' else -1)
@@ -541,7 +543,7 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
     deltaG = 0
 
     for met in reaction.metabolites:
-        if 'cpd00067' != met.annotation['seed_id']:
+        if CPD_PROTON != met.annotation['seed_id']:
             deltaG += reaction.metabolites[met] * met.thermo.deltaGf_tr
 
     sum_deltaGFis = 0
@@ -560,9 +562,7 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
                 * transportedMets[seed_id]['coeff'])
 
     for met in final_coeffs:
-        if final_coeffs[met] != 0 and met.annotation['seed_id'] != 'cpd00067':
-            comp_pH = met.thermo.pH
-            comp_ionicStr = met.thermo.ionicStr
+        if final_coeffs[met] != 0 and met.annotation['seed_id'] != CPD_PROTON:
 
             met_deltaGis = met.thermo.deltaGf_tr
             sum_deltaGFis += final_coeffs[met] * met_deltaGis

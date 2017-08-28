@@ -272,6 +272,14 @@ class GenericVariable:
     def __repr__(self):
         return self.variable.__repr__()
 
+def get_binary_type():
+    """
+    FIX : We enforce type to be integer instead of binary, else optlang does
+    not allow to set the binary variable bounds to anything other than (0,1)
+    You might want to set it at (0,0) to enforce directionality for example
+    """
+    return 'integer'
+    # return 'binary'
 
 class BinaryVariable(GenericVariable):
     """
@@ -284,18 +292,8 @@ class BinaryVariable(GenericVariable):
                                  problem,
                                  lb = 0,
                                  ub = 1,
-                                 type=self.get_type(),
+                                 type=get_binary_type(),
                                  **kwargs)
-
-
-    def get_type(self):
-        """
-        FIX : We enforce type to be integer instead of binary, else optlang does
-        not allow to set the binary variable bounds to anything other than (0,1)
-        You might want to set it at (0,0) to enforce directionality for example
-        """
-        return 'integer'
-        # return 'binary'
 
     def make_name(self):
         return 'B_' + self.id
@@ -324,7 +322,7 @@ class ReactionVariable(GenericVariable):
 
 class MetaboliteVariable(GenericVariable):
     """
-    Class to represent a variable attached to a reaction
+    Class to represent a variable attached to a metabolite
     """
 
     def __init__(self, metabolite, **kwargs):
@@ -347,15 +345,15 @@ class MetaboliteVariable(GenericVariable):
 
 class ForwardUseVariable(ReactionVariable, BinaryVariable):
     """
-    Class to represent a use variable, a type of binary variable used to enforce
-    directionality in reaction net fluxes
+    Class to represent a forward use variable, a type of binary variable used to
+    enforce forward directionality in reaction net fluxes
     """
 
     def __init__(self, reaction, **kwargs):
         ReactionVariable.__init__(self, reaction,
                                   lb = 0,
                                   ub = 1,
-                                  type=self.get_type(),
+                                  type=get_binary_type(),
                                   **kwargs)
 
     def make_name(self):
@@ -363,15 +361,15 @@ class ForwardUseVariable(ReactionVariable, BinaryVariable):
 
 class BackwardUseVariable(ReactionVariable, BinaryVariable):
     """
-    Class to represent a use variable, a type of binary variable used to enforce
-    directionality in reaction net fluxes
+    Class to represent a backward use variable, a type of binary variable used
+    to enforce backward directionality in reaction net fluxes
     """
 
     def __init__(self, reaction, **kwargs):
         ReactionVariable.__init__(self, reaction,
                                   lb = 0,
                                   ub = 1,
-                                  type=self.get_type(),
+                                  type=get_binary_type(),
                                   **kwargs)
 
     def make_name(self):
@@ -424,7 +422,7 @@ class ThermoDisplacement(ReactionVariable):
 
 class PosSlackVariable(ReactionVariable):
     """
-    Class to represent a slack variable for relaxation problems
+    Class to represent a positive slack variable for relaxation problems
     """
 
     def __init__(self,reaction,**kwargs):
@@ -436,7 +434,7 @@ class PosSlackVariable(ReactionVariable):
 
 class NegSlackVariable(ReactionVariable):
     """
-    Class to represent a slack variable for relaxation problems
+    Class to represent a negative slack variable for relaxation problems
     """
 
     def __init__(self,reaction,**kwargs):
