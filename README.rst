@@ -1,6 +1,6 @@
 pyTFA
 =====
-|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |license| 
+|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |Code climate| |license| 
 
 Thermodynamics-based Flux Analysis, in Python.
 
@@ -12,9 +12,10 @@ https://doi.org/10.1529/biophysj.106.093138 <https://doi.org/10.1529/biophysj.10
 Requirements
 ------------
 
-.. warning:: This module was developed in Python 3.5, and it is recommended to run Python 3.5 
-    to run commercial solvers such as Gurobi and CPLEX. Other Python versions (2.7, 3.4) 
-    should also work (see the `CI builds <https://travis-ci.org/EPFL-LCSB/pytfa>`_)
+**This module was developed in Python 3.5, and it is recommended to run Python 3.5 
+to run commercial solvers such as Gurobi and CPLEX.**
+Other Python versions (2.7, 3.4) should also work (see the `CI builds <https://travis-ci.org/EPFL-LCSB/pytfa>`_)
+
 
 This module requires
 `COBRApy <https://github.com/opencobra/cobrapy/>`_, as well as
@@ -37,13 +38,11 @@ up.
 Setup
 =====
 
-.. note:: This step is not required if you're using the container,
-    which bundles all this.
+*This step is not required if you're using the container, which bundles all this.*
 
 You can install this module with ``pip``:
 
-.. note:: For Python 3, you might have to use
-    ``pip3`` instead of ``pip``
+*For Python 3, you might have to use* ``pip3`` *instead of* ``pip``
 
 .. code:: bash
 
@@ -67,7 +66,7 @@ package. They can be found at:
     pytfa
     └── tutorials
         ├── figure_paper.py
-        ├── relaxation_example.py
+        ├── tutorial_basics.py
         └── tutorial_sampling.py
 
 More information can be found
@@ -138,16 +137,6 @@ Python.
 Thermodynamic databases are stored in ``.thermodb`` files and can be
 easily loaded with ``pytfa.io.load_thermoDB``.
 
-Find a solution
----------------
-
-First, prepare your model for TFBA analysis with
-``pytfa.prepModelForTFBA``. Then, call ``pytfa.convToTFA`` to add the
-thermodynamic-based constraints.
-
-Finally, use the ``optimize`` method of your model to find an optimal
-solution.
-
 Example script
 --------------
 
@@ -184,7 +173,15 @@ Here is an example script :
    :target: https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt
 .. |Build Status| image:: https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master
    :target: https://travis-ci.org/EPFL-LCSB/pytfa
-.. |Codecov| image:: https://img.shields.io/codecov/c/github/codecov/pytfa.svg
+.. |Codecov| image:: https://img.shields.io/codecov/c/github/EPFL-LCSB/pytfa.svg
    :target: https://codecov.io/gh/EPFL-LCSB/pytfa
 .. |Codacy branch grade| image:: https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg
-   :target: https://api.codacy.com/project/badge/Grade/d8fd67ee134d46a69115c9b39c19be26
+   :target: https://www.codacy.com/app/realLCSB/pytfa
+.. |Code climate| image:: https://img.shields.io/codeclimate/github/EPFL-LCSB/pytfa.svg
+   :target: https://codeclimate.com/github/EPFL-LCSB/pytfa
+   
+   
+License
+========
+
+The software in this repository is put under an APACHE-2.0 licensing scheme - please see the `LICENSE <https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt>`_ file for more details.

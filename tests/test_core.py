@@ -130,6 +130,7 @@ def test_reactions_values(reaction):
     model_rxn = reaction['model']
     rxn = reaction['ref']
 
+    # Test each metabolite value
     assert(relative_error(model_rxn.lower_bound,
               float(rxn['lower_bound'])) < Precision)
     assert(relative_error(model_rxn.upper_bound,
@@ -139,7 +140,7 @@ def test_reactions_values(reaction):
     assert(model_rxn.thermo['isTrans'] == int(rxn['isTrans']))
 
     for thermoval in ['computed', 'deltaGR', 'deltaGRerr']:
-        refval = float(rxn[thermoval]].replace(',','.'))
+        refval = float(rxn[thermoval].replace(',','.'))
         assert(relative_error(model_rxn.thermo[thermoval], refval) < Precision)
 
 ############

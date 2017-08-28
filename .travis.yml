@@ -1,6 +1,5 @@
 language: python
 python:
-  - "2.7"
   - "3.4"
   - "3.5"
 branches:
@@ -8,10 +7,13 @@ branches:
  - master
  - dev
 
+before_install:
+ - pip install pytest-cov
 install:
  - pip install -e .
 
-script: py.test
+script:
+ - py.test --cov=./
 
 after_success:
- - if [[ $TRAVIS_OS_NAME == "linux" ]]; then pip install codecov; codecov; fi
+ - pip install codecov; codecov;

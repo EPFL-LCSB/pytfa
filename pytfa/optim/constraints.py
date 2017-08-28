@@ -151,7 +151,7 @@ class ReactionConstraint(GenericConstraint):
 
 class MetaboliteConstraint(GenericConstraint):
     """
-    Class to represent a variable attached to a reaction
+    Class to represent a variable attached to a metabolite
     """
 
     def __init__(self, metabolite, expr, **kwargs):
@@ -193,7 +193,6 @@ class ForwardDeltaGCoupling(ReactionConstraint):
     DGR < 0 for the reaction to proceed forwards
     Looks like:
     FU_rxn: 1000 FU_rxn + DGR_rxn < 1000
-    BU_rxn: 1000 BU_rxn - DGR_rxn < 1000
     """
 
     def __init__(self, reaction, expr, **kwargs):
@@ -201,11 +200,11 @@ class ForwardDeltaGCoupling(ReactionConstraint):
 
     def make_name(self):
         return 'FU_' + self.id
-        
+
 class BackwardDeltaGCoupling(ReactionConstraint):
     """
     Class to represent thermodynamics coupling: DeltaG of reactions has to be
-    DGR < 0 for the reaction to proceed forwards
+    DGR > 0 for the reaction to proceed backwards
     Looks like:
     BU_rxn: 1000 BU_rxn - DGR_rxn < 1000
     """
@@ -218,11 +217,10 @@ class BackwardDeltaGCoupling(ReactionConstraint):
 
 class ForwardDirectionCoupling(ReactionConstraint):
     """
-    Class to represent a directionality coupling with thermodynamics on reaction
-    variables
+    Class to represent a forward directionality coupling with thermodynamics on
+    reaction variables
     Looks like :
     UF_rxn: F_rxn - M FU_rxn < 0
-    UR_rxn: R_rxn - M RU_rxn < 0
     """
 
     def __init__(self, reaction, expr, **kwargs):
@@ -234,8 +232,8 @@ class ForwardDirectionCoupling(ReactionConstraint):
 
 class BackwardDirectionCoupling(ReactionConstraint):
     """
-    Class to represent a directionality coupling with thermodynamics on reaction
-    variables
+    Class to represent a backward directionality coupling with thermodynamics on
+    reaction variables
     Looks like :
     UR_rxn: R_rxn - M RU_rxn < 0
     """
