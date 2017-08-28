@@ -127,19 +127,19 @@ def test_model_nrxns():
 def test_reactions_values(reaction):
     global Precision
     # Test each metabolite value
-    model_met = reaction['model']
-    met = reaction['ref']
+    model_rxn = reaction['model']
+    rxn = reaction['ref']
 
     assert(relative_error(model_rxn.lower_bound,
-              float(rxn[columns['lower_bound']])) < Precision)
+              float(rxn['lower_bound'])) < Precision)
     assert(relative_error(model_rxn.upper_bound,
-              float(rxn[columns['upper_bound']])) < Precision)
+              float(rxn['upper_bound'])) < Precision)
     assert(relative_error(model_rxn.objective_coefficient,
-              float(rxn[columns['objective']])) < Precision)
-    assert(model_rxn.thermo['isTrans'] == int(rxn[columns['isTrans']]))
+              float(rxn['objective'])) < Precision)
+    assert(model_rxn.thermo['isTrans'] == int(rxn['isTrans']))
 
     for thermoval in ['computed', 'deltaGR', 'deltaGRerr']:
-        refval = float(rxn[columns[thermoval]].replace(',','.'))
+        refval = float(rxn[thermoval]].replace(',','.'))
         assert(relative_error(model_rxn.thermo[thermoval], refval) < Precision)
 
 ############
