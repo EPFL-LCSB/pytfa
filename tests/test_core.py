@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -13,34 +13,14 @@ Tests for the pytfa module
 
 import pytfa.io
 import csv
-import os
 import lpdiff
 import pytest
+import os
 
-############
-# SETTINGS #
-############
+from settings import tmodel, this_directory, objective_value
+
 # Minimal relative difference between two values to make a test fail
-Precision = 1 * 10 ** -5
-# Objective value of the Matlab solution
-objective_value = 0.810997250260066
-
-######## End of Settings ########
-this_directory = os.path.dirname(os.path.realpath(__file__))
-
-# Load the thermo database
-thermo_data = pytfa.io.load_thermoDB(this_directory \
-                                     + '/../data/thermo_data.thermodb')
-
-# Load the model
-model = pytfa.io.import_matlab_model(this_directory \
-                                     + '/../models/small_ecoli.mat')
-
-# Make your computations on it
-mytfa = pytfa.ThermoModel(thermo_data, model)
-mytfa.solver = 'optlang-glpk'
-mytfa.prepare()
-mytfa.convert()
+test_precision = 1 * 10 ** -5
 
 metabolites = []
 
@@ -55,13 +35,13 @@ with open(this_directory + '/ref/metData.csv') as csvfile:
                 columns[row[i]] = i
             continue
 
-        model_met = mytfa.metabolites.get_by_id(row[columns['id']])
+        model_met = tmodel.metabolites.get_by_id(row[columns['id']])
         ref_met = {}
 
         for item in columns:
             ref_met[item] = row[columns[item]]
 
-        metabolites.append({'model': model_met, 'ref': ref_met})
+        metabolites.append({'cobra_model': model_met, 'ref': ref_met})
 
         n_mets += 1
 
@@ -71,14 +51,14 @@ def relative_error(a, b):
 
 def test_model_nmets():
     # Make sure we test the same number of metabolites
-    global n_mets, mytfa
-    assert(n_mets == len(mytfa.metabolites))
+    global n_mets, tmodel
+    assert(n_mets == len(tmodel.metabolites))
 
 @pytest.mark.parametrize("metabolite", metabolites)
 def test_metabolites_values(metabolite):
-    global Precision
+    # global test_test_precision
     # Test each metabolite value
-    this_model_met = metabolite['model']
+    this_model_met = metabolite['cobra_model']
     this_ref_met = metabolite['ref']
 
     assert(this_model_met.annotation['seed_id'] == this_ref_met['seedid'])
@@ -87,7 +67,7 @@ def test_metabolites_values(metabolite):
     for thermoval in ['deltaGf_std', 'deltaGf_err',
                        'charge_std', 'mass', 'deltaGf_tr']:
         refval = float(this_ref_met[thermoval].replace(',','.'))
-        assert(relative_error(this_model_met.thermo[thermoval], refval) < Precision)
+        assert(relative_error(this_model_met.thermo[thermoval], refval) < test_precision)
 
 
 #############
@@ -107,61 +87,61 @@ with open(this_directory + '/ref/rxnData.csv') as csvfile:
                 columns[rxn[i]] = i
             continue
 
-        model_rxn = mytfa.reactions.get_by_id(rxn[columns['id']])
+        model_rxn = tmodel.reactions.get_by_id(rxn[columns['id']])
         ref_rxn = {}
 
         for item in columns:
             ref_rxn[item] = rxn[columns[item]]
 
-        reactions.append({'model': model_rxn, 'ref': ref_rxn})
+        reactions.append({'cobra_model': model_rxn, 'ref': ref_rxn})
 
         n_rxns += 1
 
 
 def test_model_nrxns():
     # Make sure we test the same number of reactions
-    global n_rxns, mytfa
-    assert(n_rxns == len(mytfa.reactions))
+    # global n_rxns, tmodel
+    assert(n_rxns == len(tmodel.reactions))
 
 @pytest.mark.parametrize("reaction", reactions)
 def test_reactions_values(reaction):
-    global Precision
+    # global test_test_precision
     # Test each metabolite value
-    model_rxn = reaction['model']
+    model_rxn = reaction['cobra_model']
     rxn = reaction['ref']
 
     # Test each metabolite value
     assert(relative_error(model_rxn.lower_bound,
-              float(rxn['lower_bound'])) < Precision)
+              float(rxn['lower_bound'])) < test_precision)
     assert(relative_error(model_rxn.upper_bound,
-              float(rxn['upper_bound'])) < Precision)
+              float(rxn['upper_bound'])) < test_precision)
     assert(relative_error(model_rxn.objective_coefficient,
-              float(rxn['objective'])) < Precision)
+              float(rxn['objective'])) < test_precision)
     assert(model_rxn.thermo['isTrans'] == int(rxn['isTrans']))
 
     for thermoval in ['computed', 'deltaGR', 'deltaGRerr']:
         refval = float(rxn[thermoval].replace(',','.'))
-        assert(relative_error(model_rxn.thermo[thermoval], refval) < Precision)
+        assert(relative_error(model_rxn.thermo[thermoval], refval) < test_precision)
 
 ############
 # LP FILES #
 ############
-pytfa.io.writeLP(mytfa, this_directory + '/test.lp')
+pytfa.io.writeLP(tmodel, this_directory + '/test.lp')
 
 models = [
           lpdiff.parse_file(this_directory + '/test.lp'),
           lpdiff.parse_file(this_directory + '/ref/reference.lp')
          ]
 
-#os.remove(this_directory + '/test.lp')
+os.remove(this_directory + '/test.lp')
 
 @pytest.mark.skip(reason="WIP")
 def test_lpfiles():
-    global models
-    # assert(lpdiff.compare(models) < 2)
+    # global models
     assert(lpdiff.compare(models) < 2)
 
 def test_objective_value():
-    global mytfa, objective_value
-    mytfa.optimize()
-    assert(relative_error(mytfa.objective.value, objective_value) < Precision)
+    # global tmodel, objective_value
+    tmodel.optimize()
+    assert(relative_error(tmodel.objective.value, objective_value) < test_precision)
+

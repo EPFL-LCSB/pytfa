@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -17,7 +17,11 @@ from functools import reduce
 from .utils import find_transported_mets
 from . import std
 
+from ..utils.numerics import BIGM_DG
+
 CPD_PROTON = 'cpd00067'
+
+DEFAULT_VAL = BIGM_DG
 
 class MetaboliteThermo:
     """
@@ -136,18 +140,18 @@ class MetaboliteThermo:
         self.id = None if metData == None else metData['id']
         self.pKa = [] if metData == None else metData['pKa']
         self.error = None if metData == None else metData['error']
-        self.deltaGf_std = 10 ** 7 if metData == None else metData[
+        self.deltaGf_std = DEFAULT_VAL if metData == None else metData[
             'deltaGf_std']
-        self.deltaGf_err = 10 ** 7 if metData == None else metData[
+        self.deltaGf_err = DEFAULT_VAL if metData == None else metData[
             'deltaGf_err']
-        self.mass = 10 ** 7 if metData == None else metData['mass_std']
+        self.mass = DEFAULT_VAL if metData == None else metData['mass_std']
         self.nH_std = None if metData == None else metData['nH_std']
         self.struct_cues = [] if metData == None else metData['struct_cues']
-        self.charge_std = 10 ** 7 if metData == None else metData['charge_std']
+        self.charge_std = DEFAULT_VAL if metData == None else metData['charge_std']
         self.struct_cues = None if metData == None else metData['struct_cues']
 
         # Compute deltaGf_tr if possible
-        self.deltaGf_tr = 10 ** 7 if metData == None else self.calcDGis()
+        self.deltaGf_tr = DEFAULT_VAL if metData == None else self.calcDGis()
 
         self.__dict__ = {
             'id': self.id,
@@ -451,8 +455,8 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
 
     :param cobra.core.reaction.Reaction reaction: The reaction to compute the
         data for
-    :param dict(float) compartmentsData: Data of the compartments of the model
-    :param str thermo_units: The thermodynamic database of the model
+    :param dict(float) compartmentsData: Data of the compartments of the cobra_model
+    :param str thermo_units: The thermodynamic database of the cobra_model
 
     :returns: deltaG_tpt and the breakdown of deltaG_tpt
     :rtype: tuple(float, dict(float))

@@ -1,7 +1,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -124,7 +124,7 @@ class GeneralizedOptGPSampler(GeneralizedHRSampler, OptGPSampler):
 
 def sample(model, n, method="optgp", thinning=100, processes=1, seed=None):
     """
-    Sample valid flux distributions from a thermo model.
+    Sample valid flux distributions from a thermo cobra_model.
 
     Function adapted from cobra.flux_analysis.sample to display all solver
     variables
@@ -143,7 +143,7 @@ def sample(model, n, method="optgp", thinning=100, processes=1, seed=None):
     Parameters
     ----------
     model : pytfa.core.ThermoModel
-        The model from which to sample variables.
+        The cobra_model from which to sample variables.
     n : int
         The number of samples to obtain. When using 'optgp' this must be a
         multiple of `processes`, otherwise a larger number of samples will be
