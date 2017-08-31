@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -30,10 +30,10 @@ class GenericConstraint:
         a constraint type.
         :name: Should be a concatenation of the id and a prefix that is
         specific to the variable type. will be used to address the constraint at
-        the solver level, and hence should be unique in the whole model
+        the solver level, and hence should be unique in the whole cobra_model
         :expr: the expression of the constraint (sympy.Expression subtype)
-        :model: the model hook.
-        :constraint: links directly to the model representation of tbe constraint
+        :cobra_model: the cobra_model hook.
+        :constraint: links directly to the cobra_model representation of tbe constraint
     """
 
 

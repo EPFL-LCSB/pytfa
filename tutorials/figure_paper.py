@@ -16,13 +16,13 @@ CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
-# Load the model
+# Load the cobra_model
 cobra_model = import_matlab_model('../models/glycolysis.mat')
 
 # Load reaction DB
 thermo_data = load_thermoDB('../data/thermo_data.thermodb')
 
-# Initialize the model
+# Initialize the cobra_model
 tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
 tmodel.normalize_reactions()
 
@@ -33,13 +33,13 @@ tmodel.solver = CPLEX
 tmodel.prepare()
 tmodel.convert(add_displacement = True)
 
-## Info on the model
+## Info on the cobra_model
 tmodel.print_info()
 
 ## Optimality
 solution = tmodel.optimize()
 
-# Apply the directionality of the solution to the model
+# Apply the directionality of the solution to the cobra_model
 fixed_directionality_model = apply_directionality(tmodel, solution)
 
 # Calculate variability analysis on all continuous variables

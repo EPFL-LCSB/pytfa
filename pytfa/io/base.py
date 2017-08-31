@@ -1,7 +1,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -29,15 +29,15 @@ except ImportError:
 
 
 def import_matlab_model(path, variable_name=None):
-    """ Convert at matlab model to a pyTFA model, with Thermodynamic values
+    """ Convert at matlab cobra_model to a pyTFA cobra_model, with Thermodynamic values
 
     :param string path: The path of the file to import
 
-    :returns: The converted model
+    :returns: The converted cobra_model
     :rtype: cobra.core.model.Model
 
     """
-    # We're going to import the Matlab model and convert it to COBApy
+    # We're going to import the Matlab cobra_model and convert it to COBApy
     mat_data = loadmat(path)
 
     if variable_name:
@@ -58,7 +58,7 @@ def import_matlab_model(path, variable_name=None):
 
     cobra_model.description = mat_model['description'][0]
     ## METABOLITES
-    # In the Matlab model, the corresponding components are :
+    # In the Matlab cobra_model, the corresponding components are :
     # * mets = Identifiers
     # * metNames = Names
     # * metFormulas = formulas
@@ -76,7 +76,7 @@ def import_matlab_model(path, variable_name=None):
         metabolites[i].annotation = {"seed_id": seed_id[i, 0][0]}
 
     ## REACTIONS
-    # In the Matlab model, the corresponding components are :
+    # In the Matlab cobra_model, the corresponding components are :
     # * rxns = Names
     # * rev = Reversibility (not used, see https://cobrapy.readthedocs.io/en/0.5.11/faq.html#How-do-I-change-the-reversibility-of-a-Reaction?)
     # * lb = Lower bounds
@@ -101,7 +101,7 @@ def import_matlab_model(path, variable_name=None):
         # Name of the reaction
         reaction = Reaction(str(mat_model['rxns'][i, 0][0]))
 
-        # Add the reaction to the model
+        # Add the reaction to the cobra_model
         cobra_model.add_reaction(reaction)
 
         # NOTE : The str() conversion above is needed, otherwise the CPLEX solver
@@ -110,7 +110,7 @@ def import_matlab_model(path, variable_name=None):
         # Reaction description
         # reaction.name not set
 
-        # Subsystem (only if set in the Matlab model)
+        # Subsystem (only if set in the Matlab cobra_model)
         if (len(mat_model['subSystems'][i, 0])):
             reaction.subsystem = mat_model['subSystems'][i, 0][0]
 
@@ -410,9 +410,9 @@ def load_thermoDB(path):
 
 
 def printLP(model):
-    """ Print the LP file corresponding to the model
+    """ Print the LP file corresponding to the cobra_model
 
-    :param cobra.core.model.Model model: The model to output the LP file for
+    :param cobra.core.model.Model model: The cobra_model to output the LP file for
 
     :returns: The content of the LP file
     :rtype: str
@@ -491,12 +491,12 @@ def printLP(model):
 
 
 def writeLP(model, path=None):
-    """ Write the LP file of the specified model to the file indicated by path.
+    """ Write the LP file of the specified cobra_model to the file indicated by path.
 
-    :param cobra.core.model.Model model: The COBRApy model to write the LP file
+    :param cobra.core.model.Model model: The COBRApy cobra_model to write the LP file
         for
     :param string path: `Optional` The path of the file to be written. If not
-        specified, the name of the COBRApy model will be used.
+        specified, the name of the COBRApy cobra_model will be used.
 
 
     """

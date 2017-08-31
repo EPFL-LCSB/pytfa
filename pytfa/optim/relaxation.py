@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -37,10 +37,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
     :param reactions_to_ignore: Iterable of reactions that should not be relaxed
     :param solver: solver to use (e.g. 'optlang-glpk', 'optlang-cplex',
         'optlang-gurobi'
-    :return: a model with relaxed bounds on standard Gibbs free energy
+    :return: a cobra_model with relaxed bounds on standard Gibbs free energy
     """
 
-    # Create a copy of the model on which we will perform the slack addition
+    # Create a copy of the cobra_model on which we will perform the slack addition
     slack_model = deepcopy(tmodel)
     slack_model.solver = solver
 
@@ -48,7 +48,7 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
     relaxed_model = deepcopy(tmodel)
     relaxed_model.solver = solver
 
-    # Do not relax if model is already optimal
+    # Do not relax if cobra_model is already optimal
     try:
         solution = tmodel.optimize()
     except SolverError as SE:
@@ -85,7 +85,7 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
                      this_neg_dg.constraint.variables}
 
         # Create the new constraint by adding the slack variables to the
-        # negative delta G constraint (from the initial model)
+        # negative delta G constraint (from the initial cobra_model)
         new_expr = this_neg_dg.constraint.expression.subs(subs_dict)
         new_expr += (pos_slack - neg_slack)
 
@@ -181,7 +181,7 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
     :return:
     """
 
-    # Create a copy of the model on which we will perform the slack addition
+    # Create a copy of the cobra_model on which we will perform the slack addition
     slack_model = deepcopy(tmodel)
     slack_model.solver = solver
 
@@ -189,7 +189,7 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
     relaxed_model = deepcopy(tmodel)
     relaxed_model.solver = solver
 
-    # Do not relax if model is already optimal
+    # Do not relax if cobra_model is already optimal
     try:
         solution = tmodel.optimize()
     except SolverError as SE:
@@ -239,7 +239,7 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
                      for k in this_neg_dg.constraint.variables}
 
         # Create the new constraint by adding the slack variables to the
-        # negative delta G constraint (from the initial model)
+        # negative delta G constraint (from the initial cobra_model)
         new_expr = this_neg_dg.constraint.expression.subs(subs_dict)
 
         for this_var in this_neg_dg.constraint.variables:
