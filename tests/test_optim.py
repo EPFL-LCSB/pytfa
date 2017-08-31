@@ -2,11 +2,11 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
-Unit tests for the core functionalities of pytfa
+Tests of the optimization routines of pytfa
 
 """
 
@@ -15,12 +15,7 @@ import os
 import pytfa
 import pytfa.io
 
-cobra_model = create_test_model("salmonella")
-this_directory = os.path.dirname(os.path.realpath(__file__))
-
-# Load the thermo database
-thermo_data = pytfa.io.load_thermoDB(this_directory + '/../data/thermo_data.thermodb')
-tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
+from settings import tmodel
 
 
 

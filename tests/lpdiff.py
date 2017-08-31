@@ -2,11 +2,11 @@
 """
 .. module:: pyTFA
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
-Compare two LP files, representing constraints and variables of a model
+Compare two LP files, representing constraints and variables of a cobra_model
 
 Usage: python lpdiff.py file1.py file2.py
 
@@ -100,11 +100,11 @@ def process_expr(expr):
 
 
 def parse_file(path):
-    """ Parse the content of a file and get the corresponding model
+    """ Parse the content of a file and get the corresponding cobra_model
 
     :param string file: The path of the file to parse
 
-    :returns: A dictionnary representing the model contained in the file
+    :returns: A dictionnary representing the cobra_model contained in the file
     :rtype: dict
 
     """
@@ -218,7 +218,7 @@ def compare(model, stack = None, n = 0):
 
 
     """
-    # Make sure all keys in the first model are equal to those in the second
+    # Make sure all keys in the first cobra_model are equal to those in the second
     for item in model[0]:
         if item not in model[1]:
             print((stack + '.' if stack else '') + item + ' in 1 but not in 2')
@@ -238,7 +238,7 @@ def compare(model, stack = None, n = 0):
                 print((stack + '.' if stack else '') + item + ' different :')
                 print(model[0][item], ' / ', model[1][item])
                 n += 1
-    # Are there keys in the second model not in the first ?
+    # Are there keys in the second cobra_model not in the first ?
     for item in model[1]:
         if item not in model[0]:
             print((stack + '.' if stack else '') + item + ' in 2 but not in 1')
