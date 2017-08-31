@@ -2,11 +2,11 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
-Thermodynamic model class and methods definition
+Thermodynamic cobra_model class and methods definition
 
 
 """
@@ -48,7 +48,7 @@ MAX_STOICH = 10
 
 class ThermoModel(Model):
     """
-    A class representing a model with thermodynamics information
+    A class representing a cobra_model with thermodynamics information
 
     """
 
@@ -123,7 +123,7 @@ class ThermoModel(Model):
 
         # Get the data about the compartment of the metabolite
         if not met.compartment in self.compartments:
-            raise Exception("Compartment not found in model : "
+            raise Exception("Compartment not found in cobra_model : "
                             + met.compartment)
 
         CompartmentpH = self.compartments[met.compartment]['pH']
@@ -233,7 +233,7 @@ class ThermoModel(Model):
             reaction.thermo['deltaGRerr'] = DeltaGRerr
 
     def prepare(self):
-        """ Prepares a COBRA toolbox model for TFBA analysis by doing the following:
+        """ Prepares a COBRA toolbox cobra_model for TFBA analysis by doing the following:
 
            1. checks if a reaction is a transport reaction
            2. checks the ReactionDB for Gibbs energies of formation of metabolites
@@ -536,7 +536,7 @@ class ThermoModel(Model):
                 add_potentials=False,
                 add_displacement=False,
                 verbose=True):
-        """ Converts a model into a tFBA ready model by adding the
+        """ Converts a cobra_model into a tFBA ready cobra_model by adding the
         thermodynamic constraints required
 
         .. warning::
@@ -564,7 +564,7 @@ class ThermoModel(Model):
         # INPUTS & CHECKS #
         ###################
 
-        # check if model reactions has been checked if they are transport reactions
+        # check if cobra_model reactions has been checked if they are transport reactions
         try:
             for reaction in self.reactions:
                 if not 'isTrans' in reaction.thermo:
@@ -603,16 +603,16 @@ class ThermoModel(Model):
             self.logger.warning('Objective not found')
 
         self.logger.info('# Model conversion done.')
-        self.logger.info('# Updating model variables...')
+        self.logger.info('# Updating cobra_model variables...')
         self.repair()
-        self.logger.info('# model variables are up-to-date')
+        self.logger.info('# cobra_model variables are up-to-date')
 
     def add_variable(self, kind, hook, **kwargs):
-        """ Add a new variable to a COBRApy model.
+        """ Add a new variable to a COBRApy cobra_model.
 
-        :param cobra.core.model.Model model: The COBRApy model
+        :param cobra.core.model.Model model: The COBRApy cobra_model
         :param string,cobra.Reaction hook: Either a string representing the name
-            of the variable to add to the model, or a reaction object if the
+            of the variable to add to the cobra_model, or a reaction object if the
             kind allows it
 
         :returns: The created variable
@@ -621,7 +621,7 @@ class ThermoModel(Model):
         """
 
 
-        # Initialisation links to the model
+        # Initialisation links to the cobra_model
         var = kind(hook,
                 # lb=lower_bound if lower_bound != float('-inf') else None,
                 # ub=upper_bound if upper_bound != float('inf') else None,
@@ -633,11 +633,11 @@ class ThermoModel(Model):
         return var
 
     def add_constraint(self, kind, hook, expr, **kwargs):
-        """ Add a new constraint to a COBRApy model
+        """ Add a new constraint to a COBRApy cobra_model
 
-        :param cobra.core.model.Model model: The COBRApy model
+        :param cobra.core.model.Model model: The COBRApy cobra_model
         :param string,cobra.Reaction hook: Either a string representing the name
-            of the variable to add to the model, or a reaction object if the
+            of the variable to add to the cobra_model, or a reaction object if the
             kind allows it
         :param sympy.core.expr.Expr expr: The expression of the constraint
 
@@ -650,7 +650,7 @@ class ThermoModel(Model):
             # make sure we actually pass the optlang variable
             expr = expr.variable
 
-        # Initialisation links to the model
+        # Initialisation links to the cobra_model
         cons = kind(hook,
                     expr,
                     # problem = self.problem,
@@ -686,8 +686,8 @@ class ThermoModel(Model):
 
     def regenerate_variables(self):
         """
-        Generates references to the model's constraints in self._var_dict
-        as tab-searchable attributes of the thermo model
+        Generates references to the cobra_model's constraints in self._var_dict
+        as tab-searchable attributes of the thermo cobra_model
         :return:
         """
 
@@ -710,8 +710,8 @@ class ThermoModel(Model):
 
     def regenerate_constraints(self):
         """
-        Generates references to the model's constraints in self._cons_dict
-        as tab-searchable attributes of the thermo model
+        Generates references to the cobra_model's constraints in self._cons_dict
+        as tab-searchable attributes of the thermo cobra_model
         :return:
         """
 
@@ -746,7 +746,7 @@ class ThermoModel(Model):
 
     def get_primal(self, vartype, index_by_reactions = False):
         """
-        Returns the primal value of the model for variables of a given type
+        Returns the primal value of the cobra_model for variables of a given type
 
         :param vartype: Class of variable. Ex: pytfa.optim.variables.ThermoDisplacement
         :return:
@@ -756,7 +756,7 @@ class ThermoModel(Model):
     def get_solution(self):
         """
         Overrides the cobra.core.solution method, to also get the supplementary
-        variables we added to the model
+        variables we added to the cobra_model
         :return:
         """
         objective_value = self.solver.objective.value
@@ -792,7 +792,7 @@ class ThermoModel(Model):
     def get_constraints_of_type(self, constraint_type):
         """
         Convenience function that takes as input a constraint class and returns
-        all its instances within the model
+        all its instances within the cobra_model
 
         :param constraint_type:
         :return:
@@ -804,7 +804,7 @@ class ThermoModel(Model):
     def get_variables_of_type(self, variable_type):
         """
         Convenience function that takes as input a variable class and returns
-        all its instances within the model
+        all its instances within the cobra_model
 
         :param variable_type:
         :return:
@@ -815,7 +815,7 @@ class ThermoModel(Model):
 
     def print_info(self):
         """
-        Print information and counts for the model
+        Print information and counts for the cobra_model
         :return:
         """
         n_metabolites   = len(self.metabolites)
@@ -858,7 +858,7 @@ class ThermoModel(Model):
         new.name = 'Copy of ' + self.name
 
         # The solver has all the properties we need. From there, we can
-        # reconstruct the model
+        # reconstruct the cobra_model
         new_solver = self.solver.clone(self.solver)
         new._solver = new_solver
 

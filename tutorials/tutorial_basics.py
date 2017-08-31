@@ -37,7 +37,7 @@ fva = flux_variability_analysis(mytfa)
 mytfa.prepare()
 mytfa.convert(add_displacement = True)
 
-## Info on the model
+## Info on the cobra_model
 mytfa.print_info()
 
 ## Optimality

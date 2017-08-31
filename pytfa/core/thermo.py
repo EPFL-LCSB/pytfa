@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -455,8 +455,8 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
 
     :param cobra.core.reaction.Reaction reaction: The reaction to compute the
         data for
-    :param dict(float) compartmentsData: Data of the compartments of the model
-    :param str thermo_units: The thermodynamic database of the model
+    :param dict(float) compartmentsData: Data of the compartments of the cobra_model
+    :param str thermo_units: The thermodynamic database of the cobra_model
 
     :returns: deltaG_tpt and the breakdown of deltaG_tpt
     :rtype: tuple(float, dict(float))

@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -37,9 +37,9 @@ class GenericVariable:
         a variable type.
         :name: Should be a concatenation of the id and a prefix that is
         specific to the variable type. will be used to address the variable at
-        the solver level, and hence should be unique in the whole model
-        :model: the model hook.
-        :variable: links directly to the model representation of tbe variable
+        the solver level, and hence should be unique in the whole cobra_model
+        :cobra_model: the cobra_model hook.
+        :variable: links directly to the cobra_model representation of tbe variable
     """
 
     @property
@@ -256,14 +256,14 @@ class GenericVariable:
         :return:
         """
 
-        # if isinstance(new_variable, self.model.problem.Variable):
+        # if isinstance(new_variable, self.cobra_model.problem.Variable):
         #     new_name = new_variable.name
         # else: #It is an expression
         #     new_name  = new_variable.__str__()
         #     for k,v in op_replace_dict.items():
         #         new_name = new_name.replace(k,v)
 
-        # result = GenericVariable(new_name, self.model)
+        # result = GenericVariable(new_name, self.cobra_model)
         # result.variable = new_variable
 
         # return result

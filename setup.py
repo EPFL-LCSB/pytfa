@@ -1,4 +1,4 @@
-""" Thermodynamic constraints for Flux-Based Analysis of reactions
+""" Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -34,6 +34,6 @@ setup(name='pytfa',
                         'scipy'],
       py_modules=['pytfa'],
       python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4',
-      description='pyTFA adds thermodynamic constraints for Flux-Based Analysis of reactions',
+      description='pyTFA adds Thermodynamics-based Flux Analysis',
       keywords=['pytfa','tfa','thermodynamics','flux analysis'],
      )
