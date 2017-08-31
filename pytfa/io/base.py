@@ -11,14 +11,12 @@ Input/Output tools to import or export pytfa models
 """
 
 import pickle
-import re  # Regular expressions
 import zlib
 import numpy as np
 import re
 
 from cobra import Model, Reaction, Metabolite
 from scipy.io import loadmat, savemat
-from six import iteritems
 
 from ..utils.numerics import BIGM_DG
 
