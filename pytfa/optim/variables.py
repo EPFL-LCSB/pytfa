@@ -64,6 +64,7 @@ class GenericVariable:
         self.kwargs = kwargs
         self._name = self.make_name()
         self.get_interface()
+        self.prefix = ''
 
     def get_interface(self):
         """
@@ -86,7 +87,7 @@ class GenericVariable:
 
         :return: None
         """
-        return self.id
+        return self.prefix + self.id
 
     @property
     def name(self):
@@ -295,8 +296,7 @@ class BinaryVariable(GenericVariable):
                                  type=get_binary_type(),
                                  **kwargs)
 
-    def make_name(self):
-        return 'B_' + self.id
+    prefix = 'B_'
 
 class ReactionVariable(GenericVariable):
     """
@@ -356,8 +356,7 @@ class ForwardUseVariable(ReactionVariable, BinaryVariable):
                                   type=get_binary_type(),
                                   **kwargs)
 
-    def make_name(self):
-        return 'FU_' + self.id
+    prefix = 'FU_'
 
 class BackwardUseVariable(ReactionVariable, BinaryVariable):
     """
@@ -372,8 +371,7 @@ class BackwardUseVariable(ReactionVariable, BinaryVariable):
                                   type=get_binary_type(),
                                   **kwargs)
 
-    def make_name(self):
-        return 'BU_' + self.id
+    prefix = 'BU_'
 
 
 class LogConcentration(MetaboliteVariable):
@@ -381,8 +379,7 @@ class LogConcentration(MetaboliteVariable):
     Class to represent a log concentration of a metabolite
     """
 
-    def make_name(self):
-        return 'LC_' + self.id
+    prefix = 'LC_'
 
 
 class DeltaGErr(ReactionVariable):
@@ -390,8 +387,7 @@ class DeltaGErr(ReactionVariable):
     Class to represent a DeltaGErr
     """
 
-    def make_name(self):
-        return 'DGE_' + self.id
+    prefix = 'DGE_'
 
 
 class DeltaG(ReactionVariable):
@@ -399,8 +395,7 @@ class DeltaG(ReactionVariable):
     Class to represent a DeltaG
     """
 
-    def make_name(self):
-        return 'DG_' + self.id
+    prefix = 'DG_'
 
 
 class DeltaGstd(ReactionVariable):
@@ -408,8 +403,7 @@ class DeltaGstd(ReactionVariable):
     Class to represent a DeltaG^o (naught) - standard conditions
     """
 
-    def make_name(self):
-        return 'DGo_' + self.id
+    prefix = 'DGo_'
 
 class ThermoDisplacement(ReactionVariable):
     """
@@ -417,8 +411,7 @@ class ThermoDisplacement(ReactionVariable):
     \Gamma = -\DeltaG/RT
     """
 
-    def make_name(self):
-        return 'LnGamma_' + self.id
+    prefix = 'LnGamma_'
 
 class PosSlackVariable(ReactionVariable):
     """
@@ -428,8 +421,7 @@ class PosSlackVariable(ReactionVariable):
     def __init__(self,reaction,**kwargs):
         ReactionVariable.__init__(self, reaction, **kwargs)
 
-    def make_name(self):
-        return 'PosSlack_' + self.id
+    prefix = 'PosSlack_'
 
 
 class NegSlackVariable(ReactionVariable):
@@ -440,13 +432,12 @@ class NegSlackVariable(ReactionVariable):
     def __init__(self,reaction,**kwargs):
         ReactionVariable.__init__(self, reaction, **kwargs)
 
-    def make_name(self):
-        return 'NegSlack_' + self.id
+    prefix = 'NegSlack_'
 
 class PosSlackLC(MetaboliteVariable):
-    def make_name(self):
-        return  'PosSlackLC_' + self.id
+
+    prefix = 'PosSlackLC_'
 
 class NegSlackLC(MetaboliteVariable):
-    def make_name(self):
-        return  'NegSlackLC_' + self.id
+
+    prefix = 'NegSlackLC_'

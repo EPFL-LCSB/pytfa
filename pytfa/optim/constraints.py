@@ -59,6 +59,7 @@ class GenericConstraint:
         self.kwargs = kwargs
         self._name = self.make_name()
         self.get_interface(expr)
+        self.prefix = ''
 
     def get_interface(self, expr):
         """
@@ -83,7 +84,7 @@ class GenericConstraint:
 
         :return: None
         """
-        return self.id
+        return self.prefix + self.id
 
     @property
     def expr(self):
@@ -184,8 +185,7 @@ class NegativeDeltaG(ReactionConstraint):
      = 0
     """
 
-    def make_name(self):
-        return 'G_' + self.id
+    prefix = 'G_'
 
 class ForwardDeltaGCoupling(ReactionConstraint):
     """
@@ -198,8 +198,7 @@ class ForwardDeltaGCoupling(ReactionConstraint):
     def __init__(self, reaction, expr, **kwargs):
         ReactionConstraint.__init__(self, reaction, expr, **kwargs)
 
-    def make_name(self):
-        return 'FU_' + self.id
+    prefix = 'FU_'
 
 class BackwardDeltaGCoupling(ReactionConstraint):
     """
@@ -212,8 +211,7 @@ class BackwardDeltaGCoupling(ReactionConstraint):
     def __init__(self, reaction, expr, **kwargs):
         ReactionConstraint.__init__(self, reaction, expr, **kwargs)
 
-    def make_name(self):
-        return 'BU_' + self.id
+    prefix = 'BU_'
 
 class ForwardDirectionCoupling(ReactionConstraint):
     """
@@ -226,8 +224,7 @@ class ForwardDirectionCoupling(ReactionConstraint):
     def __init__(self, reaction, expr, **kwargs):
         ReactionConstraint.__init__(self, reaction, expr, **kwargs)
 
-    def make_name(self):
-        return 'UF_' + self.id
+    prefix = 'UF_'
 
 
 class BackwardDirectionCoupling(ReactionConstraint):
@@ -241,8 +238,7 @@ class BackwardDirectionCoupling(ReactionConstraint):
     def __init__(self, reaction, expr, **kwargs):
         ReactionConstraint.__init__(self, reaction, expr, **kwargs)
 
-    def make_name(self):
-        return 'UR_' + self.id
+    prefix = 'UR_'
 
 class SimultaneousUse(ReactionConstraint):
     """
@@ -251,8 +247,7 @@ class SimultaneousUse(ReactionConstraint):
     SU_rxn: FU_rxn + BU_rxn <= 1
     """
 
-    def make_name(self):
-        return 'SU_' + self.id
+    prefix = 'SU_'
 
 class DisplacementCoupling(ReactionConstraint):
     """
@@ -261,8 +256,7 @@ class DisplacementCoupling(ReactionConstraint):
     Ln(Gamma) - (1/RT)*DGR_rxn = 0
     """
 
-    def make_name(self):
-        return 'DC_' + self.id
+    prefix = 'DC_'
 
 class ForbiddenProfile(GenericConstraint):
     """
@@ -279,5 +273,4 @@ class ForbiddenProfile(GenericConstraint):
                                    model=model,
                                    **kwargs)
 
-    def make_name(self):
-        return 'FP_' + self.id
+    prefix = 'FP_'
