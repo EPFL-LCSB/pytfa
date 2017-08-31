@@ -519,9 +519,7 @@ class ThermoModel(Model):
         # create the prevent simultaneous use constraints
         # SU_rxn: FU_rxn + BU_rxn <= 1
         CLHS = FU_rxn + BU_rxn
-        # self.add_constraint(SimultaneousUse, rxn, CLHS, ub=1)
-        # TEST: equality
-        self.add_constraint(SimultaneousUse, rxn, CLHS, lb= 0, ub=1)
+        self.add_constraint(SimultaneousUse, rxn, CLHS, ub=1)
 
         # create constraints that control fluxes with their use variables
         # UF_rxn: F_rxn - M FU_rxn < 0
@@ -846,7 +844,6 @@ class ThermoModel(Model):
         :param memo:
         :return:
         """
-        # FIXME
 
         return self.copy()
 
