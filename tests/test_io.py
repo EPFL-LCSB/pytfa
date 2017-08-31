@@ -36,5 +36,5 @@ def test_read_write_compdata():
     fname = 'tmp.comp.json'
     write_compartment_data(tmodel,fname)
     cd = read_compartment_data(fname)
-    apply_compartment_data(cobra_model,fname)
+    apply_compartment_data(cobra_model,cd)
     os.remove(fname)

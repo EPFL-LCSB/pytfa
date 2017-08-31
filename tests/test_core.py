@@ -15,6 +15,7 @@ import pytfa.io
 import csv
 import lpdiff
 import pytest
+import os
 
 from settings import tmodel, this_directory, objective_value
 
@@ -132,9 +133,9 @@ models = [
           lpdiff.parse_file(this_directory + '/ref/reference.lp')
          ]
 
-#os.remove(this_directory + '/test.lp')
+os.remove(this_directory + '/test.lp')
 
-#@pytest.mark.skip(reason="WIP")
+@pytest.mark.skip(reason="WIP")
 def test_lpfiles():
     # global models
     assert(lpdiff.compare(models) < 2)
