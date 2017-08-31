@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -44,7 +44,7 @@ def get_solution_value_for_variables(solution, these_vars, index_by_reaction = F
 
 def compare_solutions(models):
     """
-    returns the solution dictionnary for each model
+    returns the solution dictionnary for each cobra_model
     :param (iterable (pytfa.core.ThermoModel)) models:
     :return:
     """
@@ -114,7 +114,7 @@ def get_direction_use_variables(tmodel,solution):
 
 def get_primal(tmodel, vartype, index_by_reactions = False):
     """
-    Returns the primal value of the model for variables of a given type
+    Returns the primal value of the cobra_model for variables of a given type
     :param tmodel:
     :param vartype: Class of variable. Ex: pytfa.optim.variables.ThermoDisplacement
     :param index_by_reactions: Set to true to get reaction names as index instead of
@@ -134,7 +134,7 @@ def get_primal(tmodel, vartype, index_by_reactions = False):
 
 def strip_from_integer_variables(tmodel):
     """
-    Removes all integer and binary variables of a model, to make it sample-able
+    Removes all integer and binary variables of a cobra_model, to make it sample-able
     :param tmodel:
     :return:
     """
@@ -164,7 +164,7 @@ def strip_from_integer_variables(tmodel):
 
     continuous_model.solver.update()
     # This will update the values =
-    print('Is the model still integer ? {}'     \
+    print('Is the cobra_model still integer ? {}'     \
           .format(continuous_model.solver.is_integer))
 
     return continuous_model

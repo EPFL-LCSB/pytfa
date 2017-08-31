@@ -2,7 +2,7 @@
 """
 .. module:: pytfa
    :platform: Unix, Windows
-   :synopsis: Thermodynamic constraints for Flux-Based Analysis of reactions
+   :synopsis: Thermodynamics-based Flux Analysis
 
 .. moduleauthor:: pyTFA team
 
@@ -58,7 +58,7 @@ def plot_fva_tva_comparison(fva,tva):
 def plot_thermo_displacement_histogram(tmodel,solution = None):
     """
     Plot a histogram of the thermodynamic displacement. if no solution is
-    provided, will look at the model's own solution
+    provided, will look at the cobra_model's own solution
 
     :param tmodel:
     :param solution:
