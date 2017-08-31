@@ -26,12 +26,12 @@ this_directory = os.path.dirname(os.path.realpath(__file__))
 
 # Load the thermo database
 thermo_data = pytfa.io.load_thermoDB \
-    (this_directory \
+                                    (this_directory \
                                      + '/../data/thermo_data.thermodb')
 
 # Load the cobra_model
 cobra_model = pytfa.io.import_matlab_model \
-    (this_directory \
+                                    (this_directory \
                                      + '/../models/small_ecoli.mat')
 
 # Make your computations on it
