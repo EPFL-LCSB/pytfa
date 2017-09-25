@@ -19,7 +19,7 @@ from setuptools import setup
 #     reqs = [str(ir.req) for ir in install_reqs]
 #     return reqs
 
-version_tag = '0.6.1-b2'
+version_tag = '0.6.1-b3'
 
 setup(name='pytfa',
       version=version_tag,
