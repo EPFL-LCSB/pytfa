@@ -10,13 +10,13 @@ Model reduction implementation of
 
 Ataman M, Hernandez Gardiol DF, Fengos G, Hatzimanikatis V (2017)
 redGEM: Systematic reduction and analysis of genome-scale metabolic
-reconstructions for development of consistent core metabolic models.
+reconstructions for development of consistent thermo metabolic models.
 PLoS Computational Biology 13(7): e1005444.
 https://doi.org/10.1371/journal.pcbi.1005444
 """
 
 
-from ..core.tmodel import ThermoModel
+from ..thermo.tmodel import ThermoModel
 
 def reduce(tmodel, reduction_parameters):
     reduction = ReducedModel(tmodel, reduction_parameters)

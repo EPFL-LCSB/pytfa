@@ -1,10 +1,12 @@
 bokeh>=0.12.1
+biopython
 cobra>0.6
 ipdb
 lxml
 openpyxl
 pymysql
 pytest
+python-libsbml
 scipy
 sqlalchemy
 tabulate

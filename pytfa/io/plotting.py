@@ -88,8 +88,7 @@ def plot_histogram(values, **kwargs):
     """
     Convenience function. Plots a histogram of flat 1D data.
 
-    :param tmodel:
-    :param solution:
+    :param values:
     :return:
     """
 

@@ -1,6 +1,7 @@
 def apply_reaction_variability(tmodel, va, inplace = True):
     """
     Applies the VA results as bounds for the reactions of a cobra_model
+    :param inplace:
     :param tmodel:
     :param va:
     :return:
@@ -50,6 +51,7 @@ def apply_directionality(tmodel,solution, inplace = True):
     Takes a flux solution and transfers its reaction directionality as
     constraints for the cobra_model
 
+    :param inplace:
     :param tmodel:
     :param solution:
     :return:

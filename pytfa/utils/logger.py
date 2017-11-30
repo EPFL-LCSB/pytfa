@@ -11,7 +11,10 @@ Logging utilities
 """
 
 import logging
+import os
+import time
 
+LOGFOLDERNAME = 'logs'
 
 def get_bistream_logger(name):
     """
@@ -23,11 +26,18 @@ def get_bistream_logger(name):
     """
     logger = logging.getLogger(name)
 
+    try:
+        os.makedirs(LOGFOLDERNAME)
+    except FileExistsError:
+        pass
+
     if not logger.handlers:
         logger.setLevel(logging.DEBUG)
 
         # create a file handler
-        file_handler = logging.FileHandler(name+'.log')
+        filename = name+get_timestr()+'.log'
+        path = os.path.join(LOGFOLDERNAME, filename)
+        file_handler = logging.FileHandler(path)
         file_handler.setLevel(logging.DEBUG)
 
         # create a stream handler
@@ -46,6 +56,5 @@ def get_bistream_logger(name):
     return logger
 
 def get_timestr():
-    import time
-    timestr = time.strftime("%Y%m%d-%H%M%S")
+    timestr = time.strftime("_%Y%m%d_%H%M%S")
     return timestr
