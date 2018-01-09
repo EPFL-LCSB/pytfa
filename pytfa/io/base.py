@@ -92,7 +92,8 @@ def import_matlab_model(path, variable_name=None):
 
     def gene_id_to_name(match):
         id_ = int(match.group()[2:-1])
-        return mat_model['genes'][id_, 0][0]
+        # /!\ These are indexed from 1, while python indexes from 0
+        return mat_model['genes'][id_ - 1, 0][0]
 
     # Add each reaction
     for i in range(mat_model['S'].shape[1]):
