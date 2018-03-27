@@ -33,6 +33,9 @@ RUN pip install -r requirements.txt
 COPY ./solvers /solvers
 COPY ./utils /utils
 
+# Fix permissions
+RUN find . -type f -iname "*.sh" -exec chmod +x {} \;
+
 # Install CPLEX
 RUN /utils/install_cplex.sh
 # Install gurobi
