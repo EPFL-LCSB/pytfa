@@ -36,7 +36,7 @@ COPY ./utils /utils
 # Install CPLEX
 RUN /utils/install_cplex.sh
 # Install gurobi
-COPY ./utils/gurobi.lic .
+COPY ./utils/gurobi.lic* .
 RUN /utils/install_gurobi.sh
 
 # Remove installers

@@ -21,7 +21,7 @@ FLOAT_PRECISION = 10**-3
 
 # Regular expressions database, used to parse the data from LP files
 regex = {
-    'name':re.compile(r'\\\Problem name: (.+)'),
+    'name':re.compile(r'\\Problem name: (.+)'),
     'obj' :re.compile(r'obj: (.+)'),
     'cons':re.compile(r'([0-9A-Za-z\-_]+): (.+)([=<>]+) ([\-e0-9\\.]+)'),
     'expr':re.compile(r' *([\-+]? *[0-9\\.]*(?:e-?[0-9]+)?[ \*]+|-|)([A-Za-z0-9][A-Za-z0-9_\-]+) +'),

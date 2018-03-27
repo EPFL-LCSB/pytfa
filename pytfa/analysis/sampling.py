@@ -18,9 +18,9 @@ from  cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler, HRSampler,\
 from optlang.interface import OPTIMAL
 
 class GeneralizedHRSampler(HRSampler):
-    def __init__(self, model, thinning, seed=None):
+    def __init__(self, model, thinning,  nproj=None, seed=None):
         """
-        Adapted from cobra.flux_analysis.analysis
+        Adapted from cobra.flux_analysis.sampling.py
         _________________________________________
 
         Initialize a new sampler object.
@@ -29,11 +29,17 @@ class GeneralizedHRSampler(HRSampler):
         # required to get deterministic warmup point generation
         # (in turn required for a working `seed` arg)
         if model.solver.is_integer:
-            raise TypeError("analysis does not work with integer problems :(")
+            raise TypeError("sampling does not work with integer problems :(")
         self.model = model.copy()
-        self.thinning = thinning
-        self.n_samples = 0
+        self.thinning = thinning        
 
+        if nproj is None:
+            self.nproj = int(min(len(self.model.variables)**3, 1e6))
+        else:
+            self.nproj = nproj
+        self.n_samples = 0
+        self.retries = 0
+        
         # Careful, double underscore names are mangled to the class name
         self.problem = self._HRSampler__build_problem()
 
@@ -51,7 +57,7 @@ class GeneralizedHRSampler(HRSampler):
 
     def generate_fva_warmup(self):
         """
-        Adapted from cobra.flux_analysis.analysis
+        Adapted from cobra.flux_analysis.sampling.py
         __________________________________________
 
         Generate the warmup points for the sampler.
@@ -109,12 +115,12 @@ class GeneralizedACHRSampler(GeneralizedHRSampler,ACHRSampler):
 class GeneralizedOptGPSampler(GeneralizedHRSampler, OptGPSampler):
     def __init__(self, model, processes, thinning=100, seed=None):
         """
-        Adapted from cobra.flux_analysis.analysis
+        Adapted from cobra.flux_analysis.sampling.py
         __________________________________________
         Initialize a new OptGPSampler."""
         GeneralizedHRSampler.__init__(self, model, thinning, seed=seed)
         self.generate_fva_warmup()
-        self.np = processes
+        self.processes = processes
 
         # This maps our saved center into shared memory,
         # meaning they are synchronized across processes
