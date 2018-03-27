@@ -34,7 +34,7 @@ COPY ./solvers /solvers
 COPY ./utils /utils
 
 # Fix permissions
-RUN find . -type f -iname "*.sh" -exec chmod +x {} \;
+RUN find ./utils -type f -iname "*.sh" -exec chmod +x {} \;
 
 # Install CPLEX
 RUN /utils/install_cplex.sh
