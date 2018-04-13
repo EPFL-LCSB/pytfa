@@ -20,6 +20,8 @@ from scipy.io import loadmat, savemat
 
 from ..utils.numerics import BIGM_DG
 
+from warnings import warn
+
 try:
     from scipy.sparse import dok_matrix, lil_matrix
 except ImportError:
@@ -143,6 +145,11 @@ def import_matlab_model(path, variable_name=None):
                 reaction.gene_reaction_rule = rule
         except ValueError:
             pass
+        except IndexError:
+            # The gene number is higher than the length of the gene list
+            warn('The gene reaction rule {} appears to be misaligned with '
+                 'the gene list'.format(rule))
+
 
     Compartments = dict()
     CompartmentDB = mat_model['CompartmentData'][0]
