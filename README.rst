@@ -12,6 +12,15 @@ https://doi.org/10.1529/biophysj.106.093138 <https://doi.org/10.1529/biophysj.10
 Requirements
 ------------
 
+You will need to have `Git-LFS <https://git-lfs.github.com/>`_ in order to properly download some binary files:
+
+.. code:: bash
+
+    git clone https://github.com/EPFL-LCSB/pytfa.git /path/to/pytfa
+    cd /path/to/pytfa
+    git lfs install
+    git lfs pull
+
 **This module was developed in Python 3.5, and it is recommended to run Python 3.5 
 to run commercial solvers such as Gurobi and CPLEX.**
 Other Python versions (2.7, 3.4) should also work (see the `CI builds <https://travis-ci.org/EPFL-LCSB/pytfa>`_)
