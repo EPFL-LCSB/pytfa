@@ -17,6 +17,7 @@ pyTFA enables you to add thermodynamic constraints to your COBRApy models to fin
    model
    thermoDB
    pytfa
+   integrating_metabolomics
 
 
 
