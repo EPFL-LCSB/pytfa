@@ -16,7 +16,7 @@ use case for TFA
 `tutorial_basics.py` shows a more realistic case with a reduced model of
 ecoli. It also cycles through several
 solvers (if more are installed), to show how simple it is to change your solver
-(thanks to [optlang](https://github.com/biosustain/optlang) ).
+(thanks to `optlang`_).
 
 `tutorial_sampling.py` shows how to sample a variable, for example thermodynamic
 displacement, and generate plots to visualize the results.
@@ -27,3 +27,5 @@ structured, and how data is managed.
 Cheers,
 
 The py.TFA team
+
+.. _optlang: https://github.com/biosustain/optlang

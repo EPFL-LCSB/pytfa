@@ -18,7 +18,8 @@ from  cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler, HRSampler,\
 from optlang.interface import OPTIMAL
 
 class GeneralizedHRSampler(HRSampler):
-    def __init__(self, model, thinning,  nproj=None, seed=None, variables = None):
+
+    def __init__(self, model, thinning,  nproj=None, seed=None):
         """
         Adapted from cobra.flux_analysis.sampling.py
         _________________________________________
@@ -31,27 +32,23 @@ class GeneralizedHRSampler(HRSampler):
         if model.solver.is_integer:
             raise TypeError("sampling does not work with integer problems :(")
         self.model = model.copy()
+
         self.thinning = thinning
 
-        if variables is not None:
-            self.variables = variables
-        else:
-            self.variables = self.model.variables
-
         if nproj is None:
-            self.nproj = int(min(len(self.variables)**3, 1e6))
+            self.nproj = int(min(len(self.model.variables)**3, 1e6))
         else:
             self.nproj = nproj
         self.n_samples = 0
         self.retries = 0
-
+        
         # Careful, double underscore names are mangled to the class name
         self.problem = self._HRSampler__build_problem()
 
         # Set up a map from reaction -> forward/reverse variable
-        var_idx = {v: idx for idx, v in enumerate(self.variables)}
+        var_idx = {v: idx for idx, v in enumerate(self.model.variables)}
         self.var_idx = np.array(
-            [var_idx[v] for v in self.variables])
+            [var_idx[v] for v in self.model.variables])
         self.warmup = None
         if seed is None:
             self._seed = int(time())
@@ -74,10 +71,10 @@ class GeneralizedHRSampler(HRSampler):
         """
         self.n_warmup = 0
         idx = np.hstack([self.var_idx])
-        self.warmup = np.zeros((len(idx), len(self.variables)))
+        self.warmup = np.zeros((len(idx), len(self.model.variables)))
         self.model.objective = S.Zero
         self.model.objective.direction = "max"
-        variables = self.variables
+        variables = self.model.variables
         for i in idx:
             # Omit fixed reactions
             if self.problem.variable_fixed[i]:
@@ -91,7 +88,7 @@ class GeneralizedHRSampler(HRSampler):
                         i].name)
                 continue
             primals = self.model.solver.primal_values
-            sol = [primals[v.name] for v in self.variables]
+            sol = [primals[v.name] for v in self.model.variables]
             self.warmup[self.n_warmup,] = sol
             self.n_warmup += 1
             # revert objective
@@ -118,22 +115,22 @@ class GeneralizedACHRSampler(GeneralizedHRSampler,ACHRSampler):
         np.random.seed(self._seed)
 
 class GeneralizedOptGPSampler(GeneralizedHRSampler, OptGPSampler):
-    def __init__(self, model, processes, thinning=100, seed=None, variables = None):
+    def __init__(self, model, processes, thinning=100, seed=None):
         """
         Adapted from cobra.flux_analysis.sampling.py
         __________________________________________
         Initialize a new OptGPSampler."""
-        GeneralizedHRSampler.__init__(self, model, thinning, seed=seed, variables = variables)
+        GeneralizedHRSampler.__init__(self, model, thinning, seed=seed)
         self.generate_fva_warmup()
         self.processes = processes
 
         # This maps our saved center into shared memory,
         # meaning they are synchronized across processes
-        self.center = shared_np_array((len(self.variables), ),
+        self.center = shared_np_array((len(self.model.variables), ),
                                       self.warmup.mean(axis=0))
 
 
-def sample(model, n, method="optgp", thinning=100, processes=1, seed=None, variables = None):
+def sample(model, n, method="optgp", thinning=100, processes=1, seed=None):
     """
     Sample valid flux distributions from a thermo cobra_model.
 
@@ -197,9 +194,9 @@ def sample(model, n, method="optgp", thinning=100, processes=1, seed=None, varia
        Operations Research 199846:1 , 84-95
     """
     if method == "optgp":
-        sampler = GeneralizedOptGPSampler(model, processes, thinning=thinning, seed=seed, variables = variables)
+        sampler = GeneralizedOptGPSampler(model, processes, thinning=thinning, seed=seed)
     elif method == "achr":
-        sampler = GeneralizedACHRSampler(model, thinning=thinning, seed=seed, variables = variables)
+        sampler = GeneralizedACHRSampler(model, thinning=thinning, seed=seed)
     else:
         raise ValueError("method must be 'optgp' or 'achr'!")
 

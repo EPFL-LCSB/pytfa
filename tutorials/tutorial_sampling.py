@@ -36,7 +36,7 @@ annotate_from_lexicon(tmodel, lexicon)
 apply_compartment_data(tmodel, compartment_data)
 
 # Set the solver
-tmodel.solver = CPLEX
+tmodel.solver = GLPK
 
 ## TFA conversion
 tmodel.prepare()

@@ -17,26 +17,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV USER pytfa
 ENV HOME /home/$USER
 
-RUN useradd -ms "/bin/bash" "$USER"
-USER $USER
-WORKDIR $HOME
-
-USER root
-
 # Copy python package requirements
 COPY requirements.txt .
 
 # Install python packages
 RUN pip install -r requirements.txt
 
+RUN useradd -ms "/bin/bash" "$USER"
+USER $USER
+WORKDIR $HOME
+
 # Take care of the solvers
 COPY ./solvers /solvers
 COPY ./utils /utils
 
+# Fix permissions
+RUN ls -al /
+RUN find /utils -type f -iname "*.sh" -exec chmod +x {} \;
+
 # Install CPLEX
 RUN /utils/install_cplex.sh
 # Install gurobi
-COPY ./utils/gurobi.lic .
+COPY ./utils/gurobi.lic* .
 RUN /utils/install_gurobi.sh
 
 # Remove installers
@@ -50,7 +52,6 @@ COPY src/ /src/
 RUN mkdir /src/pytfa
 
 COPY .bashrc $HOME
-RUN chown "$USER" "$HOME/.bashrc"
 
 #Finalizing installation
 
