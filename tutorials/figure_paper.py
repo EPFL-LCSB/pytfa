@@ -21,7 +21,7 @@ GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
 # Load the cobra_model
-cobra_model = import_matlab_model('../models/smallEcoli.mat')
+cobra_model = import_matlab_model('../models/small_ecoli.mat')
 
 # Load reaction DB
 thermo_data = load_thermoDB('../data/thermo_data.thermodb')
@@ -30,7 +30,7 @@ thermo_data = load_thermoDB('../data/thermo_data.thermodb')
 tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
 
 # Set the solver
-tmodel.solver = CPLEX
+tmodel.solver = GLPK
 
 ## TFA conversion
 tmodel.prepare()
