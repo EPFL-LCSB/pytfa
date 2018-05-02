@@ -9,8 +9,12 @@
 Variable declarations
 
 """
+from distutils.version import LooseVersion
+from optlang import __version__ as OPTLANG_VER
 
 from ..utils.str import camel2underscores
+
+
 
 op_replace_dict = {
     ' + ': '_ADD_',
@@ -33,7 +37,7 @@ class GenericVariable:
     Attributes:
 
         :id: Used for DictList comprehension. Usually points back at a
-        metabolite or reaction id for ease of linking. Should be unique given
+        enzyme or reaction id for ease of linking. Should be unique given
         a variable type.
         :name: Should be a concatenation of the id and a prefix that is
         specific to the variable type. will be used to address the variable at
@@ -51,22 +55,23 @@ class GenericVariable:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id_, model, **kwargs):
+    def __init__(self, id_, model, queue=False, **kwargs):
         """
 
         :param id_: will be used to identify the variable
             (name will be a concat of this and a prefix)
-        :param problem: the cobra.Model.problem object
+        :param model: the cobra.Model object
+        :param queue: whether or not to queue the variable for update object
         :param kwargs: stuff you want to pass to the variable constructor
         """
         self._id = id_
         self._model = model
         self.kwargs = kwargs
         self._name = self.make_name()
-        self.get_interface()
+        self.get_interface(queue)
         self.prefix = ''
 
-    def get_interface(self):
+    def get_interface(self, queue):
         """
         Called upon completion of __init__, initializes the value of self.var,
         which is returned upon call, and stores the actual interfaced variable.
@@ -76,7 +81,10 @@ class GenericVariable:
 
         if not self.name in self.model.variables:
             variable = self.model.problem.Variable(name = self.name, **self.kwargs)
-            self.model.add_cons_vars(variable)
+            if not queue:
+                self.model.add_cons_vars(variable)
+            else:
+                self.model._var_queue.append(variable)
         else:
             self.variable = self.model.variables.get(self.name)
 
@@ -100,7 +108,7 @@ class GenericVariable:
     @property
     def id(self):
         """
-        for cobra.core.DictList compatibility
+        for cobra.thermo.DictList compatibility
         :return:
         """
         return self._id
@@ -121,6 +129,10 @@ class GenericVariable:
     # @variable.setter
     # def variable(self, value):
     #     self._variable = value
+
+    @property
+    def type(self):
+        return self.variable.type
 
     def test_consistency(self, other):
         """
@@ -279,20 +291,26 @@ def get_binary_type():
     not allow to set the binary variable bounds to anything other than (0,1)
     You might want to set it at (0,0) to enforce directionality for example
     """
-    return 'integer'
-    # return 'binary'
+    if LooseVersion(OPTLANG_VER) < LooseVersion('1.2.3'):
+        return 'integer'
+    else:
+        return 'binary'
 
 class BinaryVariable(GenericVariable):
     """
     Class to represent a generic binary variable
     """
 
-    def __init__(self, id_, problem, **kwargs):
+    def __init__(self, id_, model, **kwargs):
+
+        if not 'lb' in kwargs:
+            kwargs['lb'] = 0
+        if not 'ub' in kwargs:
+            kwargs['ub'] = 1
+
         GenericVariable.__init__(self,
                                  id_,
-                                 problem,
-                                 lb = 0,
-                                 ub = 1,
+                                 model = model,
                                  type=get_binary_type(),
                                  **kwargs)
 
@@ -322,7 +340,7 @@ class ReactionVariable(GenericVariable):
 
 class MetaboliteVariable(GenericVariable):
     """
-    Class to represent a variable attached to a metabolite
+    Class to represent a variable attached to a enzyme
     """
 
     def __init__(self, metabolite, **kwargs):
@@ -351,8 +369,6 @@ class ForwardUseVariable(ReactionVariable, BinaryVariable):
 
     def __init__(self, reaction, **kwargs):
         ReactionVariable.__init__(self, reaction,
-                                  lb = 0,
-                                  ub = 1,
                                   type=get_binary_type(),
                                   **kwargs)
 
@@ -365,9 +381,12 @@ class BackwardUseVariable(ReactionVariable, BinaryVariable):
     """
 
     def __init__(self, reaction, **kwargs):
+        if not 'lb' in kwargs:
+            kwargs['lb'] = 0
+        if not 'ub' in kwargs:
+            kwargs['ub'] = 1
+
         ReactionVariable.__init__(self, reaction,
-                                  lb = 0,
-                                  ub = 1,
                                   type=get_binary_type(),
                                   **kwargs)
 
@@ -376,7 +395,7 @@ class BackwardUseVariable(ReactionVariable, BinaryVariable):
 
 class LogConcentration(MetaboliteVariable):
     """
-    Class to represent a log concentration of a metabolite
+    Class to represent a log concentration of a enzyme
     """
 
     prefix = 'LC_'

@@ -12,19 +12,22 @@ from pytfa.analysis import  variability_analysis,           \
                             apply_generic_variability,       \
                             apply_directionality
 
+from cobra.flux_analysis.variability import flux_variability_analysis
+
+from math import log
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
 # Load the cobra_model
-cobra_model = import_matlab_model('../models/glycolysis.mat')
+cobra_model = import_matlab_model('../models/smallEcoli.mat')
 
 # Load reaction DB
 thermo_data = load_thermoDB('../data/thermo_data.thermodb')
 
 # Initialize the cobra_model
 tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
-tmodel.normalize_reactions()
 
 # Set the solver
 tmodel.solver = CPLEX
@@ -39,71 +42,35 @@ tmodel.print_info()
 ## Optimality
 solution = tmodel.optimize()
 
-# Apply the directionality of the solution to the cobra_model
-fixed_directionality_model = apply_directionality(tmodel, solution)
-
 # Calculate variability analysis on all continuous variables
-tva_fluxes = variability_analysis(fixed_directionality_model, kind='reactions')
-tight_model = apply_reaction_variability(fixed_directionality_model, tva_fluxes)
+fva_fluxes = flux_variability_analysis(cobra_model)
+tva_fluxes = variability_analysis(tmodel, kind='reactions')
 
+# Add more specific concentration data
+def apply_concentration_bound(met, lb, ub):
+    the_conc_var = tmodel.log_concentration.get_by_id(met)
+    # Do not forget the variables in the model are logs !
+    the_conc_var.ub = log(ub)
+    the_conc_var.lb = log(lb)
 
-thermo_vars = [DeltaG,DeltaGstd,ThermoDisplacement]
-tva_thermo = variability_analysis(tight_model, kind=thermo_vars)
+apply_concentration_bound('atp_c', lb=1e-3, ub=1e-2)
+apply_concentration_bound('adp_c', lb=4e-4, ub=7e-4)
+apply_concentration_bound('amp_c', lb=2e-4, ub=3e-4)
 
-tight_model = apply_generic_variability (tight_model, tva_thermo)
-
-## Sample space
-from pytfa.optim import strip_from_integer_variables
-from pytfa.analysis import sample
-
-continuous_model = strip_from_integer_variables(tight_model)
-sampling = sample(continuous_model, 10000, processes = 4)
-
-directory = 'outputs/'
-if not os.path.exists(directory):
-    os.makedirs(directory)
-
-###########################
-###       Escher        ###
-###########################
-
-
-## Extract variable values for visualisation with Escher
-from pytfa.io.viz import export_variable_for_escher, export_reactions_for_escher
-
-# Oppose sign to have reaction in the right direction
-thermo_values = -1*sampling.median()
-
-export_variable_for_escher(tmodel = continuous_model,
-                           variable_type = ThermoDisplacement,
-                           data = thermo_values,
-                           filename = directory+'glycolysis_median_thermo_disp.csv')
-
-# Oppose sign to have reaction in the right direction
-thermo_values = -1*sampling.mean()
-export_variable_for_escher(tmodel = continuous_model,
-                           variable_type = ThermoDisplacement,
-                           data = thermo_values,
-                           filename = directory+'glycolysis_mean_thermo_disp.csv')
-
-export_reactions_for_escher(tmodel,
-                           sampling,
-                           directory+'glycolysis_avg_fluxes.csv')
-
+tmodel.optimize()
+# Perform variability analysis again
+tva_fluxes_lc = variability_analysis(tmodel, kind='reactions')
 
 ###########################
 ###     Plotting        ###
 ###########################
 
-from pytfa.io.plotting import plot_histogram
+from pytfa.io.plotting import plot_fva_tva_comparison
 from bokeh.plotting import show, output_file
+from bokeh.layouts import column
 
-filename = directory+'glycolysis_fig_{}_histogram.html'
-
-for rid in ['PGK', 'FBP', 'GLCptspp', 'GAPD' ]:
-    vid = 'LnGamma_' + rid
-    output_file(filename.format(vid))
-    values = sampling[vid]
-    p = plot_histogram(values)
-    p.title.text = 'Log Thermodynamic displacement of {}'.format(rid)
-    show(p)
+output_file('outputs/va_comparison.html')
+p1 = plot_fva_tva_comparison(fva_fluxes, tva_fluxes)
+p2 = plot_fva_tva_comparison(fva_fluxes, tva_fluxes_lc)
+c = column(p1,p2)
+show(c)

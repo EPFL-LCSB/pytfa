@@ -18,7 +18,7 @@ from cobra.util.solver import set_objective
 from optlang.exceptions import SolverError
 
 from .constraints import NegativeDeltaG
-from .utils import get_solution_value_for_variables
+from .utils import get_solution_value_for_variables, chunk_sum, symbol_sum
 from .variables import PosSlackVariable, NegSlackVariable, DeltaGstd, \
     LogConcentration, NegSlackLC, PosSlackLC
 from ..utils import numerics
@@ -29,16 +29,40 @@ BIGM_DG = numerics.BIGM_DG
 BIGM_P = numerics.BIGM_P
 EPSILON = numerics.EPSILON
 
+def relax_dgo_gurobi(model, relax_obj_type = 0):
 
-def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
+    the_cons = [x.constraint._internal_constraint
+                for x in model.get_constraints_of_type(NegativeDeltaG)]
+    cons_penalities = [1]*len(the_cons)
+
+    # the_vars = [x._internal_variable for x in model.variables]
+    # vars_penalities = [1]*len(the_vars)
+
+    grm = ecoli.solver.problem.feasRelax(relaxobjtype=relax_obj_type,
+                                         minrelax=True,
+                                         constrs=the_cons,
+                                         # vars=the_vars,
+                                         # lbpen=vars_penalities,
+                                         # ubpen=vars_penalities,
+                                         vars=None,
+                                         lbpen=None,
+                                         ubpen=None,
+                                         rhspen=cons_penalities)
+
+    return grm
+
+def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
     """
     :param t_tmodel:
-    :type t_tmodel: pytfa.core.ThermoModel:
+    :type t_tmodel: pytfa.thermo.ThermoModel:
     :param reactions_to_ignore: Iterable of reactions that should not be relaxed
     :param solver: solver to use (e.g. 'optlang-glpk', 'optlang-cplex',
         'optlang-gurobi'
     :return: a cobra_model with relaxed bounds on standard Gibbs free energy
     """
+
+    if solver is None:
+        solver = tmodel.solver
 
     # Create a copy of the cobra_model on which we will perform the slack addition
     slack_model = deepcopy(tmodel)
@@ -49,12 +73,12 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
     relaxed_model.solver = solver
 
     # Do not relax if cobra_model is already optimal
-    try:
-        solution = tmodel.optimize()
-    except SolverError as SE:
-        status = tmodel.solver.status
-        tmodel.logger.error(SE)
-        tmodel.logger.warning('Solver status: {}'.format(status))
+    # try:
+    #     solution = tmodel.optimize()
+    # except SolverError as SE:
+    #     status = tmodel.solver.status
+    #     tmodel.logger.error(SE)
+    #     tmodel.logger.warning('Solver status: {}'.format(status))
     # if tmodel.solver.status == OPTIMAL:
     #     raise Exception('Model is already optimal')
 
@@ -65,7 +89,9 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
     my_neg_dg = slack_model.get_constraints_of_type(NegativeDeltaG)
 
     changes = OrderedDict()
-    objective = 0
+    objective_symbols = []
+
+    relaxed_model.logger.info('Adding slack constraints')
 
     for this_neg_dg in my_neg_dg:
 
@@ -97,7 +123,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
                                    expr=new_expr, lb=0, ub=0)
 
         # Update the objective with the new variables
-        objective += (neg_slack + pos_slack)
+        objective_symbols += [neg_slack,  pos_slack]
+
+    # objective = chunk_sum(objective_symbols)
+    objective = symbol_sum(objective_symbols)
 
     # Change the objective to minimize slack
     set_objective(slack_model, objective)
@@ -105,11 +134,13 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
     # Update variables and constraints references
     slack_model.repair()
 
+    relaxed_model.logger.info('Optimizing slack model')
     # Relax
     slack_model.objective.direction = 'min'
     relaxation = slack_model.optimize()
 
     # Extract the relaxation values from the solution, by type
+    relaxed_model.logger.info('Extracting relaxation')
     my_neg_slacks = slack_model.get_variables_of_type(NegSlackVariable)
     my_pos_slacks = slack_model.get_variables_of_type(PosSlackVariable)
 
@@ -117,6 +148,8 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
                                                         my_neg_slacks)
     pos_slack_values = get_solution_value_for_variables(relaxation,
                                                         my_pos_slacks)
+
+    epsilon = relaxed_model.solver.configuration.tolerances.feasibility
 
     for this_reaction in relaxed_model.reactions:
         # No thermo, or relaxation forbidden
@@ -129,10 +162,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
         # Get the relaxation
         dgo_delta_lb = \
             neg_slack_values[my_neg_slacks \
-            .get_by_id(this_reaction.id).name]
+                .get_by_id(this_reaction.id).name]
         dgo_delta_ub = \
             pos_slack_values[my_pos_slacks \
-            .get_by_id(this_reaction.id).name]
+                .get_by_id(this_reaction.id).name]
 
         # Apply reaction delta G standard bound change
         if dgo_delta_lb > 0 or dgo_delta_ub > 0:
@@ -142,8 +175,8 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
             previous_dgo_ub = the_dgo.variable.ub
 
             # Apply change
-            the_dgo.variable.lb -= (dgo_delta_lb + EPSILON)
-            the_dgo.variable.ub += (dgo_delta_ub + EPSILON)
+            the_dgo.variable.lb -= (dgo_delta_lb + epsilon)
+            the_dgo.variable.ub += (dgo_delta_ub + epsilon)
 
             # If needed, store that in a report table
             changes[this_reaction.id] = [
@@ -154,7 +187,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
                 the_dgo.variable.lb,
                 the_dgo.variable.ub]
 
+    relaxed_model.logger.info('Testing relaxation')
     # Obtain relaxation
+    # relaxed_model.growth_reaction.lower_bound = 0
+
     relaxed_model.optimize()
 
     # Format relaxation
@@ -167,19 +203,22 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver='optlang-glpk'):
                             'lb_out',
                             'ub_out']
 
-    tmodel.logger.info('\n' + relax_table.__str__())
+    relaxed_model.logger.info('\n' + relax_table.__str__())
 
     return relaxed_model, slack_model, relax_table
 
-def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
+def relax_lc(tmodel, metabolites_to_ignore = (), solver = None):
     """
 
     :param metabolites_to_ignore:
     :param in_tmodel:
-    :type in_tmodel: pytfa.core.ThermoModel:
+    :type in_tmodel: pytfa.thermo.ThermoModel:
     :param min_objective_value:
     :return:
     """
+
+    if solver is None:
+        solver = tmodel.solver
 
     # Create a copy of the cobra_model on which we will perform the slack addition
     slack_model = deepcopy(tmodel)
@@ -278,6 +317,7 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
                                                         my_neg_slacks)
     pos_slack_values = get_solution_value_for_variables(relaxation,
                                                         my_pos_slacks)
+    epsilon = relaxed_model.solver.configuration.tolerances.feasibility
 
     for this_met in relaxed_model.metabolites:
         # No thermo, or relaxation forbidden
@@ -303,8 +343,8 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver ='optlang-glpk'):
             previous_lc_ub = the_lc.variable.ub
 
             # Apply change
-            the_lc.variable.lb -= (lc_delta_lb + EPSILON)
-            the_lc.variable.ub += (lc_delta_ub + EPSILON)
+            the_lc.variable.lb -= (lc_delta_lb + epsilon)
+            the_lc.variable.ub += (lc_delta_ub + epsilon)
 
             # If needed, store that in a report table
             changes[this_met.id] = [

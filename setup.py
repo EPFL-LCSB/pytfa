@@ -5,7 +5,7 @@
 
 """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 # import os
 # from pip.req import parse_requirements
 # from pip.download import PipSession
@@ -19,7 +19,7 @@ from setuptools import setup
 #     reqs = [str(ir.req) for ir in install_reqs]
 #     return reqs
 
-version_tag = '0.6.1-b2'
+version_tag = '0.6.1-b5'
 
 setup(name='pytfa',
       version=version_tag,
@@ -32,8 +32,32 @@ setup(name='pytfa',
                         'optlang',
                         'pytest',
                         'scipy'],
-      py_modules=['pytfa'],
+      packages = find_packages(),
       python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4',
       description='pyTFA adds Thermodynamics-based Flux Analysis',
       keywords=['pytfa','tfa','thermodynamics','flux analysis'],
+
+      license='Apache2',
+
+      # See https://PyPI.python.org/PyPI?%3Aaction=list_classifiers
+      classifiers=[
+            # How mature is this project? Common values are
+            #   3 - Alpha
+            #   4 - Beta
+            #   5 - Production/Stable
+            'Development Status :: 4 - Beta',
+
+            # Indicate who your project is intended for
+            'Intended Audience :: Science/Research',
+            'Topic :: Scientific/Engineering :: Bio-Informatics',
+            'Environment :: Console',
+
+            # Pick your license as you wish (should match "license" above)
+            'License :: OSI Approved :: Apache Software License',
+
+            # Specify the Python versions you support here. In particular, ensure
+            # that you indicate whether you support Python 2, Python 3 or both.
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+      ],
      )

@@ -12,31 +12,28 @@ Thermodynamic cobra_model class and methods definition
 """
 
 import re
-from collections import defaultdict
 from copy import deepcopy
 from math import log
 
 import pandas as pd
 from cobra import Model
-from cobra.core import Solution, DictList
-from optlang.exceptions import SolverError
 
+from ..core.model import LCSBModel
 from . import std
-from .thermo import get_debye_huckel_b
-from .thermo import MetaboliteThermo, calcDGR_cues, calcDGtpt_rhs
+from .metabolite import MetaboliteThermo
+from .reaction import calcDGtpt_rhs, calcDGR_cues, \
+    get_debye_huckel_b
 from .utils import check_reaction_balance, check_transport_reaction, \
     find_transported_mets
 from ..optim.constraints import SimultaneousUse, NegativeDeltaG, \
     BackwardDeltaGCoupling, ForwardDeltaGCoupling, BackwardDirectionCoupling, \
     ForwardDirectionCoupling, ReactionConstraint, MetaboliteConstraint, \
     DisplacementCoupling
-from ..optim.utils import get_primal
 from ..optim.variables import ThermoDisplacement, DeltaGstd, DeltaG, \
-    ForwardUseVariable, BackwardUseVariable, LogConcentration, GenericVariable, \
+    ForwardUseVariable, BackwardUseVariable, LogConcentration, \
     ReactionVariable, MetaboliteVariable
 from ..utils import numerics
 from ..utils.logger import get_bistream_logger
-from ..utils.str import camel2underscores
 
 BIGM = numerics.BIGM
 BIGM_THERMO = numerics.BIGM_THERMO
@@ -46,13 +43,13 @@ EPSILON = numerics.EPSILON
 MAX_STOICH = 10
 
 
-class ThermoModel(Model):
+class ThermoModel(LCSBModel, Model):
     """
     A class representing a cobra_model with thermodynamics information
 
     """
 
-    def __init__(self, thermo_data, model, name=None,
+    def __init__(self, thermo_data=None, model=Model(), name=None,
                  temperature=std.TEMPERATURE_0,
                  min_ph=std.MIN_PH,
                  max_ph=std.MAX_PH):
@@ -64,15 +61,32 @@ class ThermoModel(Model):
         :type temperature: float
         """
 
-        Model.__init__(self, deepcopy(model), name)
+        LCSBModel.__init__(self, model, name)
+
+        self.logger = get_bistream_logger('ME model' + str(self.name))
 
         self.TEMPERATURE = temperature
         self.thermo_data = thermo_data
-        self.thermo_unit = thermo_data['units']
-        self.reaction_cues_data = thermo_data['cues']
-        self.compounds_data = thermo_data['metabolites']
-        self.Debye_Huckel_B = get_debye_huckel_b(temperature)
         self.parent = model
+
+        # CONSTANTS
+        self.MAX_pH = max_ph
+        self.MIN_pH = min_ph
+
+        self._var_dict = dict()
+        self._cons_dict = dict()
+
+        self._init_thermo()
+
+        self.logger.info('# Model initialized with units {} and temperature {} K'  \
+                    .format(self.thermo_unit, self.TEMPERATURE))
+
+    def _init_thermo(self):
+
+        self.thermo_unit = self.thermo_data['units']
+        self.reaction_cues_data = self.thermo_data['cues']
+        self.compounds_data = self.thermo_data['metabolites']
+        self.Debye_Huckel_B = get_debye_huckel_b(self.TEMPERATURE)
 
         self.logger = get_bistream_logger('thermomodel_' + str(self.name))
 
@@ -85,16 +99,6 @@ class ThermoModel(Model):
             self.Adjustment = 4.184
 
         self.RT = self.GAS_CONSTANT * self.TEMPERATURE
-
-        # CONSTANTS
-        self.MAX_pH = max_ph
-        self.MIN_pH = min_ph
-
-        self._var_dict = dict()
-        self._cons_dict = dict()
-
-        self.logger.info('# Model initialized with units {} and temperature {} K'  \
-                    .format(self.thermo_unit, self.TEMPERATURE))
 
     def normalize_reactions(self):
         """
@@ -121,7 +125,7 @@ class ThermoModel(Model):
         :return:
         """
 
-        # Get the data about the compartment of the metabolite
+        # Get the data about the compartment of the enzyme
         if not met.compartment in self.compartments:
             raise Exception("Compartment not found in cobra_model : "
                             + met.compartment)
@@ -131,9 +135,11 @@ class ThermoModel(Model):
 
         # Which index of the reaction DB do you correspond to ?
         if not 'seed_id' in met.annotation:
-            raise Exception("seed_id missing for " + met.name)
-
-        if not met.annotation['seed_id'] in self.compounds_data:
+            # raise Exception("seed_id missing for " + met.name)
+            self.logger.warning("Metabolite {} ({}) has no seed_id".\
+                                format(met.id, met.name))
+            metData = None
+        elif not met.annotation['seed_id'] in self.compounds_data:
             self.logger.warning("Metabolite {} ({}) not present in thermoDB"
                   .format(met.annotation['seed_id'], met.name))
             metData = None
@@ -165,7 +171,7 @@ class ThermoModel(Model):
         # Initialize a dictionnary where we will put our data - FIXME : Create a thermo object ?
         reaction.thermo = {'isTrans': False}
 
-        # also check if rxn and metabolite compartments match
+        # also check if rxn and enzyme compartments match
         reaction.compartment = None
         for met in reaction.metabolites:
             if reaction.compartment == None:
@@ -195,7 +201,7 @@ class ThermoModel(Model):
             or len(reaction.metabolites) >= 100
             or balanceResult in ['missing atoms', 'drain flux']):
 
-            self.logger.warning('{} : thermo constraint NOT created'.format(reaction.id))
+            self.logger.info('{} : thermo constraint NOT created'.format(reaction.id))
             reaction.thermo['computed'] = False
             reaction.thermo['deltaGR'] = BIGM_DG
             reaction.thermo['deltaGRerr'] = BIGM_DG
@@ -216,6 +222,7 @@ class ThermoModel(Model):
                 for met in reaction.metabolites:
                     if (met.formula != 'H'
                         or ('seed_id' in met.annotation
+                            # That's H+
                             and met.annotation['seed_id'] != 'cpd00067')):
                         DeltaGrxn += reaction.metabolites[
                                          met] * met.thermo.deltaGf_tr
@@ -258,7 +265,7 @@ class ThermoModel(Model):
 
         self.logger.debug('computing reaction thermodynamic data')
 
-        # Look for the proton metabolite...
+        # Look for the proton enzyme...
         proton = {}
         for i in range(num_mets):
             if (self.metabolites[i].formula == 'H'
@@ -282,7 +289,7 @@ class ThermoModel(Model):
 
     def _convert_metabolite(self, met, add_potentials, verbose):
         """
-        Given a metabolite, proceeds to create the necessary variables and
+        Given a enzyme, proceeds to create the necessary variables and
         constraints for thermodynamics-based modeling
 
         :param met:
@@ -315,7 +322,7 @@ class ThermoModel(Model):
 
         elif ('seed_id' in met.annotation
               and met.annotation['seed_id'] == 'cpd11416'):
-            # we do not create the thermo variables for biomass metabolite
+            # we do not create the thermo variables for biomass enzyme
             pass
 
         elif metDeltaGF < 10 ** 6:
@@ -339,7 +346,7 @@ class ThermoModel(Model):
                                metDeltaGF)
 
         else:
-            self.logger.warning('NOT generating thermo variables for {}'.format(met.id))
+            self.logger.info('NOT generating thermo variables for {}'.format(met.id))
 
         if LC != None:
             # Register the variable to find it more easily
@@ -399,12 +406,12 @@ class ThermoModel(Model):
 
             if rxn.thermo['isTrans']:
                 # calculate the DG component associated to transport of the
-                # metabolite. This will be added to the constraint on the Right
+                # enzyme. This will be added to the constraint on the Right
                 # Hand Side (RHS)
 
                 transportedMets = find_transported_mets(rxn)
 
-                # Chemical coefficient, it is the metabolite's coefficient...
+                # Chemical coefficient, it is the enzyme's coefficient...
                 # + transport coeff for reactants
                 # - transport coeff for products
                 chem_stoich = rxn.metabolites.copy()
@@ -458,6 +465,8 @@ class ThermoModel(Model):
                                            * RT
                                            * rxn.metabolites[met])
 
+
+
             # G: - DGR_rxn + DGoRerr_Rxn
             #   + RT * StoichCoefProd1 * LC_prod1
             #   + RT * StoichCoefProd2 * LC_prod2
@@ -465,7 +474,6 @@ class ThermoModel(Model):
             #   + RT * StoichCoefSub2 * LC_subs2
             #   - ...
             #   = 0
-
 
             # Formulate the constraint
             CLHS = DGoR - DGR + LC_TransMet + LC_ChemMet
@@ -476,6 +484,7 @@ class ThermoModel(Model):
                                             rxn,
                                             lb=-BIGM_P,
                                             ub=BIGM_P)
+
                 # ln(Gamma) = +DGR/RT (DGR < 0 , rxn is forward, ln(Gamma) < 0d
                 expr = lngamma - 1/RT * DGR
                 self.add_constraint(DisplacementCoupling,
@@ -489,6 +498,7 @@ class ThermoModel(Model):
             # deltaG if the reaction has thermo constraints
             # FU_rxn: 1000 FU_rxn + DGR_rxn < 1000 - epsilon
             FU_rxn = self.add_variable(ForwardUseVariable, rxn)
+
             CLHS = DGR + FU_rxn * BIGM_THERMO
             self.add_constraint(ForwardDeltaGCoupling,
                                 rxn,
@@ -575,7 +585,7 @@ class ThermoModel(Model):
                             + 'Please run ThermoModel.prepare()')
 
         # FIXME Use generalized rule (ext to the function)
-        # formatting the metabolite and reaction names to remove brackets
+        # formatting the enzyme and reaction names to remove brackets
         replacements = {
             '_': re.compile(r'[\[\(]'),
             '': re.compile(r'[\]\)]')
@@ -607,232 +617,25 @@ class ThermoModel(Model):
         self.repair()
         self.logger.info('# cobra_model variables are up-to-date')
 
-    def add_variable(self, kind, hook, **kwargs):
-        """ Add a new variable to a COBRApy cobra_model.
-
-        :param cobra.core.model.Model model: The COBRApy cobra_model
-        :param string,cobra.Reaction hook: Either a string representing the name
-            of the variable to add to the cobra_model, or a reaction object if the
-            kind allows it
-
-        :returns: The created variable
-        :rtype: optlang.interface.Variable
-
-        """
-
-
-        # Initialisation links to the cobra_model
-        var = kind(hook,
-                # lb=lower_bound if lower_bound != float('-inf') else None,
-                # ub=upper_bound if upper_bound != float('inf') else None,
-                **kwargs)
-
-        self._var_dict[var.name] = var
-        #self.add_cons_vars(var.variable)
-
-        return var
-
-    def add_constraint(self, kind, hook, expr, **kwargs):
-        """ Add a new constraint to a COBRApy cobra_model
-
-        :param cobra.core.model.Model model: The COBRApy cobra_model
-        :param string,cobra.Reaction hook: Either a string representing the name
-            of the variable to add to the cobra_model, or a reaction object if the
-            kind allows it
-        :param sympy.core.expr.Expr expr: The expression of the constraint
-
-        :returns: The created constraint
-        :rtype: optlang.interface.Constraint
-
-        """
-
-        if isinstance(expr,GenericVariable):
-            # make sure we actually pass the optlang variable
-            expr = expr.variable
-
-        # Initialisation links to the cobra_model
-        cons = kind(hook,
-                    expr,
-                    # problem = self.problem,
-                    # lb=lower_bound if lower_bound != float('-inf') else None,
-                    # ub=upper_bound if upper_bound != float('inf') else None,
-                    **kwargs)
-        self._cons_dict[cons.name] = cons
-        # self.add_cons_vars(cons.constraint)
-
-        return cons
-
-    def remove_variable(self, var):
-        """
-        Removes a variable
-
-        :param var:
-        :return:
-        """
-
-        self._var_dict.pop(var.name)
-        self.remove_cons_vars(var.variable)
-
-    def remove_constraint(self, cons):
-        """
-        Removes a constraint
-
-        :param cons:
-        :return:
-        """
-
-        self._cons_dict.pop(cons.name)
-        self.remove_cons_vars(cons.constraint)
-
-    def regenerate_variables(self):
-        """
-        Generates references to the cobra_model's constraints in self._var_dict
-        as tab-searchable attributes of the thermo cobra_model
-        :return:
-        """
-
-        # Let us not forget to remove fields that might be empty by now
-        if hasattr(self,'_var_kinds'):
-            for k in self._var_kinds:
-                attrname = camel2underscores(k)
-                delattr(self, attrname)
-
-        _var_kinds = defaultdict(DictList)
-        for k,v in self._var_dict.items():
-            _var_kinds[v.__class__.__name__].append(v)
-
-        for k in _var_kinds:
-            attrname = camel2underscores(k)
-            setattr(self,attrname,_var_kinds[k])
-
-        self._var_kinds = _var_kinds
-
-
-    def regenerate_constraints(self):
-        """
-        Generates references to the cobra_model's constraints in self._cons_dict
-        as tab-searchable attributes of the thermo cobra_model
-        :return:
-        """
-
-        # Let us not forget to remove fields that migh be empty by now
-        if hasattr(self,'_cons_kinds'):
-            for k in self._cons_kinds:
-                attrname = camel2underscores(k)
-                delattr(self, attrname)
-
-        _cons_kinds = defaultdict(DictList)
-
-        for k,v in self._cons_dict.items():
-            _cons_kinds[v.__class__.__name__].append(v)
-
-        for k in _cons_kinds:
-            attrname = camel2underscores(k)
-            setattr(self,attrname,_cons_kinds[k])
-
-        self._cons_kinds = _cons_kinds
-
-
-    def repair(self):
-        """
-        Updates references to variables and constraints
-        :return:
-        """
-        # self.add_cons_vars([x.constraint for x in self._cons_dict.values()])
-        # self.add_cons_vars([x.variable for x in self._var_dict.values()])
-        Model.repair(self)
-        self.regenerate_constraints()
-        self.regenerate_variables()
-
-    def get_primal(self, vartype, index_by_reactions = False):
-        """
-        Returns the primal value of the cobra_model for variables of a given type
-
-        :param vartype: Class of variable. Ex: pytfa.optim.variables.ThermoDisplacement
-        :return:
-        """
-        return get_primal(self, vartype, index_by_reactions)
-
-    def get_solution(self):
-        """
-        Overrides the cobra.core.solution method, to also get the supplementary
-        variables we added to the cobra_model
-        :return:
-        """
-        objective_value = self.solver.objective.value
-        status = self.solver.status
-        variables = pd.Series(data=self.solver.primal_values)
-        solution = Solution(objective_value=objective_value,
-                            status=status,
-                            fluxes=variables)
-        return solution
-
-    def optimize(self, objective_sense=None, **kwargs):
-        """
-        Call the Model.optimize function (which really is but an interface to the
-        solver's. Catches SolverError in the case of no solutions. Passes down
-        supplementary keyword arguments (see cobra.core.Model.optimize)
-        :type objective_sense: 'min' or 'max'
-        """
-
-        if objective_sense:
-            self.objective.direction = objective_sense
-
-        try:
-            Model.optimize(self, **kwargs)
-            solution = self.get_solution()
-            self.solution = solution
-            return solution
-        except SolverError as SE:
-            status = self.solver.status
-            self.logger.error(SE)
-            self.logger.warning('Solver status: {}'.format(status))
-            raise(SE)
-
-    def get_constraints_of_type(self, constraint_type):
-        """
-        Convenience function that takes as input a constraint class and returns
-        all its instances within the cobra_model
-
-        :param constraint_type:
-        :return:
-        """
-
-        constraint_key = constraint_type.__name__
-        return self._cons_kinds[constraint_key]
-
-    def get_variables_of_type(self, variable_type):
-        """
-        Convenience function that takes as input a variable class and returns
-        all its instances within the cobra_model
-
-        :param variable_type:
-        :return:
-        """
-
-        variable_key = variable_type.__name__
-        return self._var_kinds[variable_key]
-
-    def print_info(self):
+    def print_info(self, specific = False):
         """
         Print information and counts for the cobra_model
         :return:
         """
+        if not specific:
+            LCSBModel.print_info(self)
+
         n_metabolites   = len(self.metabolites)
         n_reactions     = len(self.reactions)
         n_metabolites_thermo = len([x for x in self.metabolites \
-                                    if x.thermo['id']])
-        n_reactions_thermo   = len([x for x in self.reactions   \
-                                    if x.thermo['computed']])
+                                    if hasattr(x, 'thermo') and x.thermo['id']])
+        n_reactions_thermo   = len([x for x in self.reactions if
+                                    hasattr(x, 'thermo') and x.thermo['computed']])
 
         info = pd.DataFrame(columns = ['value'])
-        info.loc['name'] = self.name
-        info.loc['description'] = self.description
-        info.loc['num metabolites'] = n_metabolites
-        info.loc['num reactions'] = n_reactions
-        info.loc['num metabolite(thermo)'] = n_metabolites_thermo
+        info.loc['num metabolites(thermo)'] = n_metabolites_thermo
         info.loc['num reactions(thermo)'] = n_reactions_thermo
-        info.loc['pct metabolite(thermo)'] = n_metabolites_thermo/n_metabolites*100
+        info.loc['pct metabolites(thermo)'] = n_metabolites_thermo/n_metabolites*100
         info.loc['pct reactions(thermo)'] = n_reactions_thermo/n_reactions*100
         info.index.name = 'key'
 

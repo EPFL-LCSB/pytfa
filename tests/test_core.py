@@ -57,7 +57,7 @@ def test_model_nmets():
 @pytest.mark.parametrize("metabolite", metabolites)
 def test_metabolites_values(metabolite):
     # global test_test_precision
-    # Test each metabolite value
+    # Test each enzyme value
     this_model_met = metabolite['cobra_model']
     this_ref_met = metabolite['ref']
 
@@ -106,11 +106,11 @@ def test_model_nrxns():
 @pytest.mark.parametrize("reaction", reactions)
 def test_reactions_values(reaction):
     # global test_test_precision
-    # Test each metabolite value
+    # Test each enzyme value
     model_rxn = reaction['cobra_model']
     rxn = reaction['ref']
 
-    # Test each metabolite value
+    # Test each enzyme value
     assert(relative_error(model_rxn.lower_bound,
               float(rxn['lower_bound'])) < test_precision)
     assert(relative_error(model_rxn.upper_bound,

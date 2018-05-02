@@ -20,6 +20,8 @@ from scipy.io import loadmat, savemat
 
 from ..utils.numerics import BIGM_DG
 
+from warnings import warn
+
 try:
     from scipy.sparse import dok_matrix, lil_matrix
 except ImportError:
@@ -29,10 +31,11 @@ except ImportError:
 def import_matlab_model(path, variable_name=None):
     """ Convert at matlab cobra_model to a pyTFA cobra_model, with Thermodynamic values
 
+    :param variable_name:
     :param string path: The path of the file to import
 
     :returns: The converted cobra_model
-    :rtype: cobra.core.model.Model
+    :rtype: cobra.thermo.model.Model
 
     """
     # We're going to import the Matlab cobra_model and convert it to COBApy
@@ -92,7 +95,8 @@ def import_matlab_model(path, variable_name=None):
 
     def gene_id_to_name(match):
         id_ = int(match.group()[2:-1])
-        return mat_model['genes'][id_, 0][0]
+        # /!\ These are indexed from 1, while python indexes from 0
+        return mat_model['genes'][id_ - 1, 0][0]
 
     # Add each reaction
     for i in range(mat_model['S'].shape[1]):
@@ -141,6 +145,11 @@ def import_matlab_model(path, variable_name=None):
                 reaction.gene_reaction_rule = rule
         except ValueError:
             pass
+        except IndexError:
+            # The gene number is higher than the length of the gene list
+            warn('The gene reaction rule {} appears to be misaligned with '
+                 'the gene list'.format(rule))
+
 
     Compartments = dict()
     CompartmentDB = mat_model['CompartmentData'][0]
@@ -180,6 +189,7 @@ def write_matlab_model(tmodel, path, varname='tmodel'):
     """
     Writes the Thermo Model to a Matlab-compatible structure
 
+    :param varname:
     :param tmodel:
     :param path:
     :return: None
@@ -199,7 +209,7 @@ def create_thermo_dict(tmodel):
     Dumps the thermodynamic information in a mat-compatible dictionary
     (similar to the output of cobra.io.mat.create_mat_dict)
 
-    :param tmodel: pytfa.core.tmodel.ThermoModel
+    :param tmodel: pytfa.thermo.tmodel.ThermoModel
     :return: dict object
     """
 
@@ -280,7 +290,7 @@ def create_problem_dict(tmodel):
     Dumps the the MILP formulation for TFA in a mat-compatible dictionary
     (similar to the output of cobra.io.mat.create_mat_dict)
 
-    :param tmodel: pytfa.core.tmodel.ThermoModel
+    :param tmodel: pytfa.thermo.tmodel.ThermoModel
     :ret
     """
 
@@ -357,6 +367,7 @@ def create_generalized_matrix(tmodel, array_type = 'dense'):
     """
     Returns the generalized stoichiomatric matrix used for TFA
 
+    :param array_type:
     :param tmodel: pytfa.ThermoModel
 
     :returns: matrix.
@@ -410,7 +421,7 @@ def load_thermoDB(path):
 def printLP(model):
     """ Print the LP file corresponding to the cobra_model
 
-    :param cobra.core.model.Model model: The cobra_model to output the LP file for
+    :param cobra.thermo.model.Model model: The cobra_model to output the LP file for
 
     :returns: The content of the LP file
     :rtype: str
@@ -443,7 +454,7 @@ def printLP(model):
 
         # Write the lower bound if applicable...
         if cons.lb != cons.ub:
-            if cons.lb != None:
+            if cons.lb is not None:
                 res += str(cons.lb) + ' < '
 
         # Write the bound
@@ -452,7 +463,7 @@ def printLP(model):
         # Write the upper bound
         if cons.lb == cons.ub:
             res += ' = ' + str(cons.ub)
-        elif cons.ub != None:
+        elif cons.ub is not None:
             res += ' < ' + str(cons.ub)
 
         # Next line
@@ -491,7 +502,7 @@ def printLP(model):
 def writeLP(model, path=None):
     """ Write the LP file of the specified cobra_model to the file indicated by path.
 
-    :param cobra.core.model.Model model: The COBRApy cobra_model to write the LP file
+    :param cobra.thermo.model.Model model: The COBRApy cobra_model to write the LP file
         for
     :param string path: `Optional` The path of the file to be written. If not
         specified, the name of the COBRApy cobra_model will be used.

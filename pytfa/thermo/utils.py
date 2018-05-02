@@ -18,9 +18,9 @@ def check_reaction_balance(reaction, proton = None):
     """ Check the balance of a reaction, and eventually add protons to balance
     it
 
-    :param cobra.core.reaction.Reaction reaction: The reaction to check the
+    :param cobra.thermo.reaction.Reaction reaction: The reaction to check the
         balance of.
-    :param cobra.core.metabolite.Metabolite proton: *Optional* The proton to add
+    :param cobra.thermo.metabolite.Metabolite proton: *Optional* The proton to add
         to the reaction to balance it.
 
     :returns: The balance of the reaction :
@@ -103,24 +103,24 @@ def check_reaction_balance(reaction, proton = None):
 def find_transported_mets(reaction):
     """ Get a list of the transported metabolites of the reaction.
 
-    :param cobra.core.reaction.Reaction reaction: The reaction to get the
+    :param cobra.thermo.reaction.Reaction reaction: The reaction to get the
         transported metabolites of
 
     :returns: A dictionnary of the transported metabolites.
-        The index corresponds to the seed_id of the transported metabolite
+        The index corresponds to the seed_id of the transported enzyme
 
         The value is a dictionnairy with the following values:
 
             * coeff (:any:`float`):
-                The stoechiomectric coefficient of the metabolite
-            * reactant (:any:`cobra.core.metabolite.Metabolite`):
+                The stoechiomectric coefficient of the enzyme
+            * reactant (:any:`cobra.thermo.enzyme.Metabolite`):
                 The reactant of the reaction corresponding to the transported
-                metabolite
-            * product (:any:`cobra.core.metabolite.Metabolite`):
+                enzyme
+            * product (:any:`cobra.thermo.enzyme.Metabolite`):
                 The product of the reaction corresponding to the transported
-                metabolite
+                enzyme
 
-    A transported metabolite is defined as a metabolite which is a product and a
+    A transported enzyme is defined as a enzyme which is a product and a
     reactant of a reaction. We can distinguish them thanks to their seed_ids.
 
     """
@@ -157,22 +157,26 @@ def find_transported_mets(reaction):
 def check_transport_reaction(reaction):
     """ Check if a reaction is a transport reaction
 
-    :param cobra.core.reaction.Reaction reaction: The reaction to check
+    :param cobra.thermo.reaction.Reaction reaction: The reaction to check
 
     :returns: Whether the reaction is a transport reaction or not
     :rtype: bool
 
-    A transport reaction is defined as a reaction that has the same metabolite
+    A transport reaction is defined as a reaction that has the same compound
     as a reactant and a product. We can distinguish them thanks to their seed_ids.
+    If they have one
 
     """
     seed_ids = {}
-    for reactant in reaction.reactants:
-        seed_ids[reactant.annotation['seed_id']] = True
+    try:
+        for reactant in reaction.reactants:
+            seed_ids[reactant.annotation['seed_id']] = True
 
-    for product in reaction.products:
-        if product.annotation['seed_id'] in seed_ids:
-            return True
+        for product in reaction.products:
+            if product.annotation['seed_id'] in seed_ids:
+                return True
+    except KeyError:
+        return None
 
     return False
 
