@@ -11,11 +11,17 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libxml2-dev     \
         libxslt1-dev    \
-		less			\
+        less            \
     && rm -rf /var/lib/apt/lists/*
 
 ENV USER pytfa
 ENV HOME /home/$USER
+
+RUN useradd -ms "/bin/bash" "$USER"
+USER $USER
+WORKDIR $HOME
+
+USER root
 
 # Copy python package requirements
 COPY requirements.txt .
@@ -23,17 +29,9 @@ COPY requirements.txt .
 # Install python packages
 RUN pip install -r requirements.txt
 
-RUN useradd -ms "/bin/bash" "$USER"
-USER $USER
-WORKDIR $HOME
-
 # Take care of the solvers
 COPY ./solvers /solvers
 COPY ./utils /utils
-
-# Fix permissions
-RUN ls -al /
-RUN find /utils -type f -iname "*.sh" -exec chmod +x {} \;
 
 # Install CPLEX
 RUN /utils/install_cplex.sh
@@ -52,6 +50,7 @@ COPY src/ /src/
 RUN mkdir /src/pytfa
 
 COPY .bashrc $HOME
+RUN chown "$USER" "$HOME/.bashrc"
 
 #Finalizing installation
 
