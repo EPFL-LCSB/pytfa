@@ -1,2 +1,11 @@
 outputs/
 *.log
+
+# Profiling data
+*.prof
+
+# Bokeh plots
+*.html
+
+# Model dumps 
+*.json

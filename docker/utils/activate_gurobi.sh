@@ -2,8 +2,8 @@
 # Choose the GHOME variable depending on your gurobi version
 
 export GHOME_702="/opt/gurobi702/linux64"
-export GHOME_750="/opt/gurobi750/linux64"
-export GHOME=$GHOME_702
+export GHOME_752="/opt/gurobi752/linux64"
+export GHOME=$GHOME_752
 
 if [ -d $GHOME ]; then \
 	#$GHOME/bin/grbgetkey $LICENSE_KEY	&& \

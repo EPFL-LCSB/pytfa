@@ -64,7 +64,7 @@ from pytfa.optim import strip_from_integer_variables
 from pytfa.analysis import sample
 
 continuous_model = strip_from_integer_variables(tight_model)
-sampling = sample(continuous_model, 100000, processes = 30)
+sampling = sample(continuous_model, 10, processes = 10)
 
 
 directory = 'outputs/'

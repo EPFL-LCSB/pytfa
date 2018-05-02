@@ -29,7 +29,6 @@ from ..utils.logger import get_bistream_logger
 CPU_COUNT = cpu_count()
 BEST_THREAD_RATIO = int(CPU_COUNT/(4*2))    # Four proc per MILP instance,
                                             # times two threads.
-LOGGER = get_bistream_logger(__name__)
 
 def find_bidirectional_reactions(va, tolerance = 1e-8):
     """
@@ -81,7 +80,7 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
         else:
             sse =0
 
-        LOGGER.info(str(iter_count) + ' - ' + str(sse))
+        tmodel.logger.info(str(iter_count) + ' - ' + str(sse))
 
         # active_use_variables = get_active_use_variables(this_tmodel,solution)
         active_use_variables = get_direction_use_variables(this_tmodel,solution)
@@ -150,13 +149,13 @@ def variability_analysis(tmodel, kind='reactions', proc_num = BEST_THREAD_RATIO)
         these_vars = tmodel.get_variables_of_type(kind)
         these_vars = {x.name : x.variable for x in these_vars}
 
-    LOGGER.info('Beginning variability analysis for variable of type {}'    \
+    tmodel.logger.info('Beginning variability analysis for variable of type {}'    \
                 .format(kind))
 
     results = {'min':{}, 'max':{}}
     for sense in ['min','max']:
         for k,var in these_vars.items():
-            LOGGER.debug(sense + '-' + k)
+            tmodel.logger.debug(sense + '-' + k)
             results[sense][k] = _variability_analysis_element(tmodel,var,sense)
 
 

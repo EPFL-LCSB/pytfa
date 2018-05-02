@@ -102,8 +102,7 @@ def process_expr(expr):
 def parse_file(path):
     """ Parse the content of a file and get the corresponding cobra_model
 
-    :param string file: The path of the file to parse
-
+    :param path:
     :returns: A dictionnary representing the cobra_model contained in the file
     :rtype: dict
 
@@ -223,7 +222,7 @@ def compare(model, stack = None, n = 0):
         if item not in model[1]:
             print((stack + '.' if stack else '') + item + ' in 1 but not in 2')
             n += 1
-            # from IPython.core.debugger import Tracer
+            # from IPython.thermo.debugger import Tracer
             # Tracer()()
         elif isinstance(model[0][item],dict):
             n += compare([model[0][item], model[1][item]],

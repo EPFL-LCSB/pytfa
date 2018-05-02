@@ -11,23 +11,10 @@ Tools to import or export enrichment to and from pytfa models
 """
 import json
 
-import numpy
 import pandas as pd
 
-class MyEncoder(json.JSONEncoder):
-    """
-    We define an encoder that takes care of the serialization of numpy types,
-    which are not handled by json by default
-    """
-    def default(self, obj):
-        if isinstance(obj, numpy.integer):
-            return int(obj)
-        elif isinstance(obj, numpy.floating):
-            return float(obj)
-        elif isinstance(obj, numpy.ndarray):
-            return obj.tolist()
-        else:
-            return super(MyEncoder, self).default(obj)
+from .json import MyEncoder
+
 
 def write_lexicon(tmodel, filepath):
     """
@@ -80,6 +67,7 @@ def read_lexicon(filepath):
 def write_compartment_data(tmodel, filepath):
     """
 
+    :param filepath:
     :type tmodel: pytfa.core.ThermoModel
     :param tmodel:
     :return:

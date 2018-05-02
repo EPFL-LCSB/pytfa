@@ -18,6 +18,7 @@ from  cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler, HRSampler,\
 from optlang.interface import OPTIMAL
 
 class GeneralizedHRSampler(HRSampler):
+
     def __init__(self, model, thinning,  nproj=None, seed=None):
         """
         Adapted from cobra.flux_analysis.sampling.py
@@ -31,7 +32,8 @@ class GeneralizedHRSampler(HRSampler):
         if model.solver.is_integer:
             raise TypeError("sampling does not work with integer problems :(")
         self.model = model.copy()
-        self.thinning = thinning        
+
+        self.thinning = thinning
 
         if nproj is None:
             self.nproj = int(min(len(self.model.variables)**3, 1e6))
@@ -44,9 +46,9 @@ class GeneralizedHRSampler(HRSampler):
         self.problem = self._HRSampler__build_problem()
 
         # Set up a map from reaction -> forward/reverse variable
-        var_idx = {v: idx for idx, v in enumerate(model.variables)}
+        var_idx = {v: idx for idx, v in enumerate(self.model.variables)}
         self.var_idx = np.array(
-            [var_idx[v] for v in model.variables])
+            [var_idx[v] for v in self.model.variables])
         self.warmup = None
         if seed is None:
             self._seed = int(time())
@@ -124,7 +126,7 @@ class GeneralizedOptGPSampler(GeneralizedHRSampler, OptGPSampler):
 
         # This maps our saved center into shared memory,
         # meaning they are synchronized across processes
-        self.center = shared_np_array((len(model.variables), ),
+        self.center = shared_np_array((len(self.model.variables), ),
                                       self.warmup.mean(axis=0))
 
 

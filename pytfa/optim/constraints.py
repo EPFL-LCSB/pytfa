@@ -26,7 +26,7 @@ class GenericConstraint:
     Attributes:
 
         :id: Used for DictList comprehension. Usually points back at a
-        metabolite or reaction id for ease of linking. Should be unique given
+        enzyme or reaction id for ease of linking. Should be unique given
         a constraint type.
         :name: Should be a concatenation of the id and a prefix that is
         specific to the variable type. will be used to address the constraint at
@@ -46,22 +46,23 @@ class GenericConstraint:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id_, expr, model, **kwargs):
+    def __init__(self, id_, expr, model, queue=False, **kwargs):
         """
 
         :param id_: will be used to identify the variable
             (name will be a concat of this and a prefix)
-        :param problem: the cobra.Model.problem object
+        :param model: the cobra.Model object
+        :param queue: whether or not to queue the variable for update object
         :param kwargs: stuff you want to pass to the variable constructor
         """
         self._id = id_
         self._model = model
         self.kwargs = kwargs
         self._name = self.make_name()
-        self.get_interface(expr)
+        self.get_interface(expr, queue)
         self.prefix = ''
 
-    def get_interface(self, expr):
+    def get_interface(self, expr, queue):
         """
         Called upon completion of __init__, initializes the value of self.var,
         which is returned upon call, and stores the actual interfaced variable.
@@ -72,7 +73,10 @@ class GenericConstraint:
             constraint = self.model.problem.Constraint(expression = expr,
                                                        name = self.name,
                                                        **self.kwargs)
-            self.model.add_cons_vars(constraint)
+            if not queue:
+                self.model.add_cons_vars(constraint)
+            else:
+                self.model._cons_queue.append(constraint)
         else:
             self.constraint = self.model.constraints.get(self.name)
 
@@ -105,7 +109,7 @@ class GenericConstraint:
     @property
     def id(self):
         """
-        for cobra.core.DictList compatibility
+        for cobra.thermo.DictList compatibility
         :return:
         """
         return self._id
@@ -152,7 +156,7 @@ class ReactionConstraint(GenericConstraint):
 
 class MetaboliteConstraint(GenericConstraint):
     """
-    Class to represent a variable attached to a metabolite
+    Class to represent a variable attached to a enzyme
     """
 
     def __init__(self, metabolite, expr, **kwargs):

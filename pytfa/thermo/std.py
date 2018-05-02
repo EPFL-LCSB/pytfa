@@ -10,3 +10,8 @@ MAX_PH = 9
 # given pH and ionic strength using formula given by Goldberg and Tewari, 1991
 # equation 4.4-10 in Alberty's book
 DEBYE_HUCKEL_B_0 = 1.6
+
+A_LOT = 5000
+A_LITTLE = 0.5
+A_COUPLE = 2.5 # A couple is usually considered to be 2 or 3
+MANY = 10

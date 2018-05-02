@@ -53,7 +53,7 @@ def plot_fva_tva_comparison(fva,tva):
 
     plot.yaxis.ticker = [x for x in range(len(tva))]
 
-    show(plot)
+    return plot
 
 def plot_thermo_displacement_histogram(tmodel,solution = None):
     """
@@ -82,14 +82,13 @@ def plot_thermo_displacement_histogram(tmodel,solution = None):
     p1.yaxis.axis_label = 'count'
     p1.title = "Histogram: Thermodynamic displacement"
 
-    show(p1)
+    return p1
 
 def plot_histogram(values, **kwargs):
     """
     Convenience function. Plots a histogram of flat 1D data.
 
-    :param tmodel:
-    :param solution:
+    :param values:
     :return:
     """
 
