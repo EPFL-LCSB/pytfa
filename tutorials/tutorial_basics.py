@@ -3,6 +3,7 @@
 
 import pytfa
 
+from optlang.exceptions import SolverError
 
 from cobra.core.model import SolverNotFound
 from cobra.flux_analysis import flux_variability_analysis
