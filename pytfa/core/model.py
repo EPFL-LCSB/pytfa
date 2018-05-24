@@ -29,7 +29,7 @@ class LCSBModel(ABC):
         Very much model specific
         """
 
-        Model.__init__(self, model, name)
+        Model.__init__(self, model.copy(), name)
 
         self._cons_queue = list()
         self._var_queue = list()
