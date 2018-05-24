@@ -43,8 +43,8 @@ def test_io():
     from pytfa.io.dict import model_to_dict, model_from_dict
     from pytfa.optim.utils import copy_solver_configuration
 
-    dictmodel = model_to_dict(self)
+    dictmodel = model_to_dict(tmodel)
     new = model_from_dict(dictmodel)
 
-    copy_solver_configuration(self, new)
+    copy_solver_configuration(tmodel, new)
 

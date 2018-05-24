@@ -16,7 +16,7 @@ import csv
 import lpdiff
 import pytest
 import os
-
+from pytfa.utils import numerics
 from settings import tmodel, this_directory, objective_value
 
 # Minimal relative difference between two values to make a test fail
@@ -64,10 +64,13 @@ def test_metabolites_values(metabolite):
     assert(this_model_met.annotation['seed_id'] == this_ref_met['seedid'])
     assert(this_model_met.compartment == this_ref_met['compartment'])
 
-    for thermoval in ['deltaGf_std', 'deltaGf_err',
-                       'charge_std', 'mass', 'deltaGf_tr']:
-        refval = float(this_ref_met[thermoval].replace(',','.'))
-        assert(relative_error(this_model_met.thermo[thermoval], refval) < test_precision)
+    for thermoval in ['charge_std', 'mass', 'deltaGf_std', 
+                        'deltaGf_err','deltaGf_tr']:
+        if relative_error(this_model_met.thermo[thermoval], numerics.BIGM_THERMO) < test_precision:
+            pass
+        else:
+            refval = float(this_ref_met[thermoval].replace(',','.'))
+            assert(relative_error(this_model_met.thermo[thermoval], refval) < test_precision)
 
 
 #############
@@ -119,9 +122,16 @@ def test_reactions_values(reaction):
               float(rxn['objective'])) < test_precision)
     assert(model_rxn.thermo['isTrans'] == int(rxn['isTrans']))
 
-    for thermoval in ['computed', 'deltaGR', 'deltaGRerr']:
+    for thermoval in ['computed']:
         refval = float(rxn[thermoval].replace(',','.'))
         assert(relative_error(model_rxn.thermo[thermoval], refval) < test_precision)
+
+    for thermoval in ['deltaGR', 'deltaGRerr']:
+        refval = float(rxn[thermoval].replace(',','.'))
+        if relative_error(model_rxn.thermo[thermoval], numerics.BIGM_DG) < test_precision:
+            pass
+        else:
+            assert(relative_error(model_rxn.thermo[thermoval], refval) < test_precision)
 
 ############
 # LP FILES #
