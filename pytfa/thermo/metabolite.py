@@ -15,11 +15,11 @@ from functools import reduce
 from math import log, sqrt
 
 from . import std
-from ..utils.numerics import BIGM_DG
+from ..utils.numerics import BIGM_THERMO
 
 CPD_PROTON = 'cpd00067'
 
-DEFAULT_VAL = BIGM_DG
+DEFAULT_VAL = BIGM_THERMO
 
 class MetaboliteThermo:
     """

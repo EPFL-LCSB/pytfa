@@ -38,3 +38,13 @@ def test_read_write_compdata():
     cd = read_compartment_data(fname)
     apply_compartment_data(cobra_model,cd)
     os.remove(fname)
+
+def test_io():
+    from pytfa.io.dict import model_to_dict, model_from_dict
+    from pytfa.optim.utils import copy_solver_configuration
+
+    dictmodel = model_to_dict(tmodel)
+    new = model_from_dict(dictmodel)
+
+    copy_solver_configuration(tmodel, new)
+

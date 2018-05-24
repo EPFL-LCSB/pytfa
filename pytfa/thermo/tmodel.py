@@ -651,57 +651,13 @@ class ThermoModel(LCSBModel, Model):
         return self.copy()
 
     def copy(self):
-        new = type(self)(self.thermo_data,
-                          self.parent,
-                          name=self.name,
-                          temperature = self.TEMPERATURE,
-                          min_ph = self.MIN_pH,
-                          max_ph = self.MAX_pH)
+ 
+        from ..io.dict import model_from_dict, model_to_dict
+        from ..optim.utils import copy_solver_configuration
+        
+        dictmodel = model_to_dict(self)
+        new = model_from_dict(dictmodel)
 
-        new.name = 'Copy of ' + self.name
+        copy_solver_configuration(self, new)
 
-        # The solver has all the properties we need. From there, we can
-        # reconstruct the cobra_model
-        new_solver = self.solver.clone(self.solver)
-        new._solver = new_solver
-
-        for this_var in self._var_dict.values():
-
-            if isinstance(this_var, ReactionVariable):
-                reaction = new.reactions.get_by_id(this_var.reaction.id)
-                new.add_variable(kind = this_var.__class__,
-                                 hook = reaction)
-
-            elif isinstance(this_var, MetaboliteVariable):
-                metabolite = new.metabolites.get_by_id(this_var.metabolite.id)
-                new.add_variable(kind = this_var.__class__,
-                                 hook = metabolite)
-
-            else:
-                raise TypeError('Class {} copy not handled yet'    \
-                                .format(this_var.__class__))
-
-        for this_cons in self._cons_dict.values():
-            new_solver_cons = new.constraints.get(this_cons.name)
-
-            expr = new_solver_cons.expression
-            if isinstance(this_cons, ReactionConstraint):
-                reaction = new.reactions.get_by_id(this_cons.reaction.id)
-                nc = new.add_constraint(kind = this_cons.__class__,
-                                        hook = reaction,
-                                        expr = expr)
-                nc.constraint.lb = this_cons.constraint.lb
-                nc.constraint.ub = this_cons.constraint.ub
-            elif isinstance(this_cons, MetaboliteConstraint):
-                metabolite = new.metabolites.get_by_id(this_cons.metabolite.id)
-                nc = new.add_constraint(kind = this_cons.__class__,
-                                        hook = metabolite,
-                                        expr = expr)
-                nc.constraint.lb = this_cons.constraint.lb
-                nc.constraint.ub = this_cons.constraint.ub
-            else:
-                raise TypeError('Class {} copy not handled yet'    \
-                                .format(this_cons.__class__))
-
-        new.repair()
         return new
