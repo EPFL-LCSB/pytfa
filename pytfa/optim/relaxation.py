@@ -38,7 +38,7 @@ def relax_dgo_gurobi(model, relax_obj_type = 0):
     # the_vars = [x._internal_variable for x in model.variables]
     # vars_penalities = [1]*len(the_vars)
 
-    grm = ecoli.solver.problem.feasRelax(relaxobjtype=relax_obj_type,
+    grm = model.solver.problem.feasRelax(relaxobjtype=relax_obj_type,
                                          minrelax=True,
                                          constrs=the_cons,
                                          # vars=the_vars,
@@ -62,15 +62,24 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
     """
 
     if solver is None:
-        solver = tmodel.solver
+        solver = tmodel.solver.interface
 
     # Create a copy of the cobra_model on which we will perform the slack addition
     slack_model = deepcopy(tmodel)
     slack_model.solver = solver
+    slack_model.name = 'SlackModel '+tmodel.name
+    slack_model.id = 'SlackModel_'+tmodel.id
 
     # Create a copy that will receive the relaxation
     relaxed_model = deepcopy(tmodel)
     relaxed_model.solver = solver
+    relaxed_model.name = 'RelaxedModel '+tmodel.name
+    relaxed_model.id = 'RelaxedModel_'+tmodel.id
+
+    # Ensure the lazy updates are all done
+    slack_model.repair()
+    relaxed_model.repair()
+
 
     # Do not relax if cobra_model is already optimal
     # try:
@@ -91,9 +100,14 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
     changes = OrderedDict()
     objective_symbols = []
 
-    relaxed_model.logger.info('Adding slack constraints')
+    slack_model.logger.info('Adding slack constraints')
+    hooks = dict()
 
     for this_neg_dg in my_neg_dg:
+
+        # If there is no thermo, or relaxation forbidden, pass
+        if this_neg_dg.id in reactions_to_ignore or this_neg_dg.id not in my_dgo:
+            continue
 
         # If there is no thermo, or relaxation forbidden, pass
         if this_neg_dg.id in reactions_to_ignore or this_neg_dg.id not in my_dgo:
@@ -115,11 +129,12 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
         new_expr = this_neg_dg.constraint.expression.subs(subs_dict)
         new_expr += (pos_slack - neg_slack)
 
+        this_reaction = this_neg_dg.reaction
         # Remove former constraint to override it
-        slack_model.remove_constraint(this_neg_dg)
+        slack_model.remove_constraint(slack_model._cons_dict[this_neg_dg.name])
 
         # Add the new variant
-        slack_model.add_constraint(NegativeDeltaG, this_neg_dg.reaction,
+        slack_model.add_constraint(NegativeDeltaG, this_reaction,
                                    expr=new_expr, lb=0, ub=0)
 
         # Update the objective with the new variables
@@ -134,7 +149,7 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
     # Update variables and constraints references
     slack_model.repair()
 
-    relaxed_model.logger.info('Optimizing slack model')
+    slack_model.logger.info('Optimizing slack model')
     # Relax
     slack_model.objective.direction = 'min'
     relaxation = slack_model.optimize()
@@ -188,8 +203,6 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
                 the_dgo.variable.ub]
 
     relaxed_model.logger.info('Testing relaxation')
-    # Obtain relaxation
-    # relaxed_model.growth_reaction.lower_bound = 0
 
     relaxed_model.optimize()
 
