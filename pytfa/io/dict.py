@@ -188,6 +188,12 @@ def model_to_dict(model):
             _add_thermo_metabolite_info(the_met, rxn_dict)
             met_dict['kind'] = 'Metabolite'
 
+    # Relaxation info
+    try:
+        obj['relaxation'] = model.relaxation
+    except AttributeError:
+        pass
+
     return obj
 
 
@@ -334,6 +340,13 @@ def model_from_dict(obj, solver=None):
 
     new._update()
     new.repair()
+
+    # Relaxation info
+    try:
+        new.relaxation = obj['relaxation']
+    except KeyError:
+        pass
+
     return new
 
 

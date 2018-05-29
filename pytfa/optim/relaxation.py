@@ -370,4 +370,6 @@ def relax_lc(tmodel, metabolites_to_ignore = (), solver = None):
 
     tmodel.logger.info('\n' + relax_table.__str__())
 
+    relaxed_model.relaxation = relax_table
+
     return relaxed_model, slack_model, relax_table
