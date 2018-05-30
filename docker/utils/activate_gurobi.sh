@@ -3,7 +3,8 @@
 
 export GHOME_702="/opt/gurobi702/linux64"
 export GHOME_752="/opt/gurobi752/linux64"
-export GHOME=$GHOME_752
+export GHOME_800="/opt/gurobi800/linux64"
+export GHOME=$GHOME_800
 
 if [ -d $GHOME ]; then \
 	#$GHOME/bin/grbgetkey $LICENSE_KEY	&& \

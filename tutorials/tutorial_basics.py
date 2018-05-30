@@ -57,12 +57,15 @@ mytfa.objective = biomass_rxn
 
 # Solver settings
 
-mytfa.solver = solver
-# mytfa.solver.configuration.verbosity = 1
-mytfa.solver.configuration.tolerances.feasibility = 1e-9
-if solver == 'optlang_gurobi':
-    mytfa.solver.problem.Params.NumericFocus = 3
-mytfa.solver.configuration.presolve = True
+def apply_solver_settings(model, solver = solver):
+    model.solver = solver
+    # model.solver.configuration.verbosity = 1
+    model.solver.configuration.tolerances.feasibility = 1e-9
+    if solver == 'optlang_gurobi':
+        model.solver.problem.Params.NumericFocus = 3
+    model.solver.configuration.presolve = True
+
+apply_solver_settings(mytfa)
 
 
 ## FBA
@@ -108,7 +111,7 @@ solver_results = dict()
 # Try different solvers
 for solver in [GLPK,CPLEX,GUROBI]:
     try:
-        mytfa.solver = solver
+        apply_solver_settings(mytfa,solver)
         this_sol = mytfa.optimize()
         solver_results[solver] = this_sol
         print ("{}: {}".format(solver, this_sol.f))

@@ -117,8 +117,9 @@ def _bool2str(bool_list):
 
 def _variability_analysis_element(tmodel, var, sense):
     tmodel.objective = var
-    sol = tmodel.optimize(objective_sense = sense)
-    return sol.f
+    tmodel.objective.direction = sense
+    sol = tmodel.slim_optimize()
+    return sol
 
 
 
