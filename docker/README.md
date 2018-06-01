@@ -29,3 +29,11 @@ ipython
 run tutorial_basics.py
 tmodel.print_info()
 ```
+
+## Additional information
+
+If you are running your Docker container in a Unix-based environment, you might get permission errors on the `.sh` scripts.
+This is because permissions are inherited from the host environment. You can fix this by running in the `docker` folder:
+```bash
+chmod +x utils/*.sh
+```
