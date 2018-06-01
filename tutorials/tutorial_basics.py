@@ -20,7 +20,7 @@ GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 solver = GLPK
 
-case = 'full' # 'reduced' or full'
+case = 'reduced' # 'reduced' or full'
 
 # Load reaction DB
 print("Loading thermo data...")
@@ -50,8 +50,6 @@ elif case == 'full':
     biomass_rxn = 'Ec_biomass_iJO1366_WT_53p95M'
 
 mytfa.name = 'tutorial_basics'
-mytfa.repair()
-mytfa._update()
 mytfa.solver = solver
 mytfa.objective = biomass_rxn
 
