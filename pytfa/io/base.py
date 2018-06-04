@@ -229,6 +229,7 @@ def create_thermo_dict(tmodel):
         'metMass':('mass',BIGM_DG),
         'metCharge':('charge_std',BIGM_DG),
         'metDelGFtr':('deltaGf_tr',BIGM_DG),
+        'metCompSymbol':('compartment','')
     }
 
     for column,(key,default_value) in met_map.items():
