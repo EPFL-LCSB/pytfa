@@ -58,6 +58,7 @@ def import_matlab_model(path, variable_name=None):
     cobra_model = Model(mat_model['description'][0])
 
     cobra_model.description = mat_model['description'][0]
+
     ## METABOLITES
     # In the Matlab cobra_model, the corresponding components are :
     # * mets = Identifiers
@@ -65,11 +66,17 @@ def import_matlab_model(path, variable_name=None):
     # * metFormulas = formulas
     # * metCompSymbol = compartments
 
-    metabolites = [Metabolite(mat_model['mets'][i, 0][0],
-        formula=mat_model['metFormulas'][i, 0][0],
-        name=mat_model['metNames'][i, 0][0],
-        compartment=mat_model['metCompSymbol'][i, 0][0]) for i in
-        range(len(mat_model['metNames']))]
+    def read_mat_model(mat_struct, field_name, index):
+        try:
+            return mat_struct[field_name][index,0][0]
+        except IndexError:
+            return None
+
+    metabolites = [Metabolite( read_mat_model(mat_model,'mets',i),
+        formula=read_mat_model(mat_model,'metFormulas',i),
+        name=read_mat_model(mat_model,'metNames',i),
+        compartment=read_mat_model(mat_model,'metCompSymbol',i))
+                   for i in range(len(mat_model['metNames']))]
 
     # Get the metSEEDID
     seed_id = mat_model['metSEEDID']
