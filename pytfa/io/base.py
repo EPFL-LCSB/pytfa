@@ -229,6 +229,7 @@ def create_thermo_dict(tmodel):
         'metMass':('mass',BIGM_DG),
         'metCharge':('charge_std',BIGM_DG),
         'metDelGFtr':('deltaGf_tr',BIGM_DG),
+        'metCompSymbol':('compartment','')
     }
 
     for column,(key,default_value) in met_map.items():
@@ -265,6 +266,34 @@ def create_thermo_dict(tmodel):
                 continue
 
         mat[column] = np.array(the_data)
+
+    # Adding compartment data
+    CompartmentDB = {}
+
+    compartments = [v for v in tmodel.compartments.values()]
+    CompartmentDB['pH'] = np.array([x['pH'] for x in compartments])
+    CompartmentDB['ionicStr'] = np.array([x['ionicStr'] for x in compartments])
+    CompartmentDB['compMaxConc'] = np.array([x['c_max'] for x in compartments])
+    CompartmentDB['compMinConc'] = np.array([x['c_min'] for x in compartments])
+
+    #Write symbols and names in collumn cell arrays
+    CompartmentDB['compSymbolList'] = np.zeros((1, len(compartments)), dtype=np.object)
+    CompartmentDB['compNameList'] =  np.zeros((1, len(compartments)), dtype=np.object)
+
+    for i,_ in enumerate(compartments):
+        CompartmentDB['compSymbolList'][0,i] = compartments[i]['symbol']
+        CompartmentDB['compNameList'][0, i] = compartments[i]['name']
+
+    # The membrane potential is an NxN matrix in the matlab format
+    membrane_pot = np.zeros((len(compartments),len(compartments)))
+    for i,_ in enumerate(compartments):
+        for j,_ in enumerate(compartments):
+            symbol_j = compartments[j]['symbol']
+            membrane_pot[i,j] = compartments[i]['membranePot'][symbol_j]
+
+    CompartmentDB['membranePot'] = membrane_pot
+
+    mat['CompartmentData'] = CompartmentDB
 
     return mat
 
