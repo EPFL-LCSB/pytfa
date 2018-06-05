@@ -280,14 +280,18 @@ def create_thermo_dict(tmodel):
     CompartmentDB['compSymbolList'] = np.zeros((1, len(compartments)), dtype=np.object)
     CompartmentDB['compNameList'] =  np.zeros((1, len(compartments)), dtype=np.object)
 
-    for i,_ in enumerate(compartments):
-        CompartmentDB['compSymbolList'][0,i] = compartments[i]['symbol']
-        CompartmentDB['compNameList'][0, i] = compartments[i]['name']
+    mat_to_python_string = [('compSymbolList', 'symbol'),
+                            ('compNameList', 'name')]
+
+    for i, _ in enumerate(compartments):
+        for mat_name, py_name in mat_to_python_string:
+            CompartmentDB[mat_name][0, i] = compartments[i][py_name]
+
 
     # The membrane potential is an NxN matrix in the matlab format
     membrane_pot = np.zeros((len(compartments),len(compartments)))
-    for i,_ in enumerate(compartments):
-        for j,_ in enumerate(compartments):
+    for i, _ in enumerate(compartments):
+        for j, _ in enumerate(compartments):
             symbol_j = compartments[j]['symbol']
             membrane_pot[i,j] = compartments[i]['membranePot'][symbol_j]
 
