@@ -58,6 +58,7 @@ def import_matlab_model(path, variable_name=None):
     cobra_model = Model(mat_model['description'][0])
 
     cobra_model.description = mat_model['description'][0]
+
     ## METABOLITES
     # In the Matlab cobra_model, the corresponding components are :
     # * mets = Identifiers
@@ -65,11 +66,17 @@ def import_matlab_model(path, variable_name=None):
     # * metFormulas = formulas
     # * metCompSymbol = compartments
 
-    metabolites = [Metabolite(mat_model['mets'][i, 0][0],
-        formula=mat_model['metFormulas'][i, 0][0],
-        name=mat_model['metNames'][i, 0][0],
-        compartment=mat_model['metCompSymbol'][i, 0][0]) for i in
-        range(len(mat_model['metNames']))]
+    def read_mat_model(mat_struct, field_name, index):
+        try:
+            return mat_struct[field_name][index,0][0]
+        except IndexError:
+            return None
+
+    metabolites = [Metabolite( read_mat_model(mat_model,'mets',i),
+        formula=read_mat_model(mat_model,'metFormulas',i),
+        name=read_mat_model(mat_model,'metNames',i),
+        compartment=read_mat_model(mat_model,'metCompSymbol',i))
+                   for i in range(len(mat_model['metNames']))]
 
     # Get the metSEEDID
     seed_id = mat_model['metSEEDID']
@@ -222,6 +229,7 @@ def create_thermo_dict(tmodel):
         'metMass':('mass',BIGM_DG),
         'metCharge':('charge_std',BIGM_DG),
         'metDelGFtr':('deltaGf_tr',BIGM_DG),
+        'metCompSymbol':('compartment','')
     }
 
     for column,(key,default_value) in met_map.items():
@@ -258,6 +266,38 @@ def create_thermo_dict(tmodel):
                 continue
 
         mat[column] = np.array(the_data)
+
+    # Adding compartment data
+    CompartmentDB = {}
+
+    compartments = [v for v in tmodel.compartments.values()]
+    CompartmentDB['pH'] = np.array([x['pH'] for x in compartments])
+    CompartmentDB['ionicStr'] = np.array([x['ionicStr'] for x in compartments])
+    CompartmentDB['compMaxConc'] = np.array([x['c_max'] for x in compartments])
+    CompartmentDB['compMinConc'] = np.array([x['c_min'] for x in compartments])
+
+    #Write symbols and names in collumn cell arrays
+    CompartmentDB['compSymbolList'] = np.zeros((1, len(compartments)), dtype=np.object)
+    CompartmentDB['compNameList'] =  np.zeros((1, len(compartments)), dtype=np.object)
+
+    mat_to_python_string = [('compSymbolList', 'symbol'),
+                            ('compNameList', 'name')]
+
+    for i, _ in enumerate(compartments):
+        for mat_name, py_name in mat_to_python_string:
+            CompartmentDB[mat_name][0, i] = compartments[i][py_name]
+
+
+    # The membrane potential is an NxN matrix in the matlab format
+    membrane_pot = np.zeros((len(compartments),len(compartments)))
+    for i, _ in enumerate(compartments):
+        for j, _ in enumerate(compartments):
+            symbol_j = compartments[j]['symbol']
+            membrane_pot[i,j] = compartments[i]['membranePot'][symbol_j]
+
+    CompartmentDB['membranePot'] = membrane_pot
+
+    mat['CompartmentData'] = CompartmentDB
 
     return mat
 

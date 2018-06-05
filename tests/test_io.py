@@ -18,9 +18,10 @@ from settings import cobra_model, tmodel
 #    I/O    #
 #############
 
-def test_write_mat():
-    from pytfa.io.base import write_matlab_model
+def test_read_write_mat():
+    from pytfa.io.base import write_matlab_model, import_matlab_model
     write_matlab_model(tmodel, 'tmp.mat')
+    import_matlab_model('tmp.mat')
     os.remove('tmp.mat')
 
 def test_read_write_lexicon():
