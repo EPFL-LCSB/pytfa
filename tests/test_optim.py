@@ -62,4 +62,11 @@ def test_constraint_addition():
     assert the_name not in tmodel.constraints
     assert cons1 not in getattr(tmodel, cons1.__attrname__)
 
+def test_relax_dgo():
+    global tmodel
+    from pytfa.optim.relaxation import relax_dgo
+
+    tmodel.reactions.Ec_biomass_iJO1366_WT_53p95M.lower_bound = 1.5
+    tmodel.optimize()
+    relax_dgo(tmodel)
     

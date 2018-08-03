@@ -225,6 +225,12 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
 
     relaxed_model.optimize()
 
+    if len(changes) == 0:
+        # The model is infeasible or something went wrong
+        tmodel.logger.error('Relaxation could not complete '
+                            '(no DeltaG relaxation found)')
+        return relaxed_model, slack_model, None
+
     # Format relaxation
     relax_table = pd.DataFrame.from_dict(changes,
                                          orient = 'index')
