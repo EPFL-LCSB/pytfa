@@ -630,6 +630,7 @@ class ThermoModel(LCSBModel, Model):
         n_metabolites_thermo = len([x for x in self.metabolites \
                                     if hasattr(x, 'thermo') and x.thermo['id']])
         n_reactions_thermo   = len([x for x in self.reactions if
+                                    x.id is not None and
                                     hasattr(x, 'thermo') and x.thermo['computed']])
 
         info = pd.DataFrame(columns = ['value'])
@@ -654,7 +655,7 @@ class ThermoModel(LCSBModel, Model):
  
         from ..io.dict import model_from_dict, model_to_dict
         from ..optim.utils import copy_solver_configuration
-        
+
         dictmodel = model_to_dict(self)
         new = model_from_dict(dictmodel)
 

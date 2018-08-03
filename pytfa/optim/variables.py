@@ -460,3 +460,4 @@ class PosSlackLC(MetaboliteVariable):
 class NegSlackLC(MetaboliteVariable):
 
     prefix = 'NegSlackLC_'
+

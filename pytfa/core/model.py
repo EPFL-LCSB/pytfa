@@ -21,6 +21,33 @@ from ..utils.str import camel2underscores
 from ..optim.variables import GenericVariable
 from ..optim.utils import get_primal
 
+import time
+
+def timeit(method):
+    """
+    Adapted from Andreas Jung's blog:
+    https://www.zopyx.com/andreas-jung/contents/a-python-decorator-for-measuring-the-execution-time-of-methods
+
+    :param method:
+    :return:
+    """
+
+
+    def timed(self, *args, **kw):
+        ts = time.time()
+        result = method(self, *args, **kw)
+        te = time.time()
+
+        message = '%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te-ts)
+
+        try:
+            self.logger.info(message)
+        except AttributeError:
+            print(message)
+        return result
+
+    return timed
+
 class LCSBModel(ABC):
 
     # @abstractmethod
@@ -139,17 +166,17 @@ class LCSBModel(ABC):
         self._cons_dict.pop(cons.name)
         self.remove_cons_vars(cons.constraint)
 
-    def _update(self):
+    def _push_queue(self):
         """
         updates the constraints and variables of the model with what's in the
         queue
         :return:
         """
 
-        self.add_cons_vars(self._cons_queue)
         self.add_cons_vars(self._var_queue)
-        self._cons_queue = list()
+        self.add_cons_vars(self._cons_queue)
         self._var_queue = list()
+        self._cons_queue = list()
 
 
     def regenerate_variables(self):
@@ -206,6 +233,7 @@ class LCSBModel(ABC):
         """
         # self.add_cons_vars([x.constraint for x in self._cons_dict.values()])
         # self.add_cons_vars([x.variable for x in self._var_dict.values()])
+        self._push_queue()
         Model.repair(self)
         self.regenerate_constraints()
         self.regenerate_variables()
@@ -245,6 +273,7 @@ class LCSBModel(ABC):
             self.objective.direction = objective_sense
 
         try:
+            # self._hidden_optimize_call(kwargs)
             Model.optimize(self, **kwargs)
             solution = self.get_solution()
             self.solution = solution
@@ -254,6 +283,14 @@ class LCSBModel(ABC):
             self.logger.error(SE)
             self.logger.warning('Solver status: {}'.format(status))
             raise (SE)
+
+    # @timeit
+    # def _hidden_optimize_call(self, kwargs):
+    #     return Model.optimize(self, **kwargs)
+
+    @timeit
+    def slim_optimize(self, *args, **kwargs):
+        return Model.slim_optimize(self, *args, **kwargs)
 
     def get_constraints_of_type(self, constraint_type):
         """
@@ -278,4 +315,3 @@ class LCSBModel(ABC):
 
         variable_key = variable_type.__name__
         return self._var_kinds[variable_key]
-

@@ -229,7 +229,7 @@ def model_from_dict(obj, solver=None):
                           max_ph=obj['max_ph'])
         new = init_thermo_model_from_dict(new, obj)
 
-    new._update()
+    new._push_queue()
 
     for the_var_dict in obj['variables']:
         this_id = the_var_dict['id']
@@ -279,7 +279,7 @@ def model_from_dict(obj, solver=None):
                 'Class {} serialization not handled yet' \
                     .format(classname))
 
-    new._update()
+    new._push_queue()
 
     variable_parse_dict = {x.name:x for x in new.variables}
 
@@ -338,7 +338,6 @@ def model_from_dict(obj, solver=None):
             raise TypeError('Class {} serialization not handled yet' \
                             .format(classname))
 
-    new._update()
     new.repair()
 
     # Relaxation info
