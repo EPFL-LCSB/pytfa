@@ -10,6 +10,9 @@ Debugging of models
 
 """
 
+from collections import defaultdict
+import pandas as pd
+
 def debug_iis(model):
     """
     Performs reduction to an Irreducible Inconsistent Subsystem (IIS)
@@ -38,3 +41,22 @@ def debug_iis(model):
 
     return out_c, out_v
 
+def find_biggest_coeffs(model,n=1):
+    coeff_dict = defaultdict(int)
+    cons_dict = dict()
+
+    for the_cons in model.constraints:
+        for the_var, the_coeff in the_cons.expression.as_coefficients_dict().items():
+            if abs(the_coeff) > coeff_dict[the_var.name]:
+                coeff_dict[the_var.name] = abs(the_coeff)
+                cons_dict[the_var.name] = the_cons.name
+
+    coeff_data = pd.DataFrame.from_dict(coeff_dict, orient = 'index')
+    cons_data = pd.DataFrame.from_dict(cons_dict, orient = 'index')
+
+    res = pd.concat([cons_data, coeff_data], axis = 1)
+    res.columns = ['constraint','coeff']
+    res.index.name = 'variable'
+    res = res[res['coeff'] > 1e-10]
+
+    return res.sort_values('coeff',ascending=False).head(n)
