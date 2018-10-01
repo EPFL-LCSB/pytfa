@@ -1,10 +1,13 @@
 pyTFA
 =====
-|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |Code climate| |license| 
+|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |license| 
 
 Thermodynamics-based Flux Analysis, in Python.
+Paper : Pierre Salvy, Georgios Fengos, Meric Ataman, Thomas Pathier, Keng C Soh, Vassily Hatzimanikatis. "pyTFA and matTFA: a Python package and a Matlab toolbox for Thermodynamics-based Flux Analysis"
+Bioinformatics (2018), bty499, `DOI:
+https://doi.org/10.1093/bioinformatics/bty499 <https://doi.org/10.1093/bioinformatics/bty499>`_
 
-Implements: Henry, Christopher S., Linda J. Broadbelt, and Vassily
+Implements: Christopher S. Henry, Linda J. Broadbelt, and Vassily
 Hatzimanikatis. "Thermodynamics-based metabolic flux analysis."
 Biophysical journal 92.5 (2007): 1792-1805. `DOI:
 https://doi.org/10.1529/biophysj.106.093138 <https://doi.org/10.1529/biophysj.106.093138>`__
