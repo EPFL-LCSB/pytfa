@@ -10,6 +10,7 @@ Subpackages
     pytfa.core
     pytfa.io
     pytfa.optim
+    pytfa.thermo
     pytfa.utils
 
 Module contents

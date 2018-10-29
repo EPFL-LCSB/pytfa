@@ -12,6 +12,22 @@ pytfa.optim.constraints module
     :undoc-members:
     :show-inheritance:
 
+pytfa.optim.debugging module
+----------------------------
+
+.. automodule:: pytfa.optim.debugging
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pytfa.optim.reformulation module
+--------------------------------
+
+.. automodule:: pytfa.optim.reformulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pytfa.optim.relaxation module
 -----------------------------
 
