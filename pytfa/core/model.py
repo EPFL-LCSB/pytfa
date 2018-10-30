@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 
 import pandas as pd
+from numpy import empty
 from optlang.exceptions import SolverError
 from cobra import DictList, Model
 from cobra.core.solution import Solution
@@ -257,8 +258,29 @@ class LCSBModel(ABC):
         objective_value = self.solver.objective.value
         status = self.solver.status
         variables = pd.Series(data=self.solver.primal_values)
+
+        fluxes = empty(len(self.reactions))
+        rxn_index = list()
+        var_primals = self.solver.primal_values
+
+        for (i, rxn) in enumerate(self.reactions):
+            rxn_index.append(rxn.id)
+            fluxes[i] = var_primals[rxn.id] - var_primals[rxn.reverse_id]
+
+        fluxes = pd.Series(index=rxn_index, data=fluxes, name="fluxes")
+
         solution = Solution(objective_value=objective_value, status=status,
-                            fluxes=variables)
+                            fluxes=fluxes)
+
+        self.solution = solution
+
+        self.solution.raw = variables
+
+        self.\
+            solution.values = pd.DataFrame.from_dict({k:v.unscaled
+                                                 for k,v in self._var_dict.items()},
+                                                 orient = 'index')
+
         return solution
 
     def optimize(self, objective_sense=None, **kwargs):

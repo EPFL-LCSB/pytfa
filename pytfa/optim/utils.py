@@ -122,11 +122,11 @@ def get_solution_value_for_variables(solution, these_vars, index_by_reaction = F
 
     if index_by_reaction:
         var2rxn = {v.name:v.id for v in these_vars}
-        ret = solution.x_dict[var_ids]
+        ret = solution.raw[var_ids]
         ret = ret.index.replace(var2rxn)
         return ret
     else:
-        return solution.x_dict[var_ids]
+        return solution.raw[var_ids]
 
 def compare_solutions(models):
     """

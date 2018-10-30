@@ -13,6 +13,7 @@ Relaxation of models with constraint too tight
 from collections import OrderedDict
 from copy import deepcopy
 
+from tqdm import tqdm
 import pandas as pd
 from cobra.util.solver import set_objective
 from optlang.exceptions import SolverError
@@ -108,7 +109,9 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
     slack_model.logger.info('Adding slack constraints')
     hooks = dict()
 
-    for this_neg_dg in my_neg_dg:
+    slack_model.solver.update()
+
+    for this_neg_dg in tqdm(my_neg_dg, desc='adding slacks'):
 
         # If there is no thermo, or relaxation forbidden, pass
         if this_neg_dg.id in reactions_to_ignore or this_neg_dg.id not in my_dgo:
@@ -171,9 +174,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
                                                         my_pos_slacks)
 
     epsilon = relaxed_model.solver.configuration.tolerances.feasibility
-
+    relaxed_model.repair()
+    relaxed_model.solver.update()
     # Apply reaction delta G standard bound change
-    for this_reaction in relaxed_model.reactions:
+    for this_reaction in tqdm(relaxed_model.reactions, desc = 'applying slack'):
         # No thermo, or relaxation forbidden
         if this_reaction.id in reactions_to_ignore or this_reaction.id not in my_dgo:
             continue
@@ -191,12 +195,12 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
 
         if in_place:
             the_neg_slack = my_neg_slacks.get_by_id(this_reaction.id)
-            the_neg_slack_value = slack_model.solution.x_dict[the_neg_slack.name]
+            the_neg_slack_value = slack_model.solution.raw[the_neg_slack.name]
             the_neg_slack.variable.lb = the_neg_slack_value - epsilon
             the_neg_slack.variable.ub = the_neg_slack_value + epsilon
 
             the_pos_slack = my_pos_slacks.get_by_id(this_reaction.id)
-            the_pos_slack_value = slack_model.solution.x_dict[the_pos_slack.name]
+            the_pos_slack_value = slack_model.solution.raw[the_pos_slack.name]
             the_pos_slack.variable.lb = the_pos_slack_value - epsilon
             the_pos_slack.variable.ub = the_pos_slack_value + epsilon
 
@@ -221,7 +225,12 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
                 the_dgo.variable.lb,
                 the_dgo.variable.ub]
 
+
+    relaxed_model.repair()
     relaxed_model.logger.info('Testing relaxation')
+
+    relaxed_model.objective = original_objective
+    relaxed_model.objective.direction = 'max'
 
     relaxed_model.optimize()
 
@@ -241,12 +250,6 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
                             'lb_out',
                             'ub_out']
 
-    relaxed_model.objective = original_objective
-    relaxed_model.objective.direction = 'max'
-
-    relaxed_model.logger.info('Testing relaxation')
-
-    relaxed_model.optimize()
     return relaxed_model, slack_model, relax_table
 
 
