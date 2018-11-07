@@ -31,14 +31,18 @@ CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
-# Temporary class parameter, until the load-from-paramfile feature is added
 class LumpGEM()
+    """
+    A class encapsulating the LumpGEM algorithm
+    """
     def __init__(self, GEM, core, carbon_intake):
         """
-        : type GEM cobra model
-        : param GEM the GEM 
-        : type core model.reactions
-        : param core list of Core reactions
+        : param GEM: the GEM 
+        : type GEM: cobra model
+        : param core: list of Core reactions
+        : type core: model.reactions
+        : param carbon_intake: the amount of carbon atoms the cell intakes from its surrounding
+        : type carbon_intake: float
         """
 
         self._GEM = GEM
@@ -55,12 +59,22 @@ class LumpGEM()
 
 
     def build_new_model():
-        return
+        """
+        TODO : Generate a new GEM model which will be optimized
+        """
+        # TODO
+        self._model = Model()
 
     def generate_binary_variables():
+        """
+        Generate binary variables for each non-core reaction
+        """
         self._bin_vars = {rxn : Variable(name=rxn.id, type='binary') for rxn in _rncore}
     
     def generate_constraints():
+        """
+        Generate carbon intake related constraints for each non-core reaction
+        """
         constraints = []
         for rxn in model.reactions:
             rxn_const = Constraint(rxn.forward_variable + rxn.reverse_variable + _C_intake*_bin_vars[rxn], ub=_C_intake)
