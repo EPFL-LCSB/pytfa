@@ -33,7 +33,7 @@ GLPK = 'optlang-glpk'
 
 # Temporary class parameter, until the load-from-paramfile feature is added
 class LumpGEM()
-    def __init__(self, GEM, core):
+    def __init__(self, GEM, core, carbon_intake):
         """
         : type GEM cobra model
         : param GEM the GEM 
@@ -42,9 +42,29 @@ class LumpGEM()
         """
 
         self._GEM = GEM
-        self._rcore = core
-        #self._mcore = [metab for metab in self._rcore.metabolites.keys()]
 
         # Extracting all reactions that lead to BBB
-        self.BBBreactions = [rxn for rxn in GEM.reactions if "Biomass" in rxn.id]
+        self._rBBB = [rxn for rxn in GEM.reactions if "Biomass" in rxn.id]
+        # Core reactions
+        self._rcore = core
+        # Non core reactions
+        self._rncore = [rxn for rxn in _GEM.reactions if not (rxn in _rcore or rxn in _rBBB)]
 
+        # Carbon intake
+        self._C_intake = carbon_intake
+
+
+    def build_new_model():
+        return
+
+    def generate_binary_variables():
+        self._bin_vars = {rxn : Variable(name=rxn.id, type='binary') for rxn in _rncore}
+    
+    def generate_constraints():
+        constraints = []
+        for rxn in model.reactions:
+            rxn_const = Constraint(rxn.forward_variable + rxn.reverse_variable + _C_intake*_bin_vars[rxn], ub=_C_intake)
+            constraints.append(rxn_const)
+
+
+        _model.add(constraints)
