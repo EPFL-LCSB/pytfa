@@ -76,9 +76,9 @@ class LumpGEM()
         Generate carbon intake related constraints for each non-core reaction
         """
         constraints = []
-        for rxn in model.reactions:
+        for rxn in self._rncore:
             rxn_const = Constraint(rxn.forward_variable + rxn.reverse_variable + _C_intake*_bin_vars[rxn], ub=_C_intake)
             constraints.append(rxn_const)
 
 
-        _model.add(constraints)
+        self._model.add(constraints)
