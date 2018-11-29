@@ -69,4 +69,10 @@ def test_relax_dgo():
     tmodel.reactions.Ec_biomass_iJO1366_WT_53p95M.lower_bound = 1.5
     tmodel.optimize()
     relax_dgo(tmodel)
+
+def test_change_expression():
+    global tmodel
+    cons = list(tmodel._cons_dict.values())[0]
+    cons.change_expr(cons.expr + 2)
+    tmodel.optimize()
     

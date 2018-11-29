@@ -92,20 +92,20 @@ class GenericConstraint:
         """
         return self.prefix + self.id
 
-    def change_expr(self, cons, new_expr, sloppy=False):
+    def change_expr(self, new_expr, sloppy=False):
 
-        lb = cons.constraint.lb
-        ub = cons.constraint.ub
-        name = cons.name
+        lb = self.constraint.lb
+        ub = self.constraint.ub
+        name = self.name
 
         # Remove former constraint to override it
-        self.solver.remove(cons.name)
-        new_cons = new.solver.interface.Constraint(name = name,
+        self.model.solver.remove(name)
+        new_cons = self.model.solver.interface.Constraint(name = name,
                                                    expression = new_expr,
                                                    ub = ub,
                                                    lb = lb)
         # Add the new variant
-        self.solver.add(new_cons, sloppy=sloppy)
+        self.model.solver.add(new_cons, sloppy=sloppy)
 
     @property
     def expr(self):
