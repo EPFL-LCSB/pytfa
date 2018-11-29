@@ -46,6 +46,7 @@ class GenericVariable:
         :cobra_model: the cobra_model hook.
         :variable: links directly to the cobra_model representation of tbe variable
     """
+    prefix = ''
 
     @property
     def __attrname__(self):
@@ -56,7 +57,8 @@ class GenericVariable:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id_, model, queue=False, scaling_factor=1, **kwargs):
+    def __init__(self, id_='', model=None, hook=None, queue=False, scaling_factor=1,
+                 **kwargs):
         """
 
         :param id_: will be used to identify the variable
@@ -67,6 +69,7 @@ class GenericVariable:
                                 adimensionalisation of constraints
         :param kwargs: stuff you want to pass to the variable constructor
         """
+        self.hook = hook
         self._id = id_
         self._model = model
         self.kwargs = kwargs
@@ -329,6 +332,20 @@ def get_binary_type():
     else:
         return 'binary'
 
+class ModelVariable(GenericVariable):
+    """
+    Class to represent a variable attached to the model
+    """
+
+    def __init__(self, model, id_, **kwargs):
+        if not 'lb' in kwargs:
+            kwargs['lb'] = 0
+        GenericVariable.__init__(self,
+                                 id_= id_,
+                                 model=model,
+                                 hook=model,
+                                 **kwargs)
+
 class BinaryVariable(GenericVariable):
     """
     Class to represent a generic binary variable
@@ -355,13 +372,16 @@ class ReactionVariable(GenericVariable):
     """
 
     def __init__(self, reaction, **kwargs):
-        self.reaction = reaction
         model = reaction.model
 
         GenericVariable.__init__(self,
-                                 id_=self.id,
                                  model=model,
+                                 hook=reaction,
                                  **kwargs)
+
+    @property
+    def reaction(self):
+        return self.hook
 
     @property
     def id(self):
@@ -377,13 +397,16 @@ class MetaboliteVariable(GenericVariable):
     """
 
     def __init__(self, metabolite, **kwargs):
-        self.metabolite = metabolite
         model = metabolite.model
 
         GenericVariable.__init__(self,
-                                 id_=self.id,
                                  model=model,
+                                 hook=metabolite,
                                  **kwargs)
+
+    @property
+    def metabolite(self):
+        return self.hook
 
     @property
     def id(self):
