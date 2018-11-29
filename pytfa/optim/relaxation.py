@@ -135,16 +135,18 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
         new_expr += (pos_slack - neg_slack)
 
         this_reaction = this_neg_dg.reaction
-        # Remove former constraint to override it
-        slack_model.remove_constraint(slack_model._cons_dict[this_neg_dg.name])
+        # # Remove former constraint to override it
+        # slack_model.remove_constraint(slack_model._cons_dict[this_neg_dg.name])
+        #
+        # # Add the new variant
+        # slack_model.add_constraint(NegativeDeltaG,
+        #                            this_reaction,
+        #                            expr=new_expr,
+        #                            lb=0,
+        #                            ub=0,
+        #                            queue=True)
 
-        # Add the new variant
-        slack_model.add_constraint(NegativeDeltaG,
-                                   this_reaction,
-                                   expr=new_expr,
-                                   lb=0,
-                                   ub=0,
-                                   queue=True)
+        this_neg_dg.change_expr(new_expr)
 
         # Update the objective with the new variables
         objective_symbols += [neg_slack,  pos_slack]
