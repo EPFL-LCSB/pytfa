@@ -25,7 +25,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, GEM, biomass_rxns, core_subsystems, carbon_uptake, thermo_data_path):
+    def __init__(self, GEM, biomass_rxns, core_subsystems, carbon_uptake, growth_rate,  thermo_data_path):
         """
         : param GEM: the GEM 
         : type GEM: cobra model
@@ -59,12 +59,14 @@ class LumpGEM:
                 # Add involved metabolites to core metabolites
                 for met in rxn.metabolites:
                     self._mcore.add(met)
- 
+
         # Non core reactions
         self._rncore = set([rxn for rxn in GEM.reactions if not (rxn in self._rcore or rxn in self._rBBB)])
 
         # Carbon uptake
         self._C_uptake = carbon_uptake
+        # Growth rate
+        self._growth_rate = growth_rate
 
         # Load reactions DB
         self._thermo_data = load_thermoDB(thermo_data_path)
@@ -85,14 +87,20 @@ class LumpGEM:
 
     def generate_constraints(self):
         """
-        Generate carbon intake related constraints for each non-core reaction
+        Generate carbon intake related constraints for each non-core reaction and 
+        growth rate related constraints for each BBB reaction
         """
+        # Carbon intake constraints
         for rxn in self._rncore:
             # rxn contrained according to the carbon uptake
             rxn_const = self._model.problem.Constraint( rxn.forward_variable +
-                                                        rxn.reverse_variable + 
+                                                        rxn.reverse_variable +
                                                         self._C_uptake * self._bin_vars[rxn], ub=self._C_uptake)
             self._model.add_cons_vars(rxn_const)
+
+        # Growth rate constraints
+        for bio_rxn in self._rBBB:
+            bio_rxn.lower_bound = self._growth_rate
 
     def apply_thermo_constraints(self):
         """
