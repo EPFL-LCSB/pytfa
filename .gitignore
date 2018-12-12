@@ -1,8 +1,12 @@
 # Pycharm folders
 .idea/*
+.idea/
 cobra_docker/work/.idea/*
 *___jb_old___
 *___jb_tmp___
+
+# Docker temp files
+docker/temp/
 
 ###########################################
 ###	Standard Python	.gitignore	###
@@ -101,9 +105,6 @@ ENV/
 
 # Spyder project settings
 .spyderproject
-
-# Pycharm project settings
-.idea
 
 # Rope project settings
 .ropeproject
