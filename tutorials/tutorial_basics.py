@@ -68,7 +68,7 @@ apply_solver_settings(mytfa)
 
 ## FBA
 fba_solution = cobra_model.optimize()
-fba_value = fba_solution.f
+fba_value = fba_solution.objective_value
 # fva = flux_variability_analysis(mytfa)
 
 ## TFA conversion
@@ -80,7 +80,7 @@ mytfa.print_info()
 
 ## Optimality
 tfa_solution = mytfa.optimize()
-tfa_value = tfa_solution.f
+tfa_value = tfa_solution.objective_value
 
 # It might happen that the model is infeasible. In this case, we can relax 
 # thermodynamics constraints:
@@ -97,7 +97,7 @@ if tfa_value < 0.1:
     print(relax_table)
     
     tfa_solution = mytfa.optimize()
-    tfa_value = tfa_solution.f
+    tfa_value = tfa_solution.objective_value
 
 # Report
 print('FBA Solution found : {0:.5g}'.format(fba_value))
@@ -112,7 +112,7 @@ for solver in [GLPK,CPLEX,GUROBI]:
         apply_solver_settings(mytfa,solver)
         this_sol = mytfa.optimize()
         solver_results[solver] = this_sol
-        print ("{}: {}".format(solver, this_sol.f))
+        print ("{}: {}".format(solver, this_sol.objective_value))
     except KeyError:
         print("Solver {} not found".format(solver))
     except SolverError as SE:
