@@ -1,20 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import errno
-
 from io.base import import_matlab_model, load_thermoDB
 
-from optim.variables import BinaryVariable, DeltaG, DeltaGstd, ThermoDisplacement
-from analysis import    variability_analysis,\
-                        apply_reaction_variability,\
-                        apply_generic_variability,\
-                        apply_directionality
-
-from cobra.flux_analysis.variability import flux_variability_analysis
-
-from math import log
+from optim.variables import BinaryVariable
+from thermo.tmodel import ThermoModel
 
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
@@ -68,15 +58,17 @@ class LumpGEM:
         # Growth rate
         self._growth_rate = growth_rate
 
-        # Load reactions DB
-        self._thermo_data = load_thermoDB(thermo_data_path)
+        # Build thermo model
+        self.apply_thermo_constraints(thermo_data_path)
+
 
     def build_new_model(self):
         """
-        
+
         """
         # TODO : Generate a new GEM model which will be optimized
-        self._model = None
+        self._cobra_model = None
+
 
     def generate_binary_variables(self):
         """
@@ -102,14 +94,31 @@ class LumpGEM:
         for bio_rxn in self._rBBB:
             bio_rxn.lower_bound = self._growth_rate
 
-    def apply_thermo_constraints(self):
+    def apply_thermo_constraints(self, thermo_data_path):
         """
         Apply thermodynamics constraints defined in thermoDB to Mcore & Rcore
         """
-        # To apply the thermodynamics constraints to Rcore & Mcore only, we will remove every 
-        # non core element from self._thermo_data
+        thermo_data = load_thermoDB(thermo_data_path)
+        self._tfa_model = ThermoModel(thermo_data, self._cobra_model)
+        self._tfa_model.name = 'Lumped Model'
 
-        # TODO flags to activate/deactivate thermopt
-        # core_thermo_data = process(self._thermo_data)
+        # TODO : Check what are these operations for
+        # self.read_lexicon = read_lexicon()
+        # compartment_data = read_compartment_data()
+        # annotate_from_lexicon(self._tfa_model, lexicon)
+        # apply_compartment_data(self._tfa_model, compartment_data)
 
-        # mytfa = ThermoModel(core_thermo_data, self._model) 
+        # TODO : solver choice
+        self._solver = 'optlang-cplex'
+
+        # TODO : Correct use of model.objective ? How to choose coeff (here 1.0) ?
+        # The objective is to max all BBB reactions, right ?
+        self._tfa_model.objective = {bbb_rxn: 1.0 for bbb_rxn in self._rBBB}
+
+        self._tfa_model.prepare()
+
+        # Deactivate tfa computation for non-core reactions
+        for ncrxn in self._rncore:
+            ncrxn.thermo['computed'] = False
+
+        self._tfa_model.convert()
