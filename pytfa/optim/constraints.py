@@ -35,6 +35,7 @@ class GenericConstraint:
         :cobra_model: the cobra_model hook.
         :constraint: links directly to the cobra_model representation of tbe constraint
     """
+    prefix = ''
 
 
     @property
@@ -46,7 +47,7 @@ class GenericConstraint:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id_, expr, model, queue=False, **kwargs):
+    def __init__(self, expr, id_='', model=None, hook = None, queue=False, **kwargs):
         """
 
         :param id_: will be used to identify the variable
@@ -55,6 +56,7 @@ class GenericConstraint:
         :param queue: whether or not to queue the variable for update object
         :param kwargs: stuff you want to pass to the variable constructor
         """
+        self.hook = hook
         self._id = id_
         self._model = model
         self.kwargs = kwargs
@@ -89,6 +91,21 @@ class GenericConstraint:
         :return: None
         """
         return self.prefix + self.id
+
+    def change_expr(self, new_expr, sloppy=False):
+
+        lb = self.constraint.lb
+        ub = self.constraint.ub
+        name = self.name
+
+        # Remove former constraint to override it
+        self.model.solver.remove(name)
+        new_cons = self.model.solver.interface.Constraint(name = name,
+                                                   expression = new_expr,
+                                                   ub = ub,
+                                                   lb = lb)
+        # Add the new variant
+        self.model.solver.add(new_cons, sloppy=sloppy)
 
     @property
     def expr(self):
@@ -136,15 +153,18 @@ class ReactionConstraint(GenericConstraint):
     """
 
     def __init__(self, reaction, expr, **kwargs):
-        self.reaction = reaction
         model = reaction.model
 
         GenericConstraint.__init__(self,
-                                   id_=self.id,
                                    expr=expr,
                                    model=model,
+                                   hook=reaction,
                                    **kwargs)
 
+
+    @property
+    def reaction(self):
+        return self.hook
 
     @property
     def id(self):
@@ -160,14 +180,17 @@ class MetaboliteConstraint(GenericConstraint):
     """
 
     def __init__(self, metabolite, expr, **kwargs):
-        self.metabolite = metabolite
         model = metabolite.model
 
         GenericConstraint.__init__(self,
-                                   id_=self.id,
                                    expr=expr,
                                    model=model,
+                                   hook=metabolite
                                    **kwargs)
+
+    @property
+    def metabolite(self):
+        return self.hook
 
     @property
     def id(self):

@@ -4,3 +4,4 @@ optlang
 sympy
 pytest
 scipy
+tqdm

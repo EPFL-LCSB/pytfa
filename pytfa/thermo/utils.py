@@ -57,7 +57,8 @@ def check_reaction_balance(reaction, proton = None):
     Atoms_sum = [0] * 26
 
     for metabolite in reaction.metabolites:
-        if metabolite.formula == 'NA':
+        if metabolite.formula == 'NA' or \
+           metabolite.formula is None:
             return 'missing structures'
         metCharge = metabolite.thermo.charge_std
         metCoeff = reaction.metabolites[metabolite]

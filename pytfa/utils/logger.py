@@ -58,3 +58,4 @@ def get_bistream_logger(name):
 def get_timestr():
     timestr = time.strftime("_%Y%m%d_%H%M%S")
     return timestr
+

@@ -111,7 +111,7 @@ def import_matlab_model(path, variable_name=None):
         reaction = Reaction(str(mat_model['rxns'][i, 0][0]))
 
         # Add the reaction to the cobra_model
-        cobra_model.add_reaction(reaction)
+        cobra_model.add_reactions([reaction])
 
         # NOTE : The str() conversion above is needed, otherwise the CPLEX solver
         # does not work : "Invalid matrix input type --"

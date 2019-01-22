@@ -21,6 +21,7 @@ CPD_PROTON = 'cpd00067'
 
 DEFAULT_VAL = BIGM_THERMO
 
+
 class MetaboliteThermo:
     """
     A class representing the thermodynamic values of a enzyme
@@ -306,7 +307,7 @@ class MetaboliteThermo:
         pka_values = [None] * len(pka_list)
 
         # Get only useful pKas
-        pka_list = [x for x in pka_list if 3 < x < 9]
+        pka_list = [x for x in pka_list if self.MIN_pH < x < self.MAX_pH]
         # Sort the list
         pka_list.sort(reverse=True)
 
@@ -343,8 +344,8 @@ class MetaboliteThermo:
     def _calc_pka(self, pka,sigmanusq):
         lnkzero = log(10 ** -pka)
         pka_value = -(
-            lnkzero - sigmanusq * (1.17582 * sqrt(self.ionicStr)) / (
-            1 + 1.6 * sqrt(self.ionicStr))) / log(10)
+            lnkzero - sigmanusq * (std.DEBYE_HUCKEL_A * log(10) * sqrt(self.ionicStr)) / (
+            1 + self.Debye_Huckel_B * sqrt(self.ionicStr))) / log(10)
         return pka_value
 
     def calcDGspA(self):

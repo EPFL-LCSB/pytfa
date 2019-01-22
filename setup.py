@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 #     return reqs
 
 
-version_tag = '0.7.1-b2'
+version_tag = '0.8.0-b0'
 
 setup(name='pytfa',
       version=version_tag,
@@ -28,11 +28,12 @@ setup(name='pytfa',
       author_email='softwares.lcsb@epfl.ch',
       url='https://github.com/EPFL-LCSB/pytfa/',
       download_url='https://github.com/EPFL-LCSB/pytfa/archive/'+version_tag+'.tar.gz',
-      install_requires=['cobra>0.6',
+      install_requires=['cobra>0.11',
                         'bokeh>=0.12.1',
                         'optlang',
                         'pytest',
-                        'scipy'],
+                        'scipy',
+                        'tqdm'],
       packages = find_packages(),
       python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4',
       description='pyTFA adds Thermodynamics-based Flux Analysis',

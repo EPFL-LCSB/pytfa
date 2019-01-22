@@ -10,5 +10,6 @@ python-libsbml
 scipy
 sqlalchemy
 tabulate
+tqdm
 sphinx
 sphinx-rtd-theme

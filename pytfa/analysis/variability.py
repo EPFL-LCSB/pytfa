@@ -6,7 +6,7 @@
 
 .. moduleauthor:: pyTFA team
 
-Analysis utilities
+Variability analysis
 
 """
 

@@ -14,6 +14,7 @@ from optlang import __version__ as OPTLANG_VER
 
 from ..utils.str import camel2underscores
 
+from warnings import warn
 
 
 op_replace_dict = {
@@ -45,6 +46,7 @@ class GenericVariable:
         :cobra_model: the cobra_model hook.
         :variable: links directly to the cobra_model representation of tbe variable
     """
+    prefix = ''
 
     @property
     def __attrname__(self):
@@ -55,21 +57,26 @@ class GenericVariable:
         """
         return camel2underscores(self.__class__.__name__)
 
-    def __init__(self, id_, model, queue=False, **kwargs):
+    def __init__(self, id_='', model=None, hook=None, queue=False, scaling_factor=1,
+                 **kwargs):
         """
 
         :param id_: will be used to identify the variable
             (name will be a concat of this and a prefix)
         :param model: the cobra.Model object
         :param queue: whether or not to queue the variable for update object
+        :param scaling_factor: scaling factor used in self.scaled, useful for
+                                adimensionalisation of constraints
         :param kwargs: stuff you want to pass to the variable constructor
         """
+        self.hook = hook
         self._id = id_
         self._model = model
         self.kwargs = kwargs
         self._name = self.make_name()
         self.get_interface(queue)
         self.prefix = ''
+        self._scaling_factor = scaling_factor
 
     def get_interface(self, queue):
         """
@@ -121,6 +128,35 @@ class GenericVariable:
     def variable(self,value):
         self.model.variables[self.name] = value
 
+    @property
+    def scaling_factor(self):
+        return self._scaling_factor
+
+    @property
+    def unscaled(self):
+        """
+        If the scaling factor of quantity X is a, it is represented by
+        the variable X_hat = X/a.
+        This returns X = a.X_hat
+        Useful for nondimensionalisation of variables and constraints
+
+        :return: The variable divided by its scaling factor
+        """
+        return self.scaling_factor * self
+
+    @property
+    def value(self):
+        try:
+            return self.model.solution.x_dict[self.name]
+        except AttributeError:
+            warn('Model need to be optimized to get a value for this variable')
+
+    @property
+    def unscaled_value(self):
+        try:
+            return self.scaling_factor * self.value
+        except AttributeError:
+            warn('Model need to be optimized to get a value for this variable')
 
     @property
     def model(self):
@@ -296,6 +332,20 @@ def get_binary_type():
     else:
         return 'binary'
 
+class ModelVariable(GenericVariable):
+    """
+    Class to represent a variable attached to the model
+    """
+
+    def __init__(self, model, id_, **kwargs):
+        if not 'lb' in kwargs:
+            kwargs['lb'] = 0
+        GenericVariable.__init__(self,
+                                 id_= id_,
+                                 model=model,
+                                 hook=model,
+                                 **kwargs)
+
 class BinaryVariable(GenericVariable):
     """
     Class to represent a generic binary variable
@@ -322,13 +372,16 @@ class ReactionVariable(GenericVariable):
     """
 
     def __init__(self, reaction, **kwargs):
-        self.reaction = reaction
         model = reaction.model
 
         GenericVariable.__init__(self,
-                                 id_=self.id,
                                  model=model,
+                                 hook=reaction,
                                  **kwargs)
+
+    @property
+    def reaction(self):
+        return self.hook
 
     @property
     def id(self):
@@ -344,13 +397,16 @@ class MetaboliteVariable(GenericVariable):
     """
 
     def __init__(self, metabolite, **kwargs):
-        self.metabolite = metabolite
         model = metabolite.model
 
         GenericVariable.__init__(self,
-                                 id_=self.id,
                                  model=model,
+                                 hook=metabolite,
                                  **kwargs)
+
+    @property
+    def metabolite(self):
+        return self.hook
 
     @property
     def id(self):
@@ -460,3 +516,4 @@ class PosSlackLC(MetaboliteVariable):
 class NegSlackLC(MetaboliteVariable):
 
     prefix = 'NegSlackLC_'
+

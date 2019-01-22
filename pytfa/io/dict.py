@@ -56,6 +56,13 @@ def var_to_dict(variable):
     obj['lb'] = variable.variable.lb
     obj['ub'] = variable.variable.ub
     obj['type'] = variable.type
+
+    # For backward compatibility
+    try:
+        obj['scaling_factor'] = variable.scaling_factor
+    except AttributeError:
+        obj['scaling_factor'] = 1
+
     return obj
 
 def cons_to_dict(constraint):
@@ -229,13 +236,14 @@ def model_from_dict(obj, solver=None):
                           max_ph=obj['max_ph'])
         new = init_thermo_model_from_dict(new, obj)
 
-    new._update()
+    new._push_queue()
 
     for the_var_dict in obj['variables']:
         this_id = the_var_dict['id']
         classname = the_var_dict['kind']
         lb = the_var_dict['lb']
         ub = the_var_dict['ub']
+        scaling_factor = the_var_dict['scaling_factor']
 
         if classname in REACTION_VARIABLE_SUBCLASSES:
             hook = new.reactions.get_by_id(this_id)
@@ -279,7 +287,7 @@ def model_from_dict(obj, solver=None):
                 'Class {} serialization not handled yet' \
                     .format(classname))
 
-    new._update()
+    new._push_queue()
 
     variable_parse_dict = {x.name:x for x in new.variables}
 
@@ -338,7 +346,6 @@ def model_from_dict(obj, solver=None):
             raise TypeError('Class {} serialization not handled yet' \
                             .format(classname))
 
-    new._update()
     new.repair()
 
     # Relaxation info

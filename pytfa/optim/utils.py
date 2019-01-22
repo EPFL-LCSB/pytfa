@@ -91,6 +91,9 @@ def symbol_sum(variables):
     # If we encounter a zero, which is a special type, increase k
     while isinstance(variables[k], sympy.numbers.Zero) and k<len(variables):
         k+=1
+        if k == len(variables):
+            # everything is 0
+            return 0
 
     if k>len(variables): #it's only zeroes
         return 0
@@ -101,6 +104,8 @@ def symbol_sum(variables):
          isinstance(variables[k], sympy.Mul) or \
          isinstance(variables[k], sympy.Add):
         return Add(*variables)
+    else:
+        raise ValueError('Arguments should be of type sympy.Add, or sympy.Mul, or optlang.Variable, or GenericVariable')
 
 
 def get_solution_value_for_variables(solution, these_vars, index_by_reaction = False):
@@ -117,11 +122,11 @@ def get_solution_value_for_variables(solution, these_vars, index_by_reaction = F
 
     if index_by_reaction:
         var2rxn = {v.name:v.id for v in these_vars}
-        ret = solution.x_dict[var_ids]
+        ret = solution.raw[var_ids]
         ret = ret.index.replace(var2rxn)
         return ret
     else:
-        return solution.x_dict[var_ids]
+        return solution.raw[var_ids]
 
 def compare_solutions(models):
     """
@@ -274,6 +279,21 @@ def copy_solver_configuration(source, target):
     for tol_name in dir(source.solver.configuration.tolerances):
         tol = getattr(source.solver.configuration.tolerances, tol_name)
         setattr(target.solver.configuration.tolerances, tol_name, tol)
+
+    # Additionnal solver-specific settings
+    try:
+        # Gurobi
+        if source.solver.interface.__name__ == 'optlang.gurobi_interface':
+            from gurobipy import GurobiError
+            for k in dir(source.solver.problem.Params):
+                if not k.startswith('_'):
+                    try:
+                        v = getattr(source.solver.problem.Params, k)
+                        setattr(target.solver.problem.Params, k, v)
+                    except GurobiError:
+                        pass
+    except ModuleNotFoundError:
+        pass
 
     # Verbosity
     target.solver.configuration.verbosity = source.solver.configuration.verbosity
