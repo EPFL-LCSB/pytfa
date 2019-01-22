@@ -19,6 +19,7 @@ from cobra.util.solver import set_objective
 from optlang.exceptions import SolverError
 
 from .constraints import NegativeDeltaG
+from .config import dg_relax_config
 from .utils import get_solution_value_for_variables, chunk_sum, symbol_sum
 from .variables import PosSlackVariable, NegSlackVariable, DeltaGstd, \
     LogConcentration, NegSlackLC, PosSlackLC
@@ -84,6 +85,8 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
     else:
         relaxed_model = slack_model
 
+    dg_relax_config(slack_model)
+
     original_objective = relaxed_model.objective
 
 
@@ -107,7 +110,6 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
     objective_symbols = []
 
     slack_model.logger.info('Adding slack constraints')
-    hooks = dict()
 
     slack_model.solver.update()
 
