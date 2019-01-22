@@ -36,7 +36,9 @@ def is_inequality(constraint):
     # If one of the bounds is None, it's an inequality
     return the_cons.lb is None or the_cons.ub is None
 
-def chebyshev_center(model, variables, inplace = False, big_m=BIGM, exclude=list()):
+
+def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
+                     include = list(), exclude=list()):
     """
 
     *Warning: Only works with pyTFA variables so far*
@@ -79,7 +81,7 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM, exclude=list
     cons_to_edit = dict()
 
     for cons in tqdm(new._cons_dict.values(), desc='Finding constraints'):
-        if type(cons) in exclude:
+        if type(cons) in exclude or type(cons) not in include:
             continue
         if not is_inequality(cons):
             continue
