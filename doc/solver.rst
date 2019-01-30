@@ -14,7 +14,7 @@ CPLEX
 
 You will need to first install CPLEX on a Linux machine.
 
-Place in `etfl/docker/solvers/` the folder /ibm that is installed by CPLEX (usually in /opt).
+Place in `etfl/docker/solvers/` the folder `/ibm` that is installed by CPLEX (usually in `/opt`).
 You actually only need the following substructure (makes the container lighter):
 
 .. code-block:: text
@@ -33,6 +33,9 @@ Gurobi
 ------
 
 Place in `etfl/docker/solvers/` the tarball you downloaded from the website, and modify accordingly the files:
+
+.. code-block:: text
+
 	../utils/install_gurobi.sh 
 	../utils/activate_gurobi.sh
 
