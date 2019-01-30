@@ -23,6 +23,7 @@ If you use our work, please cite us [1]_ !
    model
    thermoDB
    pytfa
+   solver
    integrating_metabolomics
 
 
