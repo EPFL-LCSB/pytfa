@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from io.base import import_matlab_model, load_thermoDB
+from cobra.io import load_json_model, load_yaml_model, read_sbml_model
 
 from optim.variables import BinaryVariable
 from thermo.tmodel import ThermoModel
@@ -15,7 +16,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, GEM, biomass_rxns, core_subsystems, carbon_uptake, growth_rate,  thermo_data_path):
+    def __init__(self, path_to_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate,  thermo_data_path):
         """
         : param GEM: the GEM 
         : type GEM: cobra model
@@ -33,10 +34,11 @@ class LumpGEM:
         : type thermo_data_path : string
         """
 
-        self._GEM = GEM
+        # Load the GEM through the appropriate cobra loading function (based on path suffix)
+        self._model = self._load_model(path_to_model)
 
         # Extracting all reactions that lead to BBB
-        self._rBBB = set([rxn for rxn in GEM.reactions if rxn.id in biomass_rxns])
+        self._rBBB = set([rxn for rxn in self._model.reactions if rxn.id in biomass_rxns])
 
         # Set containing every core reaction
         self._rcore = set([])
@@ -51,7 +53,7 @@ class LumpGEM:
                     self._mcore.add(met)
 
         # Non core reactions
-        self._rncore = set([rxn for rxn in GEM.reactions if not (rxn in self._rcore or rxn in self._rBBB)])
+        self._rncore = set([rxn for rxn in self._model.reactions if not (rxn in self._rcore or rxn in self._rBBB)])
 
         # Carbon uptake
         self._C_uptake = carbon_uptake
@@ -61,13 +63,28 @@ class LumpGEM:
         # TODO : solver choice
         self._solver = 'optlang-cplex'
 
-        # TODO put correct path here
-        self._cobra_model = import_matlab_model("..")
         # Build thermo model
-        self._tfa_model = self._apply_thermo_constraints(thermo_data_path, self._cobra_model)
+        self._tfa_model = self._apply_thermo_constraints(thermo_data_path, self._model)
 
         self._bin_vars = self._generate_binary_variables()
         self._generate_constraints()
+
+    def _load_model(self, path_to_model):
+        # Matlab
+        if path_to_model[-4:] == ".mat":
+            return import_matlab_model(path_to_model)
+
+        # YAML
+        if path_to_model[-4:] == ".yml":
+            return load_yaml_model(path_to_model)
+
+        # JSON
+        if path_to_model[-5:] == ".json":
+            return load_json_model(path_to_model)
+
+        # SBML
+        if path_to_model[-4:] == ".xml":
+            return read_sbml_model(path_to_model)
 
     def _generate_binary_variables(self):
         """
