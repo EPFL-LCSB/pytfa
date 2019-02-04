@@ -74,7 +74,7 @@ class LumpGEM:
         Generate binary variables for each non-core reaction
         """
         # TODO Check the correct construction of variables
-        return {rxn: BinaryVariable(name=rxn.id, type='binary') for rxn in self._rncore}
+        return {rxn: BinaryVariable(rxn.id, self._tfa_model) for rxn in self._rncore}
 
     def _generate_constraints(self):
         """
@@ -110,7 +110,7 @@ class LumpGEM:
         # TODO : Correct use of model.objective ? How to choose coeff (here 1.0) ?
         # The objective is to max all BBB reactions, right ?
         tfa_model.objective = {bbb_rxn: 1.0 for bbb_rxn in self._rBBB}
-
+        tfa_model.objective = {}
         return tfa_model
 
     def run_optimisation(self):
