@@ -58,63 +58,62 @@ class LumpGEM:
         # Growth rate
         self._growth_rate = growth_rate
 
+        # TODO : solver choice
+        self._solver = 'optlang-cplex'
+
+        # TODO put correct path here
+        self._cobra_model = import_matlab_model("..")
         # Build thermo model
-        self.apply_thermo_constraints(thermo_data_path)
+        self._tfa_model = self._apply_thermo_constraints(thermo_data_path, self._cobra_model)
 
+        self._bin_vars = self._generate_binary_variables()
+        self._generate_constraints()
 
-    def build_new_model(self):
-        """
-
-        """
-        # TODO : Generate a new GEM model which will be optimized
-        self._cobra_model = None
-
-
-    def generate_binary_variables(self):
+    def _generate_binary_variables(self):
         """
         Generate binary variables for each non-core reaction
         """
         # TODO Check the correct construction of variables
-        self._bin_vars = {rxn: BinaryVariable(name=rxn.id, type='binary') for rxn in self._rncore}
+        return {rxn: BinaryVariable(name=rxn.id, type='binary') for rxn in self._rncore}
 
-    def generate_constraints(self):
+    def _generate_constraints(self):
         """
         Generate carbon intake related constraints for each non-core reaction and 
         growth rate related constraints for each BBB reaction
         """
         # Carbon intake constraints
         for rxn in self._rncore:
-            # rxn contrained according to the carbon uptake
-            rxn_const = self._model.problem.Constraint( rxn.forward_variable +
-                                                        rxn.reverse_variable +
-                                                        self._C_uptake * self._bin_vars[rxn], ub=self._C_uptake)
-            self._model.add_cons_vars(rxn_const)
+            # rxn constrained according to the carbon uptake
+            rxn_const = self._tfa_model.problem.Constraint(rxn.forward_variable +
+                                                           rxn.reverse_variable +
+                                                           self._C_uptake * self._bin_vars[rxn], ub=self._C_uptake)
+            self._tfa_model.add_cons_vars(rxn_const)
 
         # Growth rate constraints
         for bio_rxn in self._rBBB:
             bio_rxn.lower_bound = self._growth_rate
 
-    def apply_thermo_constraints(self, thermo_data_path):
+    def _apply_thermo_constraints(self, thermo_data_path, cobra_model):
         """
         Apply thermodynamics constraints defined in thermoDB to Mcore & Rcore
         """
         thermo_data = load_thermoDB(thermo_data_path)
-        self._tfa_model = ThermoModel(thermo_data, self._cobra_model)
-        self._tfa_model.name = 'Lumped Model'
+        tfa_model = ThermoModel(thermo_data, cobra_model)
+        tfa_model.name = 'Lumped Model'
 
         # TODO : Check what are these operations for
         # self.read_lexicon = read_lexicon()
         # compartment_data = read_compartment_data()
-        # annotate_from_lexicon(self._tfa_model, lexicon)
-        # apply_compartment_data(self._tfa_model, compartment_data)
-
-        # TODO : solver choice
-        self._solver = 'optlang-cplex'
+        # annotate_from_lexicon(tfa_model, lexicon)
+        # apply_compartment_data(tfa_model, compartment_data)
 
         # TODO : Correct use of model.objective ? How to choose coeff (here 1.0) ?
         # The objective is to max all BBB reactions, right ?
-        self._tfa_model.objective = {bbb_rxn: 1.0 for bbb_rxn in self._rBBB}
+        tfa_model.objective = {bbb_rxn: 1.0 for bbb_rxn in self._rBBB}
 
+        return tfa_model
+
+    def run_optimisation(self):
         self._tfa_model.prepare()
 
         # Deactivate tfa computation for non-core reactions
@@ -122,3 +121,6 @@ class LumpGEM:
             ncrxn.thermo['computed'] = False
 
         self._tfa_model.convert()
+
+        tfa_solution = self._tfa_model.optimize()
+        return tfa_solution
