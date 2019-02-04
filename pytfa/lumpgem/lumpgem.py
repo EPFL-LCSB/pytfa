@@ -127,7 +127,7 @@ class LumpGEM:
         # TODO : Correct use of model.objective ? How to choose coeff (here 1.0) ?
         # The objective is to max all BBB reactions, right ?
         tfa_model.objective = {bbb_rxn: 1.0 for bbb_rxn in self._rBBB}
-        tfa_model.objective = {}
+
         return tfa_model
 
     def run_optimisation(self):
