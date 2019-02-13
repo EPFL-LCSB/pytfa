@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from io.base import import_matlab_model, load_thermoDB
+from ..io.base import import_matlab_model, load_thermoDB
 from cobra.io import load_json_model, load_yaml_model, read_sbml_model
 
-from optim.variables import BinaryVariable
-from thermo.tmodel import ThermoModel
+from ..optim.variables import BinaryVariable
+from ..thermo.tmodel import ThermoModel
 
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
@@ -124,10 +124,6 @@ class LumpGEM:
         # annotate_from_lexicon(tfa_model, lexicon)
         # apply_compartment_data(tfa_model, compartment_data)
 
-        # TODO : Correct use of model.objective ? How to choose coeff (here 1.0) ?
-        # The objective is to max all BBB reactions, right ?
-        tfa_model.objective = {bbb_rxn: 1.0 for bbb_rxn in self._rBBB}
-
         return tfa_model
 
     def run_optimisation(self):
@@ -141,3 +137,16 @@ class LumpGEM:
 
         tfa_solution = self._tfa_model.optimize()
         return tfa_solution
+
+    def lump_reaction(self, rBBB):
+        """
+        :param rBBB: The objective biomass reaction
+        :return:
+        """
+
+        # Setting the new objective
+        self._model.objective = rBBB
+        # Computing TFA solution
+        solution = self.run_optimisation()
+
+        #TODO : generate lumped reaction
