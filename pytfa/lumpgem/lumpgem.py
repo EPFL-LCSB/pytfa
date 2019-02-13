@@ -7,6 +7,8 @@ from cobra.io import load_json_model, load_yaml_model, read_sbml_model
 from ..optim.variables import BinaryVariable
 from ..thermo.tmodel import ThermoModel
 
+from numpy import sum
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
@@ -86,13 +88,6 @@ class LumpGEM:
         if path_to_model[-4:] == ".xml":
             return read_sbml_model(path_to_model)
 
-    def _generate_binary_variables(self):
-        """
-        Generate binary variables for each non-core reaction
-        """
-        # TODO Check the correct construction of variables
-        return {rxn: BinaryVariable(rxn.id, self._tfa_model) for rxn in self._rncore}
-
     def _generate_constraints(self):
         """
         Generate carbon intake related constraints for each non-core reaction and 
@@ -109,6 +104,21 @@ class LumpGEM:
         # Growth rate constraints
         for bio_rxn in self._rBBB:
             bio_rxn.lower_bound = self._growth_rate
+
+    def _generate_objective(self):
+        """
+        Generate and add the maximization objective
+        """
+        # List of all binary variables
+        # TODO Check the correct construction of variables
+        bin_vars = [BinaryVariable(rxn.id, self._tfa_model) for rxn in self._rncore]
+        # Add all binary variables to the model
+        self._tfa_model.add_cons_vars(bin_vars)
+
+        # Sum of binary variables to be maximized
+        objective_sum = sum(bin_vars)
+        # Set the sum as the objective function
+        self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
     def _apply_thermo_constraints(self, thermo_data_path, cobra_model):
         """
