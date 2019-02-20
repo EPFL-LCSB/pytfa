@@ -3,6 +3,7 @@
 
 from ..io.base import import_matlab_model, load_thermoDB
 from cobra.io import load_json_model, load_yaml_model, read_sbml_model
+from pytfa.optim.utils import symbol_sum
 
 from ..optim.variables import BinaryVariable
 from ..thermo.tmodel import ThermoModel
@@ -128,7 +129,7 @@ class LumpGEM:
         Generate and add the maximization objective
         """
         # Sum of binary variables to be maximized
-        objective_sum = sum(self._bin_vars.values())
+        objective_sum = symbol_sum(self._bin_vars.values())
         # Set the sum as the objective function
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
