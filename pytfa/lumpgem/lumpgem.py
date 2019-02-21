@@ -45,6 +45,8 @@ class LumpGEM:
         # Build thermo model
         self._tfa_model = self._apply_thermo_constraints(thermo_data_path, model)
 
+        # Set containing every BBB reaction
+        self._rBBB = set([])
         # Set containing every core reaction
         self._rcore = set([])
         # Set containing every core metabolite
