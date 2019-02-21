@@ -27,11 +27,14 @@ class LumpGEM:
         : param biomass_rxns: list of biomass reactions
         : type biomass_rxns: [GEM.biomass_rxn.id]
 
-        : param core_subsystems: list of Core subsystems
-        : type core_subsytems: [[model.reactions]]
+        : param core_subsystems: list of Core subsystems names
+        : type core_subsystems: [string]
 
         : param carbon_intake: the amount of carbon atoms the cell intakes from its surrounding
         : type carbon_intake: float
+
+        : param growth_rate: theoretical maximum specific growth rate in 1/hr units
+        : type growth_rate: float
 
         : param thermo_data_path: the path to the .thermodb database
         : type thermo_data_path : string
@@ -49,17 +52,20 @@ class LumpGEM:
         self._rcore = set([])
         # Set containing every core metabolite
         self._mcore = set([])
-        for subsystem in core_subsystems:
-            for rxn in subsystem:
-                # Add rxn to core reactions
+
+        # For each reaction
+        for rxn in model.reactions:
+            # If it's a BBB reaction
+            if rxn.id in biomass_rxns:
+                self._rBBB.add(rxn)
+            # If it's a core reaction
+            elif rxn.subsystem in core_subsystems:
                 self._rcore.add(rxn)
-                # Add involved metabolites to core metabolites
                 for met in rxn.metabolites:
                     self._mcore.add(met)
-
-        # Non core reactions
-        # TODO improve speed
-        self._rncore = set([rxn for rxn in self._tfa_model.reactions if not (rxn in self._rcore or rxn in self._rBBB)])
+            # If it's neither BBB nor core, then it's non-core
+            else:
+                self._rncore.add(rxn)
 
         # Carbon uptake
         self._C_uptake = carbon_uptake
@@ -153,6 +159,7 @@ class LumpGEM:
         :return:
         """
         # Growth-related constraint
+        # TODO check lower bound
         constraint = self._tfa_model.problem.Constraint(bio_rxn.flux_expression, lb=self._growth_rate)
         self._tfa_model.add_cons_vars(constraint)
 
