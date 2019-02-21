@@ -3,7 +3,7 @@
 
 from ..io.base import import_matlab_model, load_thermoDB
 from cobra.io import load_json_model, load_yaml_model, read_sbml_model
-from pytfa.optim.utils import symbol_sum
+from ..optim.utils import symbol_sum
 
 from ..optim.variables import BinaryVariable
 from ..thermo.tmodel import ThermoModel
@@ -58,6 +58,7 @@ class LumpGEM:
                     self._mcore.add(met)
 
         # Non core reactions
+        # TODO improve speed
         self._rncore = set([rxn for rxn in self._tfa_model.reactions if not (rxn in self._rcore or rxn in self._rBBB)])
 
         # Carbon uptake
@@ -150,13 +151,22 @@ class LumpGEM:
         :param bio_rxn: The objective biomass reaction
         :return:
         """
-
+        # Growth-related constraint
         constraint = self._tfa_model.problem.Constraint(bio_rxn.flux_expression, lb=self._growth_rate)
         self._tfa_model.add_cons_vars(constraint)
 
         # Computing TFA solution
         solution = self.run_optimisation()
 
+        # Removing the constraint to prevent interference with the next BBB
         self._tfa_model.remove_cons_vars(constraint)
-        
-        #TODO : generate lumped reaction
+
+        #active_ncore_reactions = [rxn if self._bin_vars[rxn].Variable.primal != 0 for rxn in self._tfa_model.reactions]
+        # TODO symbol_sum here ?
+        # TODO use generators to improve speed
+        lumped_core_reactions = sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rcore])
+        lumped_ncore_reactions = sum([rxn * solution.fluxes.get(rxn.id)*self._bin_vars[rxn].Variable.primal for rxn in self._rncore])
+
+        lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions])
+
+        return lumped_reaction
