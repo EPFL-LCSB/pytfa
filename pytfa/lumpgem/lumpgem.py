@@ -120,8 +120,7 @@ class LumpGEM:
 
     def _generate_constraints(self):
         """
-        Generate carbon intake related constraints for each non-core reaction and 
-        growth rate related constraints for each BBB reaction
+        Generate carbon intake related constraints for each non-core reaction
         """
         # Carbon intake constraints
         for rxn in self._bin_vars.keys():
@@ -155,8 +154,8 @@ class LumpGEM:
 
     def lump_reaction(self, bio_rxn):
         """
-        :param bio_rxn: The objective biomass reaction
-        :return:
+        :param bio_rxn: The objective biomass reaction to lump
+        :return: the lumped reaction
         """
         # Growth-related constraint
         # TODO check lower bound
@@ -166,15 +165,14 @@ class LumpGEM:
         # Computing TFA solution
         solution = self.run_optimisation()
 
-        # Removing the constraint to prevent interference with the next BBB
-        self._tfa_model.remove_cons_vars(constraint)
-
-        #active_ncore_reactions = [rxn if self._bin_vars[rxn].Variable.primal != 0 for rxn in self._tfa_model.reactions]
         # TODO symbol_sum here ?
         # TODO use generators to improve speed
         lumped_core_reactions = sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rcore])
         lumped_ncore_reactions = sum([rxn * solution.fluxes.get(rxn.id)*self._bin_vars[rxn].Variable.primal for rxn in self._rncore])
 
         lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions])
+
+        # Removing the growth_related constraint to prevent interference with the next lump computation
+        self._tfa_model.remove_cons_vars(constraint)
 
         return lumped_reaction
