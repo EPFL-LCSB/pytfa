@@ -45,13 +45,12 @@ class LumpGEM:
         # Build thermo model
         self._tfa_model = self._apply_thermo_constraints(thermo_data_path, model)
 
-        # Extracting all reactions that lead to BBB
-        self._rBBB = set([rxn for rxn in self._tfa_model.reactions if rxn.id in biomass_rxns])
-
         # Set containing every core reaction
         self._rcore = set([])
         # Set containing every core metabolite
         self._mcore = set([])
+        # Set containing every non-core reaction
+        self._rncore = set([])
 
         # For each reaction
         for rxn in model.reactions:
