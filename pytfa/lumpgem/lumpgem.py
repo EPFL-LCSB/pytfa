@@ -123,7 +123,8 @@ class LumpGEM:
             constraint = self._tfa_model.problem.Constraint(rxn.forward_variable +
                                                             rxn.reverse_variable +
                                                             self._C_uptake * var, ub=self._C_uptake)
-            self._tfa_model.add_cons_vars([var, constraint])
+            # TODO Checkwhether this is the right way to do it
+            self._tfa_model.add_cons_vars([var.variable, constraint])
 
     def _generate_objective(self):
         """
