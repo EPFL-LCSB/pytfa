@@ -199,7 +199,7 @@ class RedGEM:
 
         :param subsystem_i: Source subsystem
         :param subsystem_j: Destination subsystem
-        :param d: Path length wanted
+        :param d: Path length desired
         :return: None
         """
         for metabolite_id in self._subsystem_metabolites_id[subsystem_i]:
@@ -242,9 +242,21 @@ class RedGEM:
                                                                      subsystem_j, d)
 
     def is_node_allowed(self, node, i, explored, subsystem_i, subsystem_j, d):
-        # The new node is added if it is not already explored, if it is not in the source subsystem,
-        # and if it is not in the destination subsystem, except if it is the last round
-        # of exploration
+        """
+        Checks whether or not a metabolite is allowed for the current path.
+
+        The new node is added if it is not already explored, if it is not in the source subsystem,
+        and if it is not in the destination subsystem, except if it is the last round
+        of exploration
+
+        :param node: Metabolite id
+        :param i: Current step
+        :param explored: Explored node for this path
+        :param subsystem_i: Source subsystem
+        :param subsystem_j: Destination subsystem
+        :param d: Path length desired
+        :return: Boolean answering the question
+        """
         if node in explored:
             return False
         if subsystem_i != subsystem_j and node in self._subsystem_metabolites_id[subsystem_i]:
