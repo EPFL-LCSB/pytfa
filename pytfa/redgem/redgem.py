@@ -268,6 +268,19 @@ class RedGEM:
         return True
 
     def retrieve_all_paths(self, dest_node, src_node, ancestors, init_dict=True):
+        """
+        Retrieves all paths between a source metabolite and a destination metabolite after a
+        breadth first search.
+
+        This function is a recursive function, which makes use of dynamic programming to reduce
+        its complexity. It uses self._path_dict to store already computed data.
+
+        :param dest_node: Destination metabolite
+        :param src_node: Source metabolite
+        :param ancestors: Dictionary with ancestors found during the search
+        :param init_dict: Boolean, for function initialisation
+        :return: A list of all paths as tuples
+        """
         if init_dict:
             self._path_dict = {}
         if dest_node == src_node:
