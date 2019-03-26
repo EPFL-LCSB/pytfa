@@ -190,6 +190,18 @@ class RedGEM:
         return self._graph
 
     def breadth_search_subsystems_paths_length_d(self, subsystem_i, subsystem_j, d):
+        """
+        Breadth first search from each metabolite in subsystem i with special stop conditions
+        during exploration for paths of length d.
+
+        This function explores the graph through allowed paths only : this path can't go through
+        subsystem i or j but must start in i and end in j. The length of each path found is d.
+
+        :param subsystem_i: Source subsystem
+        :param subsystem_j: Destination subsystem
+        :param d: Path length wanted
+        :return: None
+        """
         for metabolite_id in self._subsystem_metabolites_id[subsystem_i]:
             # Find metabolites at a distance d from metabolite_id
             ancestors = {}
