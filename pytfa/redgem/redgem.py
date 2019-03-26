@@ -294,6 +294,18 @@ class RedGEM:
         return self._path_dict[dest_node]
 
     def retrieve_intermediate_metabolites_and_reactions(self, paths, subsystem_i, subsystem_j, d):
+        """
+        Retrieves and stores intermediate metabolites and reactions (i.e. M_{i,j}, R_{i,j},
+        M_{i,i} and R_{i,i}).
+
+        This function adds all reactions contained in these paths, and all metabolites between
+
+        :param paths: List of paths between subsystems
+        :param subsystem_i: Source subsystem
+        :param subsystem_j: Destination subsystem
+        :param d: Path length
+        :return: None
+        """
         for path in paths:
             for i in range(len(path)-1):
                 reaction = self._graph[path[i]][path[i+1]]['rxn_id']
