@@ -89,7 +89,7 @@ class GenericVariable:
         if not self.name in self.model.variables:
             variable = self.model.problem.Variable(name = self.name, **self.kwargs)
             if not queue:
-                self.model.add_cons_vars(variable)
+                self.model.add_cons_vars(variable, sloppy=self.model.sloppy)
             else:
                 self.model._var_queue.append(variable)
         else:

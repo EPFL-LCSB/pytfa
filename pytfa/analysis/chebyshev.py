@@ -15,6 +15,7 @@ import numpy as np
 from numpy.linalg import norm
 from optlang.interface import Constraint
 from pytfa.optim.variables import GenericVariable,ModelVariable
+from pytfa.optim.constraints import GenericConstraint
 # from ..optim.variables import GenericVariable,ModelVariable
 
 BIGM = 1000
@@ -56,12 +57,9 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
     else:
         new = model
 
-    if isinstance(variables[0],str):
-        # These are var names, we have to retrieve the optlang variables
-        vars = [new.variables.get(x) for x in variables]
-    elif isinstance(variables[0],GenericVariable):
-        # These are pyTFA variables, we have to retrieve the optlang variables
-        vars = [x.variable for x in variables]
+    vars = get_variables(new, variables)
+    include_list = get_cons_var_classes(new, include, type = 'cons')
+    exclude_list = get_cons_var_classes(new, exclude, type = 'cons')
 
     # 0 - Create the Chebyshev radius variable
     r = new.add_variable(kind=ChebyshevRadius,
@@ -81,7 +79,7 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
     cons_to_edit = dict()
 
     for cons in tqdm(new._cons_dict.values(), desc='Finding constraints'):
-        if type(cons) in exclude or type(cons) not in include:
+        if type(cons) in exclude_list or type(cons) not in include_list:
             continue
         if not is_inequality(cons):
             continue
@@ -112,27 +110,7 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
             new_expr -= a_sq*r
 
         cons.change_expr(new_expr)
-        # lb = cons.constraint.lb
-        # ub = cons.constraint.ub
-        # name = cons.name
-        # hook = cons.hook
-        #
-        # # Remove former constraint to override it
-        # new.solver.remove(cons.name)
-        # new_cons = new.solver.interface.Constraint(name = name,
-        #                                            expression = new_expr,
-        #                                            ub = ub,
-        #                                            lb = lb)
-        # # Add the new variant
-        # new.solver.add(new_cons, sloppy=True)
-        # new.remove_constraint(cons)
-        # new.add_constraint(kind=type(cons),
-        #                    hook=hook,
-        #                    id_ = name,
-        #                    expr=new_expr,
-        #                    lb=lb,
-        #                    ub=ub,
-        #                    queue=True)
+
 
     new.logger.info('{} constraints edited'.format(len(cons_to_edit)))
     # 4 - Optimize
@@ -148,3 +126,39 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
     var_values = {k.name:k.primal for k in vars}
 
     return pd.Series(var_values)
+
+
+def get_cons_var_classes(model, elements, type):
+
+    if len(elements) == 0:
+        return []
+
+    if type.lower().startswith('var'):
+        GenericClass = GenericVariable
+        model_elements = model._var_kinds
+    elif type.lower().startswith('cons'):
+        GenericClass = GenericConstraint
+        model_elements = model._cons_kinds
+
+    # For safety,
+    # Update the variable indices
+    model.regenerate_variables()
+    model.regenerate_constraints()
+
+    if isinstance(elements[0], str):
+        ret = [model_elements[elt][0].__class__ for elt in elements]
+    elif isinstance(elements[0], GenericClass):
+        ret = elements
+
+    return ret
+
+
+
+def get_variables(model, variables):
+    if isinstance(variables[0], str):
+        # These are var names, we have to retrieve the optlang variables
+        vars = [model.variables.get(x) for x in variables]
+    elif isinstance(variables[0], GenericVariable):
+        # These are pyTFA variables, we have to retrieve the optlang variables
+        vars = [x.variable for x in variables]
+    return vars

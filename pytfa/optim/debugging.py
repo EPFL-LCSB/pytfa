@@ -36,6 +36,9 @@ def debug_iis(model):
                 print('{}: IISLB = {}, IISUB = {}, (original bounds {}, {})'\
                       .format(v.VarName, v.IISLB, v.IISUB, v.LB, v.UB))
         # model.write("IIS_debug_{}.ilp".format(model.name))
+    elif model.solver.__class__.__module__ == 'optlang.cplex_interface':
+        model.solver.problem.conflict.refine(
+                model.solver.problem.conflict.all_constraints())
     else:
         model.logger.error('Not implemented for solver {}'.format(model.solver))
 

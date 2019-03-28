@@ -39,7 +39,7 @@ setup(name='pytfa',
       description='pyTFA adds Thermodynamics-based Flux Analysis',
       keywords=['pytfa','tfa','thermodynamics','flux analysis'],
 
-      license='Apache2',
+      license='Apache 2.0',
 
       # See https://PyPI.python.org/PyPI?%3Aaction=list_classifiers
       classifiers=[
