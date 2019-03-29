@@ -12,10 +12,26 @@ pytfa.io.base module
     :undoc-members:
     :show-inheritance:
 
+pytfa.io.dict module
+--------------------
+
+.. automodule:: pytfa.io.dict
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pytfa.io.enrichment module
 --------------------------
 
 .. automodule:: pytfa.io.enrichment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pytfa.io.json module
+--------------------
+
+.. automodule:: pytfa.io.json
     :members:
     :undoc-members:
     :show-inheritance:

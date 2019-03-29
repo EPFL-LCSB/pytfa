@@ -112,7 +112,7 @@ for solver in [GLPK,CPLEX,GUROBI]:
         apply_solver_settings(mytfa,solver)
         this_sol = mytfa.optimize()
         solver_results[solver] = this_sol
-        print ("{}: {}".format(solver, this_sol.f))
+        print ("{}: {}".format(solver, this_sol.objective_value))
     except KeyError:
         print("Solver {} not found".format(solver))
     except SolverError as SE:
