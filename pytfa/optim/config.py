@@ -62,4 +62,7 @@ def dg_relax_config(model):
         model.solver.problem.Params.BranchDir = 1
         model.solver.problem.Params.DegenMoves = 0
         model.solver.problem.Params.Heuristics = 0.001
+        model.solver.problem.Params.Cuts = 3
+        model.solver.problem.Params.Presolve = 2
+        model.solver.problem.Params.Method = 0
 

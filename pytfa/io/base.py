@@ -16,6 +16,7 @@ import numpy as np
 import re
 
 from cobra import Model, Reaction, Metabolite
+from cobra.io import load_matlab_model
 from scipy.io import loadmat, savemat
 
 from ..utils.numerics import BIGM_DG
@@ -55,9 +56,13 @@ def import_matlab_model(path, variable_name=None):
 
         mat_model = mat_data[variable_name][0, 0]
 
-    cobra_model = Model(mat_model['description'][0])
+    # cobra_model = Model(mat_model['description'][0])
+    cobra_model = load_matlab_model(path)
 
     cobra_model.description = mat_model['description'][0]
+    cobra_model.name = mat_model['description'][0]
+
+    metabolites = cobra_model.metabolites
 
     ## METABOLITES
     # In the Matlab cobra_model, the corresponding components are :
@@ -66,96 +71,96 @@ def import_matlab_model(path, variable_name=None):
     # * metFormulas = formulas
     # * metCompSymbol = compartments
 
-    def read_mat_model(mat_struct, field_name, index):
-        try:
-            return mat_struct[field_name][index,0][0]
-        except IndexError:
-            return None
+    # def read_mat_model(mat_struct, field_name, index):
+    #     try:
+    #         return mat_struct[field_name][index,0][0]
+    #     except IndexError:
+    #         return None
 
-    metabolites = [Metabolite( read_mat_model(mat_model,'mets',i),
-        formula=read_mat_model(mat_model,'metFormulas',i),
-        name=read_mat_model(mat_model,'metNames',i),
-        compartment=read_mat_model(mat_model,'metCompSymbol',i))
-                   for i in range(len(mat_model['metNames']))]
+    # metabolites = [Metabolite( read_mat_model(mat_model,'mets',i),
+    #     formula=read_mat_model(mat_model,'metFormulas',i),
+    #     name=read_mat_model(mat_model,'metNames',i),
+    #     compartment=read_mat_model(mat_model,'metCompSymbol',i))
+    #                for i in range(len(mat_model['metNames']))]
 
     # Get the metSEEDID
     seed_id = mat_model['metSEEDID']
     for i, _ in enumerate(metabolites):
         metabolites[i].annotation = {"seed_id": seed_id[i, 0][0]}
 
-    ## REACTIONS
-    # In the Matlab cobra_model, the corresponding components are :
-    # * rxns = Names
-    # * rev = Reversibility (not used, see https://cobrapy.readthedocs.io/en/0.5.11/faq.html#How-do-I-change-the-reversibility-of-a-Reaction?)
-    # * lb = Lower bounds
-    # * ub = Upper bounds
-    # * subSystems = subsystem names
-    # * S : Reactions matrix
-    #       1 line = 1 metabolite
-    #       1 column = 1 reaction
-    # * c : Objective coefficient
-    # * genes : Genes names
-    # * rules : Genes rules
+    # ## REACTIONS
+    # # In the Matlab cobra_model, the corresponding components are :
+    # # * rxns = Names
+    # # * rev = Reversibility (not used, see https://cobrapy.readthedocs.io/en/0.5.11/faq.html#How-do-I-change-the-reversibility-of-a-Reaction?)
+    # # * lb = Lower bounds
+    # # * ub = Upper bounds
+    # # * subSystems = subsystem names
+    # # * S : Reactions matrix
+    # #       1 line = 1 metabolite
+    # #       1 column = 1 reaction
+    # # * c : Objective coefficient
+    # # * genes : Genes names
+    # # * rules : Genes rules
 
-    # Some utilities for gene generation rules (convert the IDs to the names of the genes)
-    gene_pattern = re.compile(r'x\([0-9]+\)')
+    # # Some utilities for gene generation rules (convert the IDs to the names of the genes)
+    # gene_pattern = re.compile(r'x\([0-9]+\)')
 
-    def gene_id_to_name(match):
-        id_ = int(match.group()[2:-1])
-        # /!\ These are indexed from 1, while python indexes from 0
-        return mat_model['genes'][id_ - 1, 0][0]
+    # def gene_id_to_name(match):
+    #     id_ = int(match.group()[2:-1])
+    #     # /!\ These are indexed from 1, while python indexes from 0
+    #     return mat_model['genes'][id_ - 1, 0][0]
 
-    # Add each reaction
-    for i in range(mat_model['S'].shape[1]):
-        # Name of the reaction
-        reaction = Reaction(str(mat_model['rxns'][i, 0][0]))
+    # # Add each reaction
+    # for i in range(mat_model['S'].shape[1]):
+    #     # Name of the reaction
+    #     reaction = Reaction(str(mat_model['rxns'][i, 0][0]))
 
-        # Add the reaction to the cobra_model
-        cobra_model.add_reactions([reaction])
+    #     # Add the reaction to the cobra_model
+    #     cobra_model.add_reactions([reaction])
 
-        # NOTE : The str() conversion above is needed, otherwise the CPLEX solver
-        # does not work : "Invalid matrix input type --"
+    #     # NOTE : The str() conversion above is needed, otherwise the CPLEX solver
+    #     # does not work : "Invalid matrix input type --"
 
-        # Reaction description
-        # reaction.name not set
+    #     # Reaction description
+    #     # reaction.name not set
 
-        # Subsystem (only if set in the Matlab cobra_model)
-        if (len(mat_model['subSystems'][i, 0])):
-            reaction.subsystem = mat_model['subSystems'][i, 0][0]
+    #     # Subsystem (only if set in the Matlab cobra_model)
+    #     if (len(mat_model['subSystems'][i, 0])):
+    #         reaction.subsystem = mat_model['subSystems'][i, 0][0]
 
-        # Lower bound
-        reaction.lower_bound = float(mat_model['lb'][i, 0])
-        # Upper bound
-        reaction.upper_bound = float(mat_model['ub'][i, 0])
+    #     # Lower bound
+    #     reaction.lower_bound = float(mat_model['lb'][i, 0])
+    #     # Upper bound
+    #     reaction.upper_bound = float(mat_model['ub'][i, 0])
 
-        # Objective coefficient
-        reaction.objective_coefficient = float(mat_model['c'][i, 0])
+    #     # Objective coefficient
+    #     reaction.objective_coefficient = float(mat_model['c'][i, 0])
 
-        # Metabolites
-        react_mets = {}
-        # Iterate over each metabolite and see if it is part of the reaction
-        # (stoechiomectric coefficient not equal to 0)
-        for j, _ in enumerate(metabolites):
-            if (mat_model['S'][j, i] != 0):
-                react_mets[metabolites[j]] = mat_model['S'][j, i]
+    #     # Metabolites
+    #     react_mets = {}
+    #     # Iterate over each metabolite and see if it is part of the reaction
+    #     # (stoechiomectric coefficient not equal to 0)
+    #     for j, _ in enumerate(metabolites):
+    #         if (mat_model['S'][j, i] != 0):
+    #             react_mets[metabolites[j]] = mat_model['S'][j, i]
 
-        reaction.add_metabolites(react_mets)
+    #     reaction.add_metabolites(react_mets)
 
-        # Genes
-        try:
-            if len(mat_model['rules'][i, 0]):
-                rule = mat_model['rules'][i, 0][0]
-                # Call the regex magic to convert IDs to gene names
-                rule = gene_pattern.sub(gene_id_to_name, rule)
+    #     # Genes
+    #     try:
+    #         if len(mat_model['rules'][i, 0]):
+    #             rule = mat_model['rules'][i, 0][0]
+    #             # Call the regex magic to convert IDs to gene names
+    #             rule = gene_pattern.sub(gene_id_to_name, rule)
 
-                # Add the data to the reaction
-                reaction.gene_reaction_rule = rule
-        except ValueError:
-            pass
-        except IndexError:
-            # The gene number is higher than the length of the gene list
-            warn('The gene reaction rule {} appears to be misaligned with '
-                 'the gene list'.format(rule))
+    #             # Add the data to the reaction
+    #             reaction.gene_reaction_rule = rule
+    #     except ValueError:
+    #         pass
+    #     except IndexError:
+    #         # The gene number is higher than the length of the gene list
+    #         warn('The gene reaction rule {} appears to be misaligned with '
+    #              'the gene list'.format(rule))
 
 
     Compartments = dict()

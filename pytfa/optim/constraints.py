@@ -76,7 +76,7 @@ class GenericConstraint:
                                                        name = self.name,
                                                        **self.kwargs)
             if not queue:
-                self.model.add_cons_vars(constraint)
+                self.model.add_cons_vars(constraint, sloppy=self.model.sloppy)
             else:
                 self.model._cons_queue.append(constraint)
         else:

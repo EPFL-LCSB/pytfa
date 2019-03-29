@@ -52,7 +52,8 @@ def timeit(method):
 class LCSBModel(ABC):
 
     # @abstractmethod
-    def __init__(self, model, name):
+    def __init__(self, model, name, sloppy=False):
+
         """
         Very much model specific
         """
@@ -61,6 +62,8 @@ class LCSBModel(ABC):
 
         self._cons_queue = list()
         self._var_queue = list()
+        self.sloppy=sloppy
+
 
     @abstractmethod
     def copy(self):
@@ -174,8 +177,9 @@ class LCSBModel(ABC):
         :return:
         """
 
-        self.add_cons_vars(self._var_queue)
-        self.add_cons_vars(self._cons_queue)
+        self.add_cons_vars(self._var_queue, sloppy=self.sloppy)
+        self.add_cons_vars(self._cons_queue, sloppy = self.sloppy)
+
         self._var_queue = list()
         self._cons_queue = list()
 
@@ -191,7 +195,10 @@ class LCSBModel(ABC):
         if hasattr(self, '_var_kinds'):
             for k in self._var_kinds:
                 attrname = camel2underscores(k)
-                delattr(self, attrname)
+                try:
+                    delattr(self, attrname)
+                except AttributeError:
+                    pass # The attribute may not have been set up yet
 
         _var_kinds = defaultdict(DictList)
         for k, v in self._var_dict.items():

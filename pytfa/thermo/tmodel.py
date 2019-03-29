@@ -566,8 +566,13 @@ class ThermoModel(LCSBModel, Model):
         bigM = BIGM
         # Check each reactions' bounds
         for reaction in self.reactions:
-            if reaction.lower_bound < -bigM or reaction.upper_bound > bigM:
+            if reaction.lower_bound < -bigM - EPSILON\
+                    or reaction.upper_bound > bigM + EPSILON:
                 raise Exception('flux bounds too wide or big M not big enough')
+            if reaction.lower_bound < -bigM:
+                reaction.lower_bound = -bigM
+            if reaction.upper_bound > bigM:
+                reaction.upper_bound = bigM
 
 
         ###################
