@@ -418,6 +418,11 @@ class RedGEM:
                     self._intermediate_extracellular_metabolites_id[subsystem][n].add(path[i])
 
     def run_between_all_subsystems(self):
+        """
+        Retrieve subsystem and intermediate reactions and metabolites.
+
+        :return: None
+        """
         for subsystem in self._subsystem_names:
             self.extract_subsystem_reactions(subsystem)
             self.extract_subsystem_metabolites(subsystem)
