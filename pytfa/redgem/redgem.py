@@ -433,6 +433,11 @@ class RedGEM:
                     self.breadth_search_subsystems_paths_length_d(subsystem_i, subsystem_j, k)
 
     def run_extracellular_system(self):
+        """
+        Retrieve intermediate reactions and metabolites for the extracellular system
+
+        :return: None
+        """
         for subsystem in self._subsystem_names:
             for k in range(self._n + 1):
                 self.breadth_search_extracellular_system_paths(subsystem, k)
