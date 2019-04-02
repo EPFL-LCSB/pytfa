@@ -332,6 +332,18 @@ class RedGEM:
         return self._min_distance_sub_to_sub
 
     def breadth_search_extracellular_system_paths(self, subsystem, n):
+        """
+        Breadth first search from each metabolite in the extracellular system with special stop
+        conditions during exploration for paths of length n.
+
+        This function explores the graph through allowed paths only : this path can't go through
+        the extracellular system or the subsystem but must start in the extracellular system and
+        end in the subsystem. The length of each path found is n.
+
+        :param subsystem: Destination subsystem
+        :param n: Path length desired
+        :return: None
+        """
         for metabolite_id in self._extracellular_system:
             # Find metabolites at a distance n from metabolite_id
             ancestors = {}
