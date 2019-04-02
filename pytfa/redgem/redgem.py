@@ -443,6 +443,11 @@ class RedGEM:
                 self.breadth_search_extracellular_system_paths(subsystem, k)
 
     def extract_sub_network(self):
+        """
+        Extracts the reduced gem.
+
+        :return: None
+        """
         def extract_id(x):
             return x.id
         to_remove_metabolites = set(map(extract_id, self._gem.metabolites))
