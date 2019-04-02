@@ -363,9 +363,20 @@ class RedGEM:
                                                                                    n)
 
     def is_node_allowed_extracellular(self, node, i, explored, subsystem, n):
-        # The new node is added if it is not already explored, if it is not in the source subsystem,
-        # and if it is not in the destination subsystem, except if it is the last round
-        # of exploration
+        """
+        Checks whether or not a metabolite is allowed for the current path.
+
+        The new node is added if it is not already explored, if it is not in the extracellular
+        system, and if it is not in the destination subsystem except if it is the last round
+        of exploration
+
+        :param node: Metabolite id
+        :param i: Current step
+        :param explored: Explored node for this path
+        :param subsystem: Destination subsystem
+        :param n: Path length desired
+        :return: Boolean answering the question
+        """
         if node in explored:
             return False
         if node in self._extracellular_system:
