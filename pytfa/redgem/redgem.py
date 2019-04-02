@@ -314,6 +314,11 @@ class RedGEM:
                     self._intermediate_metabolites_id[subsystem_i][subsystem_j][d].add(path[i])
 
     def find_min_distance_between_subsystems(self):
+        """
+        Find minimal distance between each subsystems in both directions
+
+        :return: Dict with distances
+        """
         for i in self._subsystem_names:
             for j in self._subsystem_names:
                 for k in range(self._d+1):
