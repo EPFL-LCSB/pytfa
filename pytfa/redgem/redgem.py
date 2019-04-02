@@ -508,6 +508,11 @@ class RedGEM:
     """
 
     def run(self):
+        """
+        Runs RedGEM.
+
+        :return: None
+        """
         self.create_new_stoichiometric_matrix()
         self.run_between_all_subsystems()
         self.run_extracellular_system()
