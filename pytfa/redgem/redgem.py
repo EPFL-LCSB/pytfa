@@ -400,6 +400,16 @@ class RedGEM:
         return True
 
     def retrieve_intermediate_extracellular_metabolites_and_reactions(self, paths, subsystem, n):
+        """
+        Retrieves and stores intermediate metabolites and reactions for the extracellular system
+
+        This function adds all reactions contained in these paths, and all metabolites between
+
+        :param paths: List of paths
+        :param subsystem: Destination subsystem
+        :param n: Path length
+        :return: None
+        """
         for path in paths:
             for i in range(len(path) - 1):
                 reaction = self._graph[path[i]][path[i + 1]]['rxn_id']
