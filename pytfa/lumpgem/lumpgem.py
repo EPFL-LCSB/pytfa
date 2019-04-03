@@ -107,6 +107,7 @@ class LumpGEM:
 
         self._generate_carbon_constraints()
         self._generate_objective()
+        self._prepare_sinks()
 
     def _load_model(self, path_to_model):
         # MATLAB
@@ -165,6 +166,28 @@ class LumpGEM:
         # refresh constraint fields
         self._tfa_model.repair()
 
+    def _prepare_sinks(self):
+        print("Preparing sinks...")
+        for bio_rxn in self._rBBB:
+            print(bio_rxn.id)
+            sinks = []
+            for met, stoech_coeff in bio_rxn.reactants.items():
+                print("   "+met.id)
+                sink = Reaction("Sink_"+bio_rxn.id + "_" +met.id)
+                sink.name = "Sink_"+ bio_rxn.name + "_" + met.name
+                # Subsystem specific to BBB sinks
+                sink.subsystem = "Demand"
+                # TODO sink.lower_bound = self._growth_rate * stoech_coeff
+                sink.add_metabolites({met: -1})
+                sinks.append(sink)
+                sink.knock_out()
+
+            self._tfa_model.add_reactions(sinks)
+
+        self._tfa_model.prepare()
+        for ncrxn in self._rncore:
+            ncrxn.thermo['computed'] = False
+
 
 
     def _generate_objective(self):
@@ -209,4 +232,5 @@ class LumpGEM:
         return lumped_reaction
 
 
-
+    def computeLumps(self):
+        pass
