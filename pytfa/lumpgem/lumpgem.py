@@ -3,6 +3,7 @@
 
 from ..io.base import import_matlab_model, load_thermoDB
 from cobra.io import load_json_model, load_yaml_model, read_sbml_model
+from cobra import Reaction
 from ..optim.utils import symbol_sum
 
 from pytfa.optim.variables import ReactionVariable, BinaryVariable, get_binary_type
@@ -31,11 +32,6 @@ class MyVariableClass(ReactionVariable, BinaryVariable):
 # Define a new constraint type:
 class MyConstraintClass(ReactionConstraint):
     prefix = 'CC_'
-
-
-# Define a new constraint type:
-class BBBConstraint(MyConstraintClass):
-    prefix = 'BBB_'
 
 
 class LumpGEM:
@@ -84,7 +80,7 @@ class LumpGEM:
             if rxn.id in biomass_rxns:
                 self._rBBB.append(rxn)
             # If it's a core reaction
-            if rxn.subsystem in core_subsystems:
+            elif rxn.subsystem in core_subsystems:
                 self._rcore.append(rxn)
                 for met in rxn.metabolites:
                     self._mcore.append(met)
@@ -100,8 +96,16 @@ class LumpGEM:
         # TODO : solver choice
         self._solver = 'optlang-cplex'
 
-        self._activation_vars = self._generate_activation_vars()
-        self._generate_constraints()
+        # lumpgen binary variables to deactivate non-core reactions. The reaction is deactivated when the value of
+        # the variable is 1
+        self._activation_vars = {rxn: self._tfa_model.add_variable(kind=MyVariableClass,
+                                                                   hook=rxn,
+                                                                   lb=0,
+                                                                   ub=1,
+                                                                   queue=False)
+                                 for rxn in self._rncore}
+
+        self._generate_carbon_constraints()
         self._generate_objective()
 
     def _load_model(self, path_to_model):
@@ -140,11 +144,7 @@ class LumpGEM:
 
         return tfa_model
 
-    def _generate_activation_vars(self):
-        return {rxn: self._tfa_model.add_variable(kind=MyVariableClass, hook=rxn, lb=0, ub=1, queue=False)
-                for rxn in self._rncore}
-
-    def _generate_constraints(self):
+    def _generate_carbon_constraints(self):
         """
         Generate carbon intake related constraints for each non-core reaction
         """
@@ -165,9 +165,11 @@ class LumpGEM:
         # refresh constraint fields
         self._tfa_model.repair()
 
+
+
     def _generate_objective(self):
         """
-        Generate and add the maximization objective
+        Generate and add the maximization objective : set as many activation variables as possible to 1 (deactivated)
         """
         # Sum of binary variables to be maximized
         objective_sum = symbol_sum(list(self._activation_vars.values()))
@@ -192,34 +194,19 @@ class LumpGEM:
         :param bio_rxn: The objective biomass reaction to lump
         :return: the lumped reaction
         """
-        # Growth-related constraint
-        #constraint = self._tfa_model.problem.Constraint(bio_rxn.flux_expression, lb=self._growth_rate)
-        #self._tfa_model.add_cons_vars(constraint)
-
-        # TODO check lower bound
-        self._tfa_model.add_constraint(kind=BBBConstraint,
-                                       hook=bio_rxn,
-                                       expr=bio_rxn.flux_expression,
-                                       lb=self._growth_rate,
-                                       queue=False)
 
         # Computing TFA solution
         solution = self.run_optimisation()
 
-        # TODO use generators to improve speedw
-        # TODO why symbol_sum does not work
+        # TODO use generators to improve speed
+        # TODO maybe use sympy.add
         lumped_core_reactions = sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rcore])
         lumped_ncore_reactions = sum([rxn * solution.fluxes.get(rxn.id)*self._activation_vars[rxn].variable.primal for rxn in self._rncore])
         lumped_BBB_reactions = sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rBBB])
 
-        #lumped_core_reactions = symbol_sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rcore])
-        #lumped_ncore_reactions = symbol_sum([rxn * solution.fluxes.get(rxn.id)*self._activation_vars[rxn].Variable.primal for rxn in self._rncore])
-
         lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions])
 
-        # Removing the growth_related constraint to prevent interference with the next lump computation
-        for constraint in self._tfa_model.get_constraints_of_type(BBBConstraint):
-            self._tfa_model.remove_constraint(constraint)
+        return lumped_reaction
 
-        return (lumped_ncore_reactions, lumped_core_reactions, lumped_reaction)
-        #return lumped_reaction
+
+
