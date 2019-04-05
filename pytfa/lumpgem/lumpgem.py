@@ -15,6 +15,8 @@ from pytfa.io import read_compartment_data, apply_compartment_data, \
 
 from numpy import sum
 
+from tqdm import tqdm
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
@@ -172,8 +174,9 @@ class LumpGEM:
 
         for bio_rxn in self._rBBB:
             print(bio_rxn.id)
-            for met, stoech_coeff in bio_rxn.reactants.items():
-                if met not in all_sinks.keys():
+            for met, stoech_coeff in tqdm(bio_rxn.metabolites.items()):
+                # stoech_coeff < 0 indicates that the metabolite is a reactant.
+                if (stoech_coeff < 0) and (met not in all_sinks.keys()):
                     print("   " + met.id)
                     sink = Reaction("Sink_" + bio_rxn.id + "_" + met.id)
                     sink.name = "Sink_" + bio_rxn.name + "_" + met.name
@@ -206,31 +209,23 @@ class LumpGEM:
         # Set the sum as the objective function
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
-    def lump_reaction(self, bio_rxn):
-        """
-        :param bio_rxn: The objective biomass reaction to lump
-        :return: the lumped reaction
-        """
-
-        # Computing TFA solution
-        solution = self.run_optimisation()
-
-        # TODO use generators to improve speed
-        # TODO maybe use sympy.add
-        lumped_core_reactions = sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rcore])
-        lumped_ncore_reactions = sum([rxn * solution.fluxes.get(rxn.id)*self._activation_vars[rxn].variable.primal for rxn in self._rncore])
-        lumped_BBB_reactions = sum([rxn * solution.fluxes.get(rxn.id) for rxn in self._rBBB])
-
-        lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions])
-
-        return lumped_reaction
-
     def compute_lumps(self):
-        for met, (sink_id, stoech_coeff) in self._sinks.items():
-            print("Considering " + met.id)
+        lumps = {}
+        for met_BBB, (sink_id, stoech_coeff) in tqdm(self._sinks.items()):
+            print("Considering " + met_BBB.id)
             with self._tfa_model as model:
                 model.reactions.get_by_id(sink_id).lower_bound = self._growth_rate * stoech_coeff
                 model.convert()
                 tfa_solution = model.optimize()
 
-                # TODO compute lumps
+                # TODO use generators to improve speed
+                # TODO maybe use sympy.add
+                lumped_core_reactions =  sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rcore])
+                lumped_ncore_reactions = sum([rxn * tfa_solution.fluxes.get(rxn.id) * self._activation_vars[rxn].variable.primal for rxn in self._rncore])
+                lumped_BBB_reactions =   sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rBBB])
+
+                lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions])
+
+                lumps[met_BBB] = lumped_reaction
+
+        return lumps
