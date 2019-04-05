@@ -107,7 +107,7 @@ class LumpGEM:
 
         self._generate_carbon_constraints()
         self._generate_objective()
-        self._prepare_sinks()
+        self._sinks = self._prepare_sinks()
 
     def _load_model(self, path_to_model):
         # MATLAB
@@ -167,28 +167,35 @@ class LumpGEM:
         self._tfa_model.repair()
 
     def _prepare_sinks(self):
+        all_sinks = {}
         print("Preparing sinks...")
+
         for bio_rxn in self._rBBB:
             print(bio_rxn.id)
-            sinks = []
             for met, stoech_coeff in bio_rxn.reactants.items():
-                print("   "+met.id)
-                sink = Reaction("Sink_"+bio_rxn.id + "_" +met.id)
-                sink.name = "Sink_"+ bio_rxn.name + "_" + met.name
-                # Subsystem specific to BBB sinks
-                sink.subsystem = "Demand"
-                # TODO sink.lower_bound = self._growth_rate * stoech_coeff
-                sink.add_metabolites({met: -1})
-                sinks.append(sink)
-                sink.knock_out()
+                if met not in all_sinks.keys():
+                    print("   " + met.id)
+                    sink = Reaction("Sink_" + bio_rxn.id + "_" + met.id)
+                    sink.name = "Sink_" + bio_rxn.name + "_" + met.name
+                    # Subsystem specific to BBB sinks
+                    sink.subsystem = "Demand"
+                    # TODO sink.lower_bound = self._growth_rate * stoech_coeff
+                    sink.add_metabolites({met: -1})
+                    sink.knock_out()
+                    all_sinks[met] = (sink.id, stoech_coeff)
+                else:
+                    # TODO check this
+                    all_sinks[met][1] += stoech_coeff
+                    # Equivalent to this, but there is a knockout :
+                    #self._tfa_model.reactions.get_by_id(sinks[met]).lower_bound += self._growth_rate * stoech_coeff
 
-            self._tfa_model.add_reactions(sinks)
+        self._tfa_model.add_reactions([all_sinks[met][1] for met in all_sinks.keys()])
 
         self._tfa_model.prepare()
         for ncrxn in self._rncore:
             ncrxn.thermo['computed'] = False
 
-
+        return all_sinks
 
     def _generate_objective(self):
         """
@@ -198,19 +205,6 @@ class LumpGEM:
         objective_sum = symbol_sum(list(self._activation_vars.values()))
         # Set the sum as the objective function
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
-
-    def run_optimisation(self):
-        self._tfa_model.prepare()
-
-        # Deactivate tfa computation for non-core reactions
-        #TODO : check whether it must be done once or at each iteration
-        for ncrxn in self._rncore:
-            ncrxn.thermo['computed'] = False
-
-        self._tfa_model.convert()
-
-        tfa_solution = self._tfa_model.optimize()
-        return tfa_solution
 
     def lump_reaction(self, bio_rxn):
         """
@@ -231,6 +225,12 @@ class LumpGEM:
 
         return lumped_reaction
 
+    def compute_lumps(self):
+        for met, (sink_id, stoech_coeff) in self._sinks.items():
+            print("Considering " + met.id)
+            with self._tfa_model as model:
+                model.reactions.get_by_id(sink_id).lower_bound = self._growth_rate * stoech_coeff
+                model.convert()
+                tfa_solution = model.optimize()
 
-    def computeLumps(self):
-        pass
+                # TODO compute lumps
