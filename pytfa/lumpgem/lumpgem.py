@@ -96,6 +96,7 @@ class LumpGEM:
         self._growth_rate = growth_rate
 
         # TODO : solver choice
+        # TODO default : solver du modele
         self._solver = 'optlang-cplex'
 
         # lumpgen binary variables to deactivate non-core reactions. The reaction is deactivated when the value of
@@ -170,11 +171,13 @@ class LumpGEM:
 
     def _prepare_sinks(self):
         all_sinks = {}
+        sink_reactions = []
         print("Preparing sinks...")
 
         for bio_rxn in self._rBBB:
             print(bio_rxn.id)
             for met, stoech_coeff in tqdm(bio_rxn.metabolites.items()):
+
                 # stoech_coeff < 0 indicates that the metabolite is a reactant.
                 if (stoech_coeff < 0) and (met not in all_sinks.keys()):
                     print("   " + met.id)
@@ -185,14 +188,18 @@ class LumpGEM:
                     # TODO sink.lower_bound = self._growth_rate * stoech_coeff
                     sink.add_metabolites({met: -1})
                     sink.knock_out()
-                    all_sinks[met] = (sink.id, stoech_coeff)
-                else:
+
+                    all_sinks[met] = (sink.id, -stoech_coeff)
+                    sink_reactions.append(sink)
+
+                # reactant already seen
+                elif stoech_coeff < 0:
                     # TODO check this
-                    all_sinks[met][1] += stoech_coeff
+                    all_sinks[met][1] -= stoech_coeff
                     # Equivalent to this, but there is a knockout :
                     #self._tfa_model.reactions.get_by_id(sinks[met]).lower_bound += self._growth_rate * stoech_coeff
 
-        self._tfa_model.add_reactions([all_sinks[met][1] for met in all_sinks.keys()])
+        self._tfa_model.add_reactions(sink_reactions)
 
         self._tfa_model.prepare()
         for ncrxn in self._rncore:
@@ -220,12 +227,13 @@ class LumpGEM:
 
                 # TODO use generators to improve speed
                 # TODO maybe use sympy.add
-                lumped_core_reactions =  sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rcore])
+                lumped_core_reactions  = sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rcore])
                 lumped_ncore_reactions = sum([rxn * tfa_solution.fluxes.get(rxn.id) * self._activation_vars[rxn].variable.primal for rxn in self._rncore])
-                lumped_BBB_reactions =   sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rBBB])
+                lumped_BBB_reactions   = sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rBBB])
 
                 lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions])
 
                 lumps[met_BBB] = lumped_reaction
 
         return lumps
+
