@@ -19,7 +19,7 @@ from cobra import Metabolite, Reaction, Model
 from copy import deepcopy
 
 
-class RedGEM:
+class NetworkExpansion:
 
     def __init__(self, gem, core_subsystems, carbon_uptake, cofactor_pairs, small_metabolites,
                  inorganics, d, extracellular_system, subsystem_names=(), n=0):
