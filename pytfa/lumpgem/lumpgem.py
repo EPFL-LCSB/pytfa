@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ..io.base import import_matlab_model, load_thermoDB
-from cobra.io import load_json_model, load_yaml_model, read_sbml_model
 from cobra import Reaction
 from ..optim.utils import symbol_sum
 
 from pytfa.optim.variables import ReactionVariable, BinaryVariable, get_binary_type
 from pytfa.optim.constraints import ReactionConstraint
-from ..thermo.tmodel import ThermoModel
-
-from pytfa.io import read_compartment_data, apply_compartment_data, \
-                     read_lexicon, annotate_from_lexicon
 
 from numpy import sum
 
@@ -126,6 +120,11 @@ class LumpGEM:
         self._tfa_model.repair()
 
     def _prepare_sinks(self):
+        """
+        For each BBB (reactant of the biomass reactions), generate a sink, i.e an unbalanced reaction BBB ->
+        of which purpose is to enable the BBB to be output of the GEM
+        :return: the dict {BBB: sink} containing every BBB (keys) and their associated sinks
+        """
         all_sinks = {}
         print("Preparing sinks...")
 
@@ -166,7 +165,8 @@ class LumpGEM:
 
     def _generate_objective(self):
         """
-        Generate and add the maximization objective : set as many activation variables as possible to 1 (deactivated)
+        Generate and add the maximization objective : set as many activation variables as possible to 1
+        When an activation variable is set to 1, the corresponding non-core reaction is deactivated
         """
         # Sum of binary variables to be maximized
         objective_sum = symbol_sum(list(self._activation_vars.values()))
@@ -174,6 +174,11 @@ class LumpGEM:
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
     def compute_lumps(self):
+        """
+        For each BBB (reactant of the biomass reaction), add the corresponding sink to the model, then optimize and
+        lump the result into one lumped reaction
+        :return: The dict {BBB: lump} containing every lumped reactions, associated to their BBBs
+        """
 
         # Must be called before optimization
         self._tfa_model.convert()
