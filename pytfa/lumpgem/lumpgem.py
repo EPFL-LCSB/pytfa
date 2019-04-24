@@ -32,22 +32,25 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate):
+    def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout_limit=1):
         """
-        : param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
-        : type GEM: pytfa model
+        :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
+        :type GEM: pytfa model
 
-        : param biomass_rxns: list of biomass reactions
-        : type biomass_rxns: [GEM.biomass_rxn.id]
+        :param biomass_rxns: list of biomass reactions
+        :type biomass_rxns: [GEM.biomass_rxn.id]
 
-        : param core_subsystems: list of Core subsystems names
-        : type core_subsystems: [string]
+        :param core_subsystems: list of Core subsystems names
+        :type core_subsystems: [string]
 
-        : param carbon_intake: the amount of carbon atoms the cell intakes from its surrounding
-        : type carbon_intake: float
+        :param carbon_intake: the amount of carbon atoms the cell intakes from its surrounding
+        :type carbon_intake: float
 
-        : param growth_rate: theoretical maximum specific growth rate in 1/hr units
-        : type growth_rate: float
+        :param growth_rate: theoretical maximum specific growth rate in 1/hr units
+        :type growth_rate: float
+
+        :param timeout_limit: the maximum amount of time allowed to compute each optimization. Default is 3600s (1 hour)
+        :type timeout_limit: float (seconds)
         """
 
         self._tfa_model = tfa_model
@@ -80,7 +83,10 @@ class LumpGEM:
         # TODO default : solver du modele
         self._solver = 'optlang-cplex'
 
-        # lumpgen binary variables to deactivate non-core reactions. The reaction is deactivated when the value of
+        self._tfa_model.solver.configuration.timeout = timeout_limit
+        print("Timeout limit is {}s".format(timeout_limit))
+
+        # lumpgem binary variables to deactivate non-core reactions. The reaction is deactivated when the value of
         # the variable is 1
         self._activation_vars = {rxn: self._tfa_model.add_variable(kind=MyVariableClass,
                                                                    hook=rxn,
@@ -125,12 +131,10 @@ class LumpGEM:
         print("Preparing sinks...")
 
         for bio_rxn in self._rBBB:
-            print(bio_rxn.id)
             for met, stoech_coeff in bio_rxn.metabolites.items():
 
                 # stoech_coeff < 0 indicates that the metabolite is a reactant
                 if (stoech_coeff < 0) and (met not in all_sinks.keys()):
-                    print("   " + met.id)
                     sink = Reaction("Sink_" + bio_rxn.id + "_" + met.id)
                     sink.name = "Sink_" + bio_rxn.name + "_" + met.name
                     # Subsystem specific to BBB sinks
@@ -155,7 +159,7 @@ class LumpGEM:
         self._tfa_model.prepare()
         for ncrxn in self._rncore:
             ncrxn.thermo['computed'] = False
-
+          
         return all_sinks
 
     def _generate_objective(self):
@@ -182,12 +186,11 @@ class LumpGEM:
         lumps = {}
 
         for met_BBB, (sink_id, stoech_coeff) in self._sinks.items():
-            print("Considering :" + met_BBB.id)
+            print("Considering: " + met_BBB.id)
 
             # Activate reaction by setting its lower bound
             self._tfa_model.reactions.get_by_id(sink_id).lower_bound = self._growth_rate * stoech_coeff
 
-            # TODO timeout
             tfa_solution = self._tfa_model.optimize()
 
             # TODO maybe use sympy.add
