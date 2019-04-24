@@ -32,7 +32,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout_limit=1):
+    def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout_limit=3600):
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
         :type GEM: pytfa model
