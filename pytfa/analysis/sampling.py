@@ -13,7 +13,7 @@ Sampling wrappers for pytfa models
 import numpy as np
 from sympy.core.singleton import S
 from time import  time
-from  cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler, HRSampler,\
+from  cobra.sampling import OptGPSampler, ACHRSampler, HRSampler,\
                                             shared_np_array
 from optlang.interface import OPTIMAL
 
