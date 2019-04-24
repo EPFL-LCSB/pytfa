@@ -38,7 +38,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, path_to_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate,  thermo_data_path, auxiliary_data):
+    def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate):
         """
         : param GEM: the GEM 
         : type GEM: cobra model
@@ -59,10 +59,7 @@ class LumpGEM:
         : type thermo_data_path : string
         """
 
-        # Load the GEM through the appropriate cobra loading function (based on path suffix)
-        model = self._load_model(path_to_model)
-        # Build thermo model
-        self._tfa_model = self._apply_thermo_constraints(thermo_data_path, model, auxiliary_data)
+        self._tfa_model = tfa_model
 
         # Set containing every BBB reaction
         self._rBBB = []
@@ -76,7 +73,6 @@ class LumpGEM:
         # For each reaction
         for rxn in self._tfa_model.reactions:
             # If it's a BBB reaction
-            # TODO : make it possible to use keywords to match BBB reactions, rather than IDs
             if rxn.id in biomass_rxns:
                 self._rBBB.append(rxn)
             # If it's a core reaction
@@ -109,42 +105,6 @@ class LumpGEM:
         self._generate_carbon_constraints()
         self._generate_objective()
         self._sinks = self._prepare_sinks()
-
-    def _load_model(self, path_to_model):
-        # MATLAB
-        if path_to_model[-4:] == ".mat":
-            return import_matlab_model(path_to_model)
-
-        # YAML
-        if path_to_model[-4:] == ".yml":
-            return load_yaml_model(path_to_model)
-
-        # JSON
-        if path_to_model[-5:] == ".json":
-            return load_json_model(path_to_model)
-
-        # SBML
-        if path_to_model[-4:] == ".xml":
-            return read_sbml_model(path_to_model)
-
-    def _apply_thermo_constraints(self, thermo_data_path, cobra_model, auxiliary_data_path):
-        """
-        Apply thermodynamics constraints defined in thermoDB to Mcore & Rcore
-        """
-        thermo_data = load_thermoDB(thermo_data_path)
-        tfa_model = ThermoModel(thermo_data, cobra_model)
-        tfa_model.name = 'Lumped Model'
-
-        # TODO : Improve management of auxiliary data paths
-        if auxiliary_data_path[-1] != '/':
-            auxiliary_data_path += '/'
-        lexicon = read_lexicon(auxiliary_data_path+'lexicon.csv')
-        compartment_data = read_compartment_data(auxiliary_data_path+'compartment_data.json')
-
-        annotate_from_lexicon(tfa_model, lexicon)
-        apply_compartment_data(tfa_model, compartment_data)
-
-        return tfa_model
 
     def _generate_carbon_constraints(self):
         """
