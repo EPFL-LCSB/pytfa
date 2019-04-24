@@ -43,8 +43,8 @@ class LumpGEM:
         :param core_subsystems: list of Core subsystems names
         :type core_subsystems: [string]
 
-        :param carbon_intake: the amount of carbon atoms the cell intakes from its surrounding
-        :type carbon_intake: float
+        :param carbon_uptake: the amount of carbon atoms the cell can uptake from its surrounding
+        :type carbon_uptake: float
 
         :param growth_rate: theoretical maximum specific growth rate in 1/hr units
         :type growth_rate: float
