@@ -188,8 +188,9 @@ class LumpGEM:
         for met_BBB, (sink_id, stoech_coeff) in self._sinks.items():
             print("Considering: " + met_BBB.id)
 
+            sink = self._tfa_model.reactions.get_by_id(sink_id)
             # Activate reaction by setting its lower bound
-            self._tfa_model.reactions.get_by_id(sink_id).lower_bound = self._growth_rate * stoech_coeff
+            sink.lower_bound = self._growth_rate * stoech_coeff
 
             tfa_solution = self._tfa_model.optimize()
 
@@ -198,12 +199,12 @@ class LumpGEM:
             lumped_ncore_reactions = sum([rxn * tfa_solution.fluxes.get(rxn.id) * self._activation_vars[rxn].variable.primal for rxn in self._rncore])
             lumped_BBB_reactions   = sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rBBB])
 
-            lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions])
+            lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions, sink])
 
             lumps[met_BBB] = lumped_reaction
 
             # Deactivating reaction by setting both bounds to 0
-            self._tfa_model.reactions.get_by_id(sink_id).knock_out()
+            sink.knock_out()
 
         return lumps
 
