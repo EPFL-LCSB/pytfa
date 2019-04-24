@@ -40,8 +40,8 @@ class LumpGEM:
     """
     def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate):
         """
-        : param GEM: the GEM 
-        : type GEM: cobra model
+        : param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
+        : type GEM: pytfa model
 
         : param biomass_rxns: list of biomass reactions
         : type biomass_rxns: [GEM.biomass_rxn.id]
@@ -54,9 +54,6 @@ class LumpGEM:
 
         : param growth_rate: theoretical maximum specific growth rate in 1/hr units
         : type growth_rate: float
-
-        : param thermo_data_path: the path to the .thermodb database
-        : type thermo_data_path : string
         """
 
         self._tfa_model = tfa_model
@@ -109,6 +106,7 @@ class LumpGEM:
     def _generate_carbon_constraints(self):
         """
         Generate carbon intake related constraints for each non-core reaction
+        For each reaction rxn : rxn.forward_variable + rxn.reverse_variable + activation_var * C_uptake < C_uptake
         """
         for rxn in self._rncore:
             activation_var = self._activation_vars[rxn]
