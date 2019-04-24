@@ -56,8 +56,6 @@ class LumpGEM:
         self._rBBB = []
         # Set containing every core reaction
         self._rcore = []
-        # Set containing every core metabolite
-        self._mcore = []
         # Set containing every non-core reaction
         self._rncore = []
 
@@ -69,8 +67,6 @@ class LumpGEM:
             # If it's a core reaction
             elif rxn.subsystem in core_subsystems:
                 self._rcore.append(rxn)
-                for met in rxn.metabolites:
-                    self._mcore.append(met)
             # If it's neither BBB nor core, then it's non-core
             else:
                 self._rncore.append(rxn)
@@ -154,9 +150,8 @@ class LumpGEM:
                 elif stoech_coeff < 0:
                     # The BBB has already been associated to a sink, so we simply increase the bound of the sink
                     all_sinks[met][1] -= stoech_coeff
-                    # Equivalent to this, but there is a knockout :
-                    #self._tfa_model.reactions.get_by_id(sinks[met]).lower_bound += self._growth_rate * stoech_coeff
 
+        # Must be called before changing the reaction.thermo['computed'] values
         self._tfa_model.prepare()
         for ncrxn in self._rncore:
             ncrxn.thermo['computed'] = False
