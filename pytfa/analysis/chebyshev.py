@@ -16,6 +16,7 @@ from numpy.linalg import norm
 from optlang.interface import Constraint
 from pytfa.optim.variables import GenericVariable,ModelVariable
 from pytfa.optim.constraints import GenericConstraint
+
 # from ..optim.variables import GenericVariable,ModelVariable
 
 BIGM = 1000
@@ -60,6 +61,7 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
     vars = get_variables(new, variables)
     include_list = get_cons_var_classes(new, include, type = 'cons')
     exclude_list = get_cons_var_classes(new, exclude, type = 'cons')
+
 
     # 0 - Create the Chebyshev radius variable
     r = new.add_variable(kind=ChebyshevRadius,
@@ -111,7 +113,6 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
 
         cons.change_expr(new_expr)
 
-
     new.logger.info('{} constraints edited'.format(len(cons_to_edit)))
     # 4 - Optimize
     new.repair() # Add the queued constraints
@@ -162,3 +163,4 @@ def get_variables(model, variables):
         # These are pyTFA variables, we have to retrieve the optlang variables
         vars = [x.variable for x in variables]
     return vars
+
