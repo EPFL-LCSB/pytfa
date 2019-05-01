@@ -11,9 +11,6 @@
 Model class
 """
 
-import os
-from pytfa.io import import_matlab_model
-
 import networkx as nx
 from cobra import Metabolite, Reaction, Model
 from copy import deepcopy
