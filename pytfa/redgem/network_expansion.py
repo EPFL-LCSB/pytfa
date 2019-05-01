@@ -37,12 +37,12 @@ class NetworkExpansion:
         # calling NetworkExpansion
         self._redgem = gem
         #self._redgem.name = 'redgem'
-        self._reduced_model = Model('graph')
         self._graph = nx.DiGraph()
 
         # Subsystems
         self._subsystem_names = subsystem_names
         self._subsystem_count = len(subsystem_names)
+        self._extracellular_system = extracellular_system
 
         # Dicts to save extracted reactions and metabolites for each subsystem
         # TODO: Improve structure definition
@@ -79,7 +79,6 @@ class NetworkExpansion:
         self._small_metabolites = small_metabolites
         self._inorganics = inorganics
         self._d = d
-        self._extracellular_system = extracellular_system
         self._n = n
 
     def extract_subsystem_reactions(self, subsystem):
