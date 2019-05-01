@@ -225,15 +225,6 @@ class NetworkExpansion:
             # Handle d = 0 case, since it didn't go through the loop
             if d == 0 and metabolite_id not in self._subsystem_metabolites_id[subsystem_j]:
                 frontier = {}
-            """
-            self._graph.nodes[metabolite_id]['paths'][d] = ancestors
-            self._graph.nodes[metabolite_id]['to'][d] = frontier
-            for node in frontier:
-                if 'from_'+subsystem_i in self._graph.nodes[node]:
-                    self._graph.nodes[node]['from_'+subsystem_i].append(metabolite_id)
-                else:
-                    self._graph.nodes[node]['from_'+subsystem_i] = [metabolite_id]
-            """
             # Retrieve and save metabolites, reactions and paths
             for node in frontier:
                 paths = self.retrieve_all_paths(node, metabolite_id, ancestors)
@@ -482,31 +473,6 @@ class NetworkExpansion:
         print(to_remove_metabolites, to_remove_reactions)
         self._redgem.remove_reactions(to_remove_reactions, True)
         # self._redgem.remove_metabolites(to_remove_metabolites)
-
-    """
-    def create_sub_network(self):
-        to_add_metabolites_id = set()
-        to_add_reactions_id = set()
-
-        for name in self._subsystem_names:
-            to_add_reactions_id = to_add_reactions_id.union(self._subsystem_reactions_id[name])
-            to_add_metabolites_id = to_add_metabolites_id.union(self._subsystem_metabolites_id[name])
-
-        for i in self._subsystem_names:
-            for j in self._subsystem_names:
-                for k in range(self._d+1):
-                    to_add_reactions_id = to_add_reactions_id.union(self._intermediate_reactions_id[i][j][k])
-                    to_add_metabolites_id = to_add_metabolites_id.union(self._intermediate_metabolites_id[i][j][k])
-
-        to_add_reactions = []
-        to_add_metabolites = []
-        for reaction_id in to_add_reactions_id:
-            to_add_reactions.append(self._redgem.reactions.get_by_id(reaction_id))
-        for metabolite_id in to_add_metabolites_id:
-            to_add_metabolites.append(self._redgem.metabolites.get_by_id(metabolite_id))
-
-        self._redgem.add_reactions(to_add_reactions)
-    """
 
     def run(self):
         """
