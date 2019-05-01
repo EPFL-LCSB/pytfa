@@ -16,7 +16,7 @@ from pytfa.redgem.lumpgem import LumpGEM
 import yaml
 
 class RedGEM():
-    def __init__(self, gem, inplace, parameters_path):
+    def __init__(self, gem, parameters_path, inplace=False):
         # If inplace is True, no deepcopy is performed : the modifications are applied directly onto the gem
         if inplace:
             self._gem = gem
