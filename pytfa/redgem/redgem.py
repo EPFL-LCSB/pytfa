@@ -61,7 +61,7 @@ class RedGEM():
 
         print("Computing lumps...")
         lumper = LumpGEM(reduced_gem, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout)
-        lumps = lumper.run()
+        lumps = lumper.compute_lumps()
         print("Done.")
         return lumps
 
