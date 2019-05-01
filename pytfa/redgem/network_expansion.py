@@ -152,7 +152,6 @@ class NetworkExpansion:
                                upper_bound=rxn.upper_bound)
             new_rxn.add_metabolites(metabolites)
             kept_rxns.append(new_rxn)
-        self._reduced_model.add_reactions(kept_rxns)
 
         paths_struct = [{} for _ in range(self._d+1)]  # Comprehension list to create multiple dicts
         to_struct = [""] * (self._d+1)
