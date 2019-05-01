@@ -49,10 +49,6 @@ class NetworkExpansion:
         self._subsystem_count = len(subsystem_names)
         self._core_subsystems = core_subsystems
 
-        # Sets of core reactions and metabolites
-        self._rcore = set()
-        self._mcore = set()
-
         # Dicts to save extracted reactions and metabolites for each subsystem
         # TODO: Improve structure definition
         dict_of_lists_of_sets = {}
@@ -91,21 +87,6 @@ class NetworkExpansion:
         self._d = d
         self._extracellular_system = extracellular_system
         self._n = n
-
-    def extract_core_reactions(self):
-        for rxn in self._redgem.reactions:
-            if rxn.subsystem in self._core_subsystems:
-                self._rcore.add(rxn)
-
-    def extract_core_metabolites(self):
-        for rxn in self._rcore:
-            for metabolite in rxn.metabolites:
-                metabolite_id = metabolite.id
-                if metabolite_id in self._cofactor_pairs \
-                        or metabolite_id in self._small_metabolites \
-                        or metabolite_id in self._inorganics:
-                    continue
-                self._mcore.add(metabolite)
 
     def extract_subsystem_reactions(self, subsystem):
         """
