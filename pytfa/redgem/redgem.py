@@ -30,6 +30,10 @@ class RedGEM():
             except yaml.YAMLError as exc:
                 print(exc)
 
+        # If auto is activated, automatically extracts inorganics from the gem
+        if self.params["inorganics"] == "auto":
+            self.params["inorganics"] = _extract_inorganics()
+
     def run():
         # Extracting parameters
         core_subsystems = self.params["core_subsystems"]
@@ -58,4 +62,22 @@ class RedGEM():
         lumps = lumper.run()
         print("Done.")
         return lumps
+
+    def _extract_inorganics(self):
+        """
+        Extract inorganics from self._gem based on their formula
+
+        :return: list of inorganics metabolites
+        """
+
+        inorganics = []
+        for met in self._gem.metabolites:
+            if not met.elements == {}: # Edge case
+                # met is inorganic if it has 0 carbon in its formula
+                if 'C' in met.elements and met.elements['C'] > 0:
+                    inorganics.append(met)
+
+        return inorganics
+
+
 
