@@ -45,6 +45,7 @@ class RedGEM():
         growth_rate = self.params["growth_rate"]
 
         small_metabolites = self.params["small_metabolites"]
+        cofactor_pairs = self.params["cofactor_pairs"]
         inorganics = self.params["inorganics"]
 
         d = self.params["d"]
@@ -53,7 +54,9 @@ class RedGEM():
         timeout = self.params["timeout"]
 
         print("Computing network expansion...")
-        expander = NetworkExpansion(self._gem, core_subsystems, carbon_uptake, cofactor_pairs, small_metabolites, inorganics, d, extracellular_system, subsystem_names, n)
+        expander = NetworkExpansion(self._gem, subsystem_names, extracellular_system,
+                                    cofactor_pairs, small_metabolites, inorganics,
+                                    d, n)
         reduced_gem = expander.run()
         print("Done.")
 

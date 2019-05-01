@@ -18,20 +18,19 @@ from copy import deepcopy
 
 class NetworkExpansion:
 
-    def __init__(self, gem, core_subsystems, carbon_uptake, cofactor_pairs, small_metabolites,
-                 inorganics, d, extracellular_system, subsystem_names=(), n=0):
+    def __init__(self, gem, subsystem_names, extracellular_system,
+                 cofactor_pairs, small_metabolites, inorganics,
+                 d, n):
         """
         A class encapsulating the RedGEM algorithm
 
         :param gem: The studied GEM
-        :param core_subsystems: List of core subsystems names
-        :param carbon_uptake:
+        :param subsystem_names: Studied subsystems
+        :param extracellular_system: Extracellular metabolite ids
         :param cofactor_pairs: List of cofactor pairs id
         :param small_metabolites: List of small metabolites id
         :param inorganics: List of inorganics id
         :param d: Degree
-        :param extracellular_system:
-        :param subsystem_names:
         :param n: User parameter
         """
         # Shallow copy of the GEM : the deepcopy is possibly performed in redgem, before
@@ -44,7 +43,6 @@ class NetworkExpansion:
         # Subsystems
         self._subsystem_names = subsystem_names
         self._subsystem_count = len(subsystem_names)
-        self._core_subsystems = core_subsystems
 
         # Dicts to save extracted reactions and metabolites for each subsystem
         # TODO: Improve structure definition
