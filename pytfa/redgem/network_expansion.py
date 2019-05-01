@@ -18,14 +18,14 @@ from copy import deepcopy
 
 class NetworkExpansion:
 
-    def __init__(self, gem, subsystem_names, extracellular_system,
+    def __init__(self, gem, core_subsystems, extracellular_system,
                  cofactor_pairs, small_metabolites, inorganics,
                  d, n):
         """
         A class encapsulating the RedGEM algorithm
 
         :param gem: The studied GEM
-        :param subsystem_names: Studied subsystems
+        :param core_subsystems: Core subsystems
         :param extracellular_system: Extracellular metabolite ids
         :param cofactor_pairs: List of cofactor pairs id
         :param small_metabolites: List of small metabolites id
@@ -40,23 +40,23 @@ class NetworkExpansion:
         self._graph = nx.DiGraph()
 
         # Subsystems
-        self._subsystem_names = subsystem_names
-        self._subsystem_count = len(subsystem_names)
+        self._core_subsystems = core_subsystems
+        self._subsystem_count = len(core_subsystems)
         self._extracellular_system = extracellular_system
 
         # Dicts to save extracted reactions and metabolites for each subsystem
         # TODO: Improve structure definition
         dict_of_lists_of_sets = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_lists_of_sets[name] = [set() for _ in range(d+1)]
         dict_of_dicts_of_lists_of_sets = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_dicts_of_lists_of_sets[name] = deepcopy(dict_of_lists_of_sets)
         dict_of_int = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_int[name] = -1
         dict_of_dicts_of_int = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_dicts_of_int[name] = deepcopy(dict_of_int)
 
         self._subsystem_reactions = {}
@@ -284,8 +284,8 @@ class NetworkExpansion:
 
         :return: Dict with distances
         """
-        for i in self._subsystem_names:
-            for j in self._subsystem_names:
+        for i in self._core_subsystems:
+            for j in self._core_subsystems:
                 for k in range(self._d+1):
                     # If there path of length d
                     if self._intermediate_paths[i][j][k]:
@@ -388,12 +388,12 @@ class NetworkExpansion:
 
         :return: None
         """
-        for subsystem in self._subsystem_names:
+        for subsystem in self._core_subsystems:
             self.extract_subsystem_reactions(subsystem)
             self.extract_subsystem_metabolites(subsystem)
 
-        for subsystem_i in self._subsystem_names:
-            for subsystem_j in self._subsystem_names:
+        for subsystem_i in self._core_subsystems:
+            for subsystem_j in self._core_subsystems:
                 for k in range(self._d+1):
                     self.breadth_search_subsystems_paths_length_d(subsystem_i, subsystem_j, k)
 
@@ -403,7 +403,7 @@ class NetworkExpansion:
 
         :return: None
         """
-        for subsystem in self._subsystem_names:
+        for subsystem in self._core_subsystems:
             for k in range(self._n + 1):
                 self.breadth_search_extracellular_system_paths(subsystem, k)
 
@@ -419,13 +419,13 @@ class NetworkExpansion:
         to_remove_reactions = set(map(extract_id, self._redgem.reactions))
 
         # Keep subsystems reactions and metabolites
-        for name in self._subsystem_names:
+        for name in self._core_subsystems:
             to_remove_reactions = to_remove_reactions - self._subsystem_reactions_id[name]
             to_remove_metabolites = to_remove_metabolites - self._subsystem_metabolites_id[name]
 
         # Keep intermediate reactions and metabolites
-        for i in self._subsystem_names:
-            for j in self._subsystem_names:
+        for i in self._core_subsystems:
+            for j in self._core_subsystems:
                 for k in range(self._d+1):
                     to_remove_reactions = to_remove_reactions \
                                           - self._intermediate_reactions_id[i][j][k]
@@ -436,7 +436,7 @@ class NetworkExpansion:
         to_remove_metabolites = to_remove_metabolites - set(self._extracellular_system)
 
         # Keep intermediate extracellular reactions and metabolites
-        for i in self._subsystem_names:
+        for i in self._core_subsystems:
             for k in range(self._d+1):
                 to_remove_reactions = to_remove_reactions \
                                       - self._intermediate_extracellular_reactions_id[i][k]
