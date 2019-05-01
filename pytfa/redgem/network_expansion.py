@@ -311,6 +311,8 @@ class NetworkExpansion:
         """
         for metabolite_id in self._extracellular_system:
             # Find metabolites at a distance n from metabolite_id
+            if metabolite_id not in self._graph:
+                continue
             ancestors = {}
             frontier = {metabolite_id}
             explored = {metabolite_id}
