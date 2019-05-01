@@ -75,7 +75,6 @@ class NetworkExpansion:
         self._path_dict = {}
 
         # Save others parameters
-        self._carbon_uptake = carbon_uptake
         self._cofactor_pairs = cofactor_pairs
         self._small_metabolites = small_metabolites
         self._inorganics = inorganics
