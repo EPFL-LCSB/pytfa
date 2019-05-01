@@ -11,8 +11,8 @@
 Model class
 """
 
-import network_expansion
-import lumpgem
+from pytfa.redgem.network_expansion import NetworkExpansion
+from pytfa.redgem.lumpgem import LumpGEM
 import yaml
 
 class RedGEM():
@@ -25,16 +25,16 @@ class RedGEM():
 
         with open(parameters_path, 'r') as stream:
             try:
-                self.params = yaml.safe_load(stream))
+                self.params = yaml.safe_load(stream)
                 print("Opened parameters file")
             except yaml.YAMLError as exc:
                 print(exc)
 
         # If auto is activated, automatically extracts inorganics from the gem
         if self.params["inorganics"] == "auto":
-            self.params["inorganics"] = _extract_inorganics()
+            self.params["inorganics"] = self._extract_inorganics()
 
-    def run():
+    def run(self):
         # Extracting parameters
         core_subsystems = self.params["core_subsystems"]
         subsystem_names = self.params["subsystem_names"]
