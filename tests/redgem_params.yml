@@ -22,7 +22,7 @@ biomass_rxns:
     - "Ec_biomass_iJO1366_WT_53p95M"
 
 carbon_uptake: 60000
-growth: 0.5
+growth_rate: 0.5
 
 small_metabolites:
     - 'h'
