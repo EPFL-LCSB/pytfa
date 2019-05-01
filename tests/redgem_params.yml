@@ -1,0 +1,50 @@
+---
+core_subsystems:
+    - "Citric Acid Cycle"
+    - "Pentose Phoshate Pathway"
+    - "Glycolysis/Glucogenesis"
+    - "Pyruvate Metabolism"
+    - "Glyoxylate Metabolism"
+
+extracellular_systems:
+    - 'DM_ac_e'
+    - 'DM_etoh_e'
+    - 'DM_glyc_e'
+    - 'DM_lac-D_e'
+    - 'DM_akg_e'
+    - 'DM_for_e'
+    - 'DM_pyr_e'
+    - 'DM_fum_e'
+    - 'DM_co2_e'
+    - 'DM_mal-L_e'
+
+biomass_rxns:
+    - "Ec_biomass_iJO1366_WT_53p95M"
+
+carbon_uptake: 60000
+growth: 0.5
+
+small_metabolites:
+    - 'h'
+    - 'h2o'
+    - 'co2'
+    - 'o2'
+    - 'pi'
+    - 'ppi'
+    - 'nh4'
+    - 'h2o2'
+
+cofactor_pairs:
+    - 'h2o[c]'
+    - 'atp[c]'
+    - 'adp[c]'
+    - 'nad[c]'
+    - 'nadh[c]'
+    - 'h[c]'
+
+inorganics: "auto"
+
+d: 6
+n: 8
+
+timeout: 300
