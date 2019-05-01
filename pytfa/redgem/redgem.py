@@ -34,10 +34,12 @@ class RedGEM():
         if self.params["inorganics"] == "auto":
             self.params["inorganics"] = self._extract_inorganics()
 
+        print(self.params)
+
     def run(self):
         # Extracting parameters
         core_subsystems = self.params["core_subsystems"]
-        extracellular_system = self.params["extracellular_system"]
+        extracellular_system = self.params["extracellular_systems"]
         biomass_rxns = self.params["biomass_rxns"]
 
         carbon_uptake = self.params["carbon_uptake"]
@@ -77,7 +79,7 @@ class RedGEM():
             if not met.elements == {}: # Edge case
                 # met is inorganic if it has 0 carbon in its formula
                 if 'C' in met.elements and met.elements['C'] > 0:
-                    inorganics.append(met)
+                    inorganics.append(met.id)
 
         return inorganics
 
