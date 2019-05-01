@@ -6,6 +6,7 @@ from pytfa.thermo.tmodel import ThermoModel
 from pytfa.io import  read_compartment_data, apply_compartment_data, read_lexicon, annotate_from_lexicon
 
 
+
 path_to_model = 'models/small_ecoli.mat'
 thermoDB = "data/thermo_data.thermodb"
 carbon_uptake = 60000
@@ -24,5 +25,5 @@ tfa_model.name = 'Lumped Model'
 
 path_to_params = 'tests/redgem_params.yml'
 
-redgem = RedGEM(model, path_to_params, False)
+redgem = RedGEM(tfa_model, path_to_params, False)
 redgem.run()
