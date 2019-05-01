@@ -37,12 +37,12 @@ class NetworkExpansion:
         # calling NetworkExpansion
         self._redgem = gem
         #self._redgem.name = 'redgem'
-        self._reduced_model = Model('graph')
         self._graph = nx.DiGraph()
 
         # Subsystems
         self._subsystem_names = subsystem_names
         self._subsystem_count = len(subsystem_names)
+        self._extracellular_system = extracellular_system
 
         # Dicts to save extracted reactions and metabolites for each subsystem
         # TODO: Improve structure definition
@@ -59,10 +59,8 @@ class NetworkExpansion:
         for name in subsystem_names:
             dict_of_dicts_of_int[name] = deepcopy(dict_of_int)
 
-        self._subsystem_reactions = {}
         self._subsystem_reactions_id = {}
         self._intermediate_reactions_id = deepcopy(dict_of_dicts_of_lists_of_sets)
-        self._subsystem_metabolites = {}
         self._subsystem_metabolites_id = {}
         self._intermediate_metabolites_id = deepcopy(dict_of_dicts_of_lists_of_sets)
         self._intermediate_paths = deepcopy(dict_of_dicts_of_lists_of_sets)
@@ -79,7 +77,6 @@ class NetworkExpansion:
         self._small_metabolites = small_metabolites
         self._inorganics = inorganics
         self._d = d
-        self._extracellular_system = extracellular_system
         self._n = n
 
     def extract_subsystem_reactions(self, subsystem):
@@ -96,7 +93,6 @@ class NetworkExpansion:
             if rxn.subsystem == subsystem:
                 rxns.add(rxn)
                 rxns_id.add(rxn.id)
-        self._subsystem_reactions[subsystem] = rxns
         self._subsystem_reactions_id[subsystem] = rxns_id
         return rxns
 
@@ -120,7 +116,6 @@ class NetworkExpansion:
                     continue
                 metabolites.add(metabolite)
                 metabolites_id.add(metabolite.id)
-        self._subsystem_metabolites[subsystem] = metabolites
         self._subsystem_metabolites_id[subsystem] = metabolites_id
         return metabolites
 
