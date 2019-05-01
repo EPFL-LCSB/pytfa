@@ -517,3 +517,5 @@ class NetworkExpansion:
         self.run_between_all_subsystems()
         self.run_extracellular_system()
         self.extract_sub_network()
+
+        return self._redgem
