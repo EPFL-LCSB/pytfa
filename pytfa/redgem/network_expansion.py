@@ -37,9 +37,10 @@ class NetworkExpansion:
         :param subsystem_names:
         :param n: User parameter
         """
-        self._gem = gem
-        self._redgem = gem.copy()
-        self._redgem.name = 'redgem'
+        # Shallow copy of the GEM : the deepcopy is possibly performed in redgem, before
+        # calling NetworkExpansion
+        self._redgem = gem
+        #self._redgem.name = 'redgem'
         self._reduced_model = Model('graph')
         self._graph = nx.DiGraph()
 
@@ -92,7 +93,7 @@ class NetworkExpansion:
         self._n = n
 
     def extract_core_reactions(self):
-        for rxn in self._gem.reactions:
+        for rxn in self._redgem.reactions:
             if rxn.subsystem in self._core_subsystems:
                 self._rcore.add(rxn)
 
@@ -116,7 +117,7 @@ class NetworkExpansion:
         """
         rxns = set()
         rxns_id = set()
-        for rxn in self._gem.reactions:
+        for rxn in self._redgem.reactions:
             if rxn.subsystem == subsystem:
                 rxns.add(rxn)
                 rxns_id.add(rxn.id)
@@ -156,7 +157,7 @@ class NetworkExpansion:
         """
         kept_rxns = []
         kept_metabolites = set()
-        for rxn in self._gem.reactions:
+        for rxn in self._redgem.reactions:
             metabolites = {}
             for metabolite, coefficient in rxn.metabolites.items():
                 metabolite_id = metabolite.id
@@ -450,8 +451,8 @@ class NetworkExpansion:
         """
         def extract_id(x):
             return x.id
-        to_remove_metabolites = set(map(extract_id, self._gem.metabolites))
-        to_remove_reactions = set(map(extract_id, self._gem.reactions))
+        to_remove_metabolites = set(map(extract_id, self._redgem.metabolites))
+        to_remove_reactions = set(map(extract_id, self._redgem.reactions))
 
         # Keep subsystems reactions and metabolites
         for name in self._subsystem_names:
@@ -500,9 +501,9 @@ class NetworkExpansion:
         to_add_reactions = []
         to_add_metabolites = []
         for reaction_id in to_add_reactions_id:
-            to_add_reactions.append(self._gem.reactions.get_by_id(reaction_id))
+            to_add_reactions.append(self._redgem.reactions.get_by_id(reaction_id))
         for metabolite_id in to_add_metabolites_id:
-            to_add_metabolites.append(self._gem.metabolites.get_by_id(metabolite_id))
+            to_add_metabolites.append(self._redgem.metabolites.get_by_id(metabolite_id))
 
         self._redgem.add_reactions(to_add_reactions)
     """
