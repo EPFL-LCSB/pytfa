@@ -31,10 +31,13 @@ class RedGEM():
                 print(exc)
 
         # If auto is activated, automatically extracts inorganics from the gem
-        if self.params["inorganics"] == "auto":
+        if "inorganic" not in self.params or self.params["inorganics"] == "auto":
+            print("Automatically commputing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
 
-        print(self.params)
+        if solver_feasibility not in self.params:
+            print("Using default solver feasibility : 1e-9")
+            self.params["feasibility"] = 1e-9
 
     def run(self):
         # Extracting parameters
@@ -55,6 +58,7 @@ class RedGEM():
         n = self.params["n"]
 
         timeout = self.params["timeout"]
+        self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
 
         print("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,

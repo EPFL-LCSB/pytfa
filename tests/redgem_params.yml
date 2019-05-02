@@ -44,3 +44,4 @@ d: 6
 n: 8
 
 timeout: 300
+feasibility: 1e-9
