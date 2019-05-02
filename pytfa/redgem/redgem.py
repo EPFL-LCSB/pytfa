@@ -35,7 +35,7 @@ class RedGEM():
             print("Automatically commputing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
 
-        if solver_feasibility not in self.params:
+        if "feasibility" not in self.params:
             print("Using default solver feasibility : 1e-9")
             self.params["feasibility"] = 1e-9
 
