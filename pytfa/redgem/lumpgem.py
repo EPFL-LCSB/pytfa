@@ -14,6 +14,17 @@ GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
 
+class InfeasibleExcept(Exception):
+    def __init__(self, status, feasibility):
+        self.status = status
+        self.feasibility = feasibility
+
+
+class TimeoutExcept(Exception):
+    def __init__(self, time_limit):
+        self.time_limit = time_limit
+
+
 class MyVariableClass(ReactionVariable, BinaryVariable):
     prefix = 'VC_'
 
@@ -35,7 +46,7 @@ class LumpGEM:
     def __init__(self, tfa_model, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout_limit=3600):
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
-        :type GEM: pytfa model
+        :type tfa_model: pytfa model
 
         :param biomass_rxns: list of biomass reactions
         :type biomass_rxns: [GEM.biomass_rxn.id]
@@ -172,10 +183,11 @@ class LumpGEM:
         # Set the sum as the objective function
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
-    def compute_lumps(self):
+    def compute_lumps(self, force_solve=False):
         """
         For each BBB (reactant of the biomass reaction), add the corresponding sink to the model, then optimize and
         lump the result into one lumped reaction
+        :param force_solve: Indicates whether the computations must continue when one lumping yields a status "infeasible"
         :return: The dict {BBB: lump} containing every lumped reactions, associated to their BBBs
         """
 
@@ -194,6 +206,21 @@ class LumpGEM:
 
             tfa_solution = self._tfa_model.optimize()
 
+            try:
+                # Timeout reached
+                if self._tfa_model.solver.status == 'time_limit':
+                    raise TimeoutExcept(self._tfa_model.solver.configuration.time_limit)
+                # Not optimal status -> infeasible
+                elif self._tfa_model.solver.status != 'optimal':
+                    raise InfeasibleExcept( self._tfa_model.solver.status,
+                                            self._tfa_model.solver.configuration.tolerances.feasibility)
+            except (TimeoutExcept, InfeasibleExcept) as err:
+                # If the user want to continue anyway, suits him
+                if force_solve:
+                    pass
+                else:
+                    raise err
+
             # TODO maybe use sympy.add
             lumped_core_reactions  = sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rcore])
             lumped_ncore_reactions = sum([rxn * tfa_solution.fluxes.get(rxn.id) * self._activation_vars[rxn].variable.primal for rxn in self._rncore])
@@ -207,4 +234,3 @@ class LumpGEM:
             sink.knock_out()
 
         return lumps
-
