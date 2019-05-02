@@ -67,7 +67,13 @@ class RedGEM():
         lumper = LumpGEM(self._gem, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout)
         lumps = lumper.compute_lumps()
         print("Done.")
-        return lumps
+
+        print("Create final network...")
+        for rxn in lumps.values():
+            reduced_gem.add_reaction(rxn)
+        print("Done.")
+
+        return reduced_gem
 
     def _extract_inorganics(self):
         """
