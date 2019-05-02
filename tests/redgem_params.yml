@@ -6,7 +6,7 @@ core_subsystems:
     - "Pyruvate Metabolism"
     - "Glyoxylate Metabolism"
 
-extracellular_systems:
+extracellular_system:
     - 'DM_ac_e'
     - 'DM_etoh_e'
     - 'DM_glyc_e'

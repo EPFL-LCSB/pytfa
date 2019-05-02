@@ -39,7 +39,7 @@ class RedGEM():
     def run(self):
         # Extracting parameters
         core_subsystems = self.params["core_subsystems"]
-        extracellular_system = self.params["extracellular_systems"]
+        extracellular_system = self.params["extracellular_system"]
         biomass_rxns = self.params["biomass_rxns"]
 
         carbon_uptake = self.params["carbon_uptake"]
