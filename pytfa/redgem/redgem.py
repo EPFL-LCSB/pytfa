@@ -47,6 +47,8 @@ class RedGEM():
 
         small_metabolites = self.params["small_metabolites"]
         cofactor_pairs = self.params["cofactor_pairs"]
+        # Flatten cofactor_pairs list
+        cofactors = [cofactor for pair in cofactor_pairs for cofactor in pair]
         inorganics = self.params["inorganics"]
 
         d = self.params["d"]
@@ -56,7 +58,7 @@ class RedGEM():
 
         print("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
-                                    cofactor_pairs, small_metabolites, inorganics,
+                                    cofactors, small_metabolites, inorganics,
                                     d, n)
         reduced_gem = expander.run()
         print("Done.")

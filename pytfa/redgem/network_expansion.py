@@ -19,7 +19,7 @@ from copy import deepcopy
 class NetworkExpansion:
 
     def __init__(self, gem, core_subsystems, extracellular_system,
-                 cofactor_pairs, small_metabolites, inorganics,
+                 cofactors, small_metabolites, inorganics,
                  d, n):
         """
         A class encapsulating the RedGEM algorithm
@@ -27,7 +27,7 @@ class NetworkExpansion:
         :param gem: The studied GEM
         :param core_subsystems: Core subsystems
         :param extracellular_system: Extracellular metabolite ids
-        :param cofactor_pairs: List of cofactor pairs id
+        :param cofactors: List of cofactors id
         :param small_metabolites: List of small metabolites id
         :param inorganics: List of inorganics id
         :param d: Degree
@@ -75,7 +75,7 @@ class NetworkExpansion:
         self._path_dict = {}
 
         # Save others parameters
-        self._cofactor_pairs = cofactor_pairs
+        self._cofactor_pairs = cofactors
         self._small_metabolites = small_metabolites
         self._inorganics = inorganics
         self._d = d

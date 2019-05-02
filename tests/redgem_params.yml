@@ -35,12 +35,8 @@ small_metabolites:
     - 'h2o2'
 
 cofactor_pairs:
-    - 'h2o[c]'
-    - 'atp[c]'
-    - 'adp[c]'
-    - 'nad[c]'
-    - 'nadh[c]'
-    - 'h[c]'
+    - ['atp[c]', 'adp[c]']
+    - ['nad[c]', 'nadh[c]']
 
 inorganics: "auto"
 
