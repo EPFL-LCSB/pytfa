@@ -60,16 +60,16 @@ class RedGEM():
         timeout = self.params["timeout"]
         self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
 
+        print("Computing lumps...")
+        lumper = LumpGEM(self._gem, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout)
+        lumps = lumper.compute_lumps()
+        print("Done.")
+
         print("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
                                     cofactors, small_metabolites, inorganics,
                                     d, n)
         reduced_gem = expander.run()
-        print("Done.")
-
-        print("Computing lumps...")
-        lumper = LumpGEM(self._gem, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout)
-        lumps = lumper.compute_lumps()
         print("Done.")
 
         print("Create final network...")
