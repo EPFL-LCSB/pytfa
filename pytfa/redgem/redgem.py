@@ -36,13 +36,22 @@ class RedGEM():
             print("Automatically commputing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
 
-        if "feasibility" not in self.params:
-            print("Using default solver feasibility : 1e-9")
-            self.params["feasibility"] = 1e-9
-
         if "timeout" not in self.params:
             print("Using default timeout : 3600s")
             self.params["timeout"] = 3600
+
+        if "feasibility" not in self.params:
+            print("Using default solver feasibility : 1e-9")
+            self.params["feasibility"] = 1e-9
+        else:
+            # numbers like 1e-9 are detected as strings by yaml module
+            # to enable their use, we cast them into floats
+            try:
+                self.params["feasibility"] = float(self.params["feasibility"])
+            except ValueError as v:
+                print(v)
+
+
 
     def run(self):
         # Extracting parameters
