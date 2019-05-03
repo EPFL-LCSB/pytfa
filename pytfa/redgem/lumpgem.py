@@ -209,7 +209,7 @@ class LumpGEM:
             try:
                 # Timeout reached
                 if self._tfa_model.solver.status == 'time_limit':
-                    raise TimeoutExcept(self._tfa_model.solver.configuration.time_limit)
+                    raise TimeoutExcept(self._tfa_model.solver.configuration.timeout)
                 # Not optimal status -> infeasible
                 elif self._tfa_model.solver.status != 'optimal':
                     raise InfeasibleExcept( self._tfa_model.solver.status,
