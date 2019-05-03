@@ -36,6 +36,9 @@ class RedGEM():
             print("Automatically commputing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
 
+        if "force_solve" not in self.params:
+            self.params["force_solve"] = False
+
         if "timeout" not in self.params:
             print("Using default timeout : 3600s")
             self.params["timeout"] = 3600
@@ -50,8 +53,6 @@ class RedGEM():
                 self.params["feasibility"] = float(self.params["feasibility"])
             except ValueError as v:
                 print(v)
-
-
 
     def run(self):
         # Extracting parameters
@@ -71,12 +72,13 @@ class RedGEM():
         d = self.params["d"]
         n = self.params["n"]
 
+        force_solve = self.params["force_solve"]
         timeout = self.params["timeout"]
         self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
 
         print("Computing lumps...")
         lumper = LumpGEM(self._gem, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout)
-        lumps = lumper.compute_lumps()
+        lumps = lumper.compute_lumps(force_solve)
         print("Done.")
 
         print("Computing network expansion...")

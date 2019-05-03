@@ -43,5 +43,6 @@ inorganics: "auto"
 d: 6
 n: 8
 
+force_solve: False
 timeout: 300
 feasibility: 1e-9
