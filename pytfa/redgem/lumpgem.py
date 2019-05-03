@@ -230,6 +230,7 @@ class LumpGEM:
                     lumped_reaction += rxn * tfa_solution.fluxes.get(rxn.id)
 
             lumped_reaction.name = "lump_"+met_BBB.name
+            lumped_reaction.id = "lump_"+met_BBB.id
             lumps[met_BBB] = lumped_reaction
 
             # Deactivating reaction by setting both bounds to 0
