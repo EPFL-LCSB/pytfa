@@ -92,7 +92,7 @@ class LumpGEM:
 
         # TODO : solver choice
         # TODO default : solver du modele
-        self._solver = 'optlang-cplex'
+        #self._solver = 'optlang-cplex'
 
         self._tfa_model.solver.configuration.timeout = timeout_limit
         print("Timeout limit is {}s".format(timeout_limit))
@@ -221,13 +221,15 @@ class LumpGEM:
                 else:
                     raise err
 
-            # TODO maybe use sympy.add
-            lumped_core_reactions  = sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rcore])
-            lumped_ncore_reactions = sum([rxn * tfa_solution.fluxes.get(rxn.id) * self._activation_vars[rxn].variable.primal for rxn in self._rncore])
-            lumped_BBB_reactions   = sum([rxn * tfa_solution.fluxes.get(rxn.id) for rxn in self._rBBB])
+            lumped_reaction = sink
+            for rxn in self._rcore:
+                lumped_reaction += (rxn * tfa_solution.fluxes.get(rxn.id))
 
-            lumped_reaction = sum([lumped_core_reactions, lumped_ncore_reactions, lumped_BBB_reactions, sink])
+            for rxn in self._rncore:
+                if self._activation_vars[rxn].variable.primal == 0.0:
+                    lumped_reaction += rxn * tfa_solution.fluxes.get(rxn.id)
 
+            lumped_reaction.name = "lump_"+met_BBB.name
             lumps[met_BBB] = lumped_reaction
 
             # Deactivating reaction by setting both bounds to 0
