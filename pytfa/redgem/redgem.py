@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
 
 """
@@ -38,6 +39,10 @@ class RedGEM():
         if "feasibility" not in self.params:
             print("Using default solver feasibility : 1e-9")
             self.params["feasibility"] = 1e-9
+
+        if "timeout" not in self.params:
+            print("Using default timeout : 3600s")
+            self.params[timeout] = 3600
 
     def run(self):
         # Extracting parameters
