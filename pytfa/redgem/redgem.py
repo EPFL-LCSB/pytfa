@@ -42,7 +42,7 @@ class RedGEM():
 
         if "timeout" not in self.params:
             print("Using default timeout : 3600s")
-            self.params[timeout] = 3600
+            self.params["timeout"] = 3600
 
     def run(self):
         # Extracting parameters
