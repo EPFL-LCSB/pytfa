@@ -29,6 +29,8 @@ class GeneralizedHRSampler(HRSampler):
         # This currently has to be done to reset the solver basis which is
         # required to get deterministic warmup point generation
         # (in turn required for a working `seed` arg)
+        HRSampler.__init__(self, model, thinning, seed=seed)
+        
         if model.solver.is_integer:
             raise TypeError("sampling does not work with integer problems :(")
         self.model = model.copy()
