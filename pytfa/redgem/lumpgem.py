@@ -197,6 +197,8 @@ class LumpGEM:
         # dict: {metabolite: lumped_reaction}
         lumps = {}
 
+        self._tfa_model.objective_direction = 'min' 
+
         for met_BBB, (sink_id, stoech_coeff) in self._sinks.items():
             print("Considering: " + met_BBB.id)
 
@@ -221,13 +223,19 @@ class LumpGEM:
                 else:
                     raise err
 
-            lumped_reaction = sink
-            for rxn in self._rcore:
-                lumped_reaction += (rxn * tfa_solution.fluxes.get(rxn.id))
+            lumped_reaction = 0#sink
+            # for rxn in self._rcore:
+            #     lumped_reaction += (rxn * tfa_solution.fluxes.get(rxn.id))
+
+            epsilon = self._tfa_model.solver.configuration.tolerances.integrality
 
             for rxn in self._rncore:
-                if self._activation_vars[rxn].variable.primal == 0.0:
+                if abs(1-self._activation_vars[rxn].variable.primal) < epsilon:
                     lumped_reaction += rxn * tfa_solution.fluxes.get(rxn.id)
+
+            if not lumped_reaction:
+                # BBB is produced by core
+                continue
 
             lumped_reaction.name = "lump_"+met_BBB.name
             lumped_reaction.id = "lump_"+met_BBB.id
