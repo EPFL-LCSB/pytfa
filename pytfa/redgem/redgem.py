@@ -58,7 +58,9 @@ class RedGEM():
         # Extracting parameters
         core_subsystems = self.params["core_subsystems"]
         extracellular_system = self.params["extracellular_system"]
-        biomass_rxns = self.params["biomass_rxns"]
+        biomass_rxn_ids = self.params["biomass_rxns"]
+
+        biomass_rxns = [self._gem.reactions.get_by_id(x) for x in biomass_rxn_ids]
 
         carbon_uptake = self.params["carbon_uptake"]
         growth_rate = self.params["growth_rate"]
@@ -77,7 +79,7 @@ class RedGEM():
         self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
 
         print("Computing lumps...")
-        lumper = LumpGEM(self._gem, biomass_rxns, core_subsystems, carbon_uptake, growth_rate, timeout)
+        lumper = LumpGEM(self._gem, self.params)
         lumps = lumper.compute_lumps(force_solve)
         print("Done.")
 
@@ -92,6 +94,8 @@ class RedGEM():
         for rxn in lumps.values():
             reduced_gem.add_reaction(rxn)
         print("Done.")
+
+        reduced_gem.add_reactions(biomass_rxns)
 
         return reduced_gem
 

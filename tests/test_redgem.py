@@ -9,11 +9,17 @@ from os.path import join
 
 
 path_to_model = join(this_directory,'..','models/small_ecoli.mat')
+# path_to_model = join(this_directory,'..','models/GSmodel_Ecoli.mat')
 thermoDB = join(this_directory,'..','data/thermo_data.thermodb')
 path_to_lexicon = join(this_directory,'..','models/iJO1366/lexicon.csv')
 path_to_compartment_data = join(this_directory,'..','models/iJO1366/compartment_data.json')
 
 model = import_matlab_model(path_to_model)
+# model.remove_reactions([x for x in model.reactions if x.id.startswith('LMPD_')])
+for rxn in model.reactions:
+    if rxn.id.startswith('LMPD_'):
+        rxn.add_metabolites({x:v*(0.001 - 1) for x,v in rxn.metabolites.items()})
+
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)
 compartment_data = read_compartment_data(path_to_compartment_data)
@@ -23,6 +29,11 @@ annotate_from_lexicon(tfa_model, lexicon)
 apply_compartment_data(tfa_model, compartment_data)
 
 tfa_model.name = 'Lumped Model'
+tfa_model.prepare()
+tfa_model.convert()
+
+# tfa_model.solver.configuration.verbosity = True
+tfa_model.logger.setLevel = 30 
 
 path_to_params = join(this_directory,'..','tests/redgem_params.yml')
 

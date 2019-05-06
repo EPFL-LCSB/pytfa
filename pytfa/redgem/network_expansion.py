@@ -445,7 +445,7 @@ class NetworkExpansion:
                 to_remove_metabolites = to_remove_metabolites \
                                         - self._intermediate_extracellular_metabolites_id[i][k]
 
-        print(to_remove_metabolites, to_remove_reactions)
+        # print(to_remove_metabolites, to_remove_reactions)
         self._redgem.remove_reactions(to_remove_reactions, True)
         # self._redgem.remove_metabolites(to_remove_metabolites)
 
