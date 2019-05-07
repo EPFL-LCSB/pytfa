@@ -22,8 +22,8 @@ extracellular_system:
 biomass_rxns:
     - "Ec_biomass_iJO1366_WT_53p95M"
 
-carbon_uptake: 100
-growth_rate: 0.5
+carbon_uptake: 10
+growth_rate: 0.1
 
 small_metabolites:
     - 'h'
@@ -44,6 +44,6 @@ inorganics: "auto"
 d: 2
 n: 2
 
-force_solve: True
+force_solve: False
 timeout: 300
 feasibility: 1e-9

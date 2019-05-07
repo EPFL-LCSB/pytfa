@@ -46,7 +46,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, params):
+    def __init__(self, tfa_model, additional_core_reactions, params):
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
         :type tfa_model: pytfa model
@@ -90,6 +90,9 @@ class LumpGEM:
                 self._exchanges.append(rxn)
             # If it's a core reaction
             elif rxn.subsystem in self.core_subsystems:
+                self._rcore.append(rxn)
+            # If it is part of the intrasubsystem expansion
+            elif rxn.id in additional_core_reactions:
                 self._rcore.append(rxn)
             # If it's neither BBB nor core, then it's non-core
             else:
@@ -147,15 +150,15 @@ class LumpGEM:
             activation_var = self._activation_vars[rxn]
 
             # variable that should be bounded by carbon_uptake
-            reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
-            # fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
-            # bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
-            # reac_var = fu + bu + activation_var 
+            # reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
+            fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+            bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
+            reac_var = fu + bu + activation_var 
             # adding the constraint to the model
             self._tfa_model.add_constraint(kind=MyConstraintClass,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=bigM,#self._C_uptake,
+                                           ub=1,#bigM,#self._C_uptake,
                                            lb=0,
                                            queue=True)
 
@@ -321,9 +324,6 @@ class LumpGEM:
             lumped_reaction.subnetwork = lump_dict
 
             lumps[met_BBB] = lumped_reaction
-
-            # if not met_BBB in lumped_reaction.metabolites:
-            #     1/0
 
             # Deactivating reaction by setting both bounds to 0
             sink.lower_bound = prev_lb

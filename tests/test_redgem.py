@@ -15,7 +15,7 @@ path_to_lexicon = join(this_directory,'..','models/iJO1366/lexicon.csv')
 path_to_compartment_data = join(this_directory,'..','models/iJO1366/compartment_data.json')
 
 model = import_matlab_model(path_to_model)
-# model.remove_reactions([x for x in model.reactions if x.id.startswith('LMPD_')])
+
 for rxn in model.reactions:
     if rxn.id.startswith('LMPD_'):
         rxn.add_metabolites({x:v*(0.001 - 1) for x,v in rxn.metabolites.items()})

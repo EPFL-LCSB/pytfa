@@ -24,6 +24,9 @@ class RedGEM():
         else:
             self._gem = gem.copy()
 
+        # This one is used to perform the lumping
+        self._source_gem = gem
+
         with open(parameters_path, 'r') as stream:
             try:
                 self.params = yaml.safe_load(stream)
@@ -33,7 +36,7 @@ class RedGEM():
 
         # If auto is activated, automatically extracts inorganics from the gem
         if "inorganic" not in self.params or self.params["inorganics"] == "auto":
-            print("Automatically commputing inorganics to use")
+            print("Automatically computing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
 
         if "force_solve" not in self.params:
@@ -78,16 +81,19 @@ class RedGEM():
         timeout = self.params["timeout"]
         self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
 
-        print("Computing lumps...")
-        lumper = LumpGEM(self._gem, self.params)
-        lumps = lumper.compute_lumps(force_solve)
-        print("Done.")
-
         print("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
                                     cofactors, small_metabolites, inorganics,
                                     d, n)
         reduced_gem = expander.run()
+        print("Done.")
+
+        # Add the expansion to core reactions
+        core_reactions = reduced_gem.reactions
+
+        print("Computing lumps...")
+        lumper = LumpGEM(self._source_gem, core_reactions, self.params)
+        lumps = lumper.compute_lumps(force_solve)
         print("Done.")
 
         print("Create final network...")
@@ -96,6 +102,7 @@ class RedGEM():
         print("Done.")
 
         reduced_gem.add_reactions(biomass_rxns)
+        reduced_gem.add_reactions(lumper._exchanges)
 
         return reduced_gem
 
@@ -110,7 +117,7 @@ class RedGEM():
         for met in self._gem.metabolites:
             if not met.elements == {}: # Edge case
                 # met is inorganic if it has 0 carbon in its formula
-                if 'C' in met.elements and met.elements['C'] > 0:
+                if (not 'C' in met.elements) or met.elements['C'] <= 0:
                     inorganics.append(met.id)
 
         return inorganics
