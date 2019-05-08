@@ -42,7 +42,7 @@ def timeit(method):
         message = '%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te-ts)
 
         try:
-            self.logger.info(message)
+            self.logger.debug(message)
         except AttributeError:
             print(message)
         return result
