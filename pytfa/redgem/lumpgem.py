@@ -4,7 +4,7 @@
 from cobra import Reaction
 
 from ..optim.utils import symbol_sum
-from ..thermo.utils import is_exchange
+from ..thermo.utils import is_exchange, check_transport_reaction
 from .utils import trim_epsilon_mets
 
 from ..optim.variables import ReactionVariable, BinaryVariable, get_binary_type
@@ -13,6 +13,8 @@ from ..optim.constraints import ReactionConstraint
 from numpy import sum, round
 
 from optlang.interface import INFEASIBLE, TIME_LIMIT, OPTIMAL
+
+from tqdm import tqdm
 
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
@@ -93,7 +95,7 @@ class LumpGEM:
             elif is_exchange(rxn):
                 self._exchanges.append(rxn)
             # If it is a transport reaction
-            elif 0:#ch(rxn):
+            elif check_transport_reaction(rxn):
                 self._transports.append(rxn)
             # If it's a core reaction
             elif rxn.subsystem in self.core_subsystems:
@@ -272,9 +274,12 @@ class LumpGEM:
 
         self._tfa_model.objective_direction = 'max'
 
-        for met_BBB, (sink_id, stoech_coeff) in self._sinks.items():
+        sink_iter = tqdm(self._sinks.items(), desc = 'met')
 
-            print("Considering: " + met_BBB.id)
+        for met_BBB, (sink_id, stoech_coeff) in sink_iter:
+            # Cute stuff
+            sink_iter.set_description('met={}'.format(met_BBB.id[:10]))
+            sink_iter.refresh()
 
             sink = self._tfa_model.reactions.get_by_id(sink_id)
             # Activate reaction by setting its lower bound

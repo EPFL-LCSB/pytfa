@@ -66,6 +66,7 @@ class RedGEM():
         biomass_rxn_ids = self.params["biomass_rxns"]
 
         biomass_rxns = [self._gem.reactions.get_by_id(x) for x in biomass_rxn_ids]
+        main_bio_rxn = biomass_rxns[0].id
 
         carbon_uptake = self.params["carbon_uptake"]
         growth_rate = self.params["growth_rate"]
@@ -108,17 +109,24 @@ class RedGEM():
 
         reduced_gem.add_reactions(biomass_rxns)
         reduced_gem.add_reactions(lumper._exchanges)
-        # Add transports if authorized
+        reduced_gem.add_reactions(lumper._transports)
 
+        self.logger.info('Detecting blocked reactions')
         # Remove blocked reactions
-        # nrxn_1 = len(reduced_gem.reactions)
-        # remove_blocked_reactions(reduced_gem)
-        # nrxn_2 = len(reduced_gem.reactions)
-        #
-        # self.logger.info('Removed {} blocked reaction with '
-        #                  'FVA post-processing'.format(nrxn_2-nrxn_1))
+        nrxn_1 = len(reduced_gem.reactions)
+        remove_blocked_reactions(reduced_gem)
+        nrxn_2 = len(reduced_gem.reactions)
 
-        reduced_gem.objective = biomass_rxns[0].id
+        self.logger.info('Removed {} blocked reaction with '
+                         'FVA post-processing'.format(nrxn_2-nrxn_1))
+
+        if main_bio_rxn not in reduced_gem.reactions:
+            raise RuntimeError('Main Biomass reaction appears blocked')
+
+        reduced_gem.objective = main_bio_rxn
+
+        # For debugging purposes
+        self.lumper = lumper
 
         return reduced_gem
 
