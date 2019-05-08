@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from cobra import Reaction
-from ..optim.utils import symbol_sum
 
-from pytfa.optim.variables import ReactionVariable, BinaryVariable, get_binary_type
-from pytfa.optim.constraints import ReactionConstraint
+from ..optim.utils import symbol_sum
+from ..thermo.utils import is_exchange
+from .utils import trim_epsilon_mets
+
+from ..optim.variables import ReactionVariable, BinaryVariable, get_binary_type
+from ..optim.constraints import ReactionConstraint
 
 from numpy import sum, round
 
@@ -35,18 +38,10 @@ class MyVariableClass(ReactionVariable, BinaryVariable):
                                   type=get_binary_type(),
                                   **kwargs)
 
-
 # Define a new constraint type:
 class MyConstraintClass(ReactionConstraint):
     prefix = 'CC_'
 
-
-def is_exchange(rxn):
-    return len(rxn.metabolites) == 1
-
-def trim_epsilon_mets(reaction, epsilon):
-    rm_dict = {x:-v for x,v in reaction.metabolites.items() if abs(v)<=epsilon}
-    reaction.add_metabolites(rm_dict)
 
 class LumpGEM:
     """
