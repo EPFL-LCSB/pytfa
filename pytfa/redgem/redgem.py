@@ -111,14 +111,14 @@ class RedGEM():
         reduced_gem.add_reactions(lumper._exchanges)
         reduced_gem.add_reactions(lumper._transports)
 
-        self.logger.info('Detecting blocked reactions')
-        # Remove blocked reactions
-        nrxn_1 = len(reduced_gem.reactions)
-        remove_blocked_reactions(reduced_gem)
-        nrxn_2 = len(reduced_gem.reactions)
-
-        self.logger.info('Removed {} blocked reaction with '
-                         'FVA post-processing'.format(nrxn_2-nrxn_1))
+        # self.logger.info('Detecting blocked reactions')
+        # # Remove blocked reactions
+        # nrxn_1 = len(reduced_gem.reactions)
+        # remove_blocked_reactions(reduced_gem)
+        # nrxn_2 = len(reduced_gem.reactions)
+        #
+        # self.logger.info('Removed {} blocked reaction with '
+        #                  'FVA post-processing'.format(nrxn_2-nrxn_1))
 
         if main_bio_rxn not in reduced_gem.reactions:
             raise RuntimeError('Main Biomass reaction appears blocked')
