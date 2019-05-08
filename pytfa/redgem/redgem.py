@@ -14,6 +14,7 @@ Model class
 
 from pytfa.redgem.network_expansion import NetworkExpansion
 from pytfa.redgem.lumpgem import LumpGEM
+from .utils import remove_blocked_reactions
 import yaml
 
 class RedGEM():
@@ -26,6 +27,7 @@ class RedGEM():
 
         # This one is used to perform the lumping
         self._source_gem = gem
+        self.logger = self._gem.logger
 
         with open(parameters_path, 'r') as stream:
             try:
@@ -84,28 +86,39 @@ class RedGEM():
         self._source_gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
         self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
 
-        print("Computing network expansion...")
+        self.logger.info("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
                                     cofactors, small_metabolites, inorganics,
                                     d, n)
         reduced_gem = expander.run()
-        print("Done.")
+        self.logger.info("Done.")
 
         # Add the expansion to core reactions
         core_reactions = reduced_gem.reactions
 
-        print("Computing lumps...")
+        self.logger.info("Computing lumps...")
         lumper = LumpGEM(self._source_gem, core_reactions, self.params)
         lumps = lumper.compute_lumps(force_solve)
-        print("Done.")
+        self.logger.info("Done.")
 
-        print("Create final network...")
+        self.logger.info("Create final network...")
         for rxn in lumps.values():
             reduced_gem.add_reaction(rxn)
-        print("Done.")
+        self.logger.info("Done.")
 
         reduced_gem.add_reactions(biomass_rxns)
         reduced_gem.add_reactions(lumper._exchanges)
+        # Add transports if authorized
+
+        # Remove blocked reactions
+        # nrxn_1 = len(reduced_gem.reactions)
+        # remove_blocked_reactions(reduced_gem)
+        # nrxn_2 = len(reduced_gem.reactions)
+        #
+        # self.logger.info('Removed {} blocked reaction with '
+        #                  'FVA post-processing'.format(nrxn_2-nrxn_1))
+
+        reduced_gem.objective = biomass_rxns[0].id
 
         return reduced_gem
 
