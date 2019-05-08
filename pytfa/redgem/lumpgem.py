@@ -9,6 +9,8 @@ from pytfa.optim.constraints import ReactionConstraint
 
 from numpy import sum, round
 
+from optlang.interface import INFEASIBLE, TIME_LIMIT, OPTIMAL
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
@@ -41,6 +43,10 @@ class MyConstraintClass(ReactionConstraint):
 
 def is_exchange(rxn):
     return len(rxn.metabolites) == 1
+
+def trim_epsilon_mets(reaction, epsilon):
+    rm_dict = {x:-v for x,v in reaction.metabolites.items() if abs(v)<=epsilon}
+    reaction.add_metabolites(rm_dict)
 
 class LumpGEM:
     """
@@ -76,6 +82,8 @@ class LumpGEM:
         self._rBBB = list()
         # Set containing every exchange reaction
         self._exchanges = list()
+        # Set containing every transport reaction
+        self._transports = list()
         # Set containing every core reaction
         self._rcore = list()
         # Set containing every non-core reaction
@@ -86,8 +94,12 @@ class LumpGEM:
             # If it's a BBB reaction
             if rxn.id in self.biomass_rxns:
                 self._rBBB.append(rxn)
+            # If it is an exchange reaction
             elif is_exchange(rxn):
                 self._exchanges.append(rxn)
+            # If it is a transport reaction
+            elif 0:#ch(rxn):
+                self._transports.append(rxn)
             # If it's a core reaction
             elif rxn.subsystem in self.core_subsystems:
                 self._rcore.append(rxn)
@@ -144,21 +156,21 @@ class LumpGEM:
         Generate carbon intake related constraints for each non-core reaction
         For each reaction rxn : rxn.forward_variable + rxn.reverse_variable + activation_var * C_uptake < C_uptake
         """
-        # bigM = 10/self._tfa_model.solver.configuration.tolerances.integrality
+
         bigM = self._C_uptake
         for rxn in self._rncore:
             activation_var = self._activation_vars[rxn]
 
             # variable that should be bounded by carbon_uptake
-            # reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
-            fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
-            bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
-            reac_var = fu + bu + activation_var 
+            reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
+            # fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+            # bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
+            # reac_var = fu + bu + activation_var
             # adding the constraint to the model
             self._tfa_model.add_constraint(kind=MyConstraintClass,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=1,#bigM,#self._C_uptake,
+                                           ub=bigM,#1,#bigM,#self._C_uptake,
                                            lb=0,
                                            queue=True)
 
@@ -260,8 +272,10 @@ class LumpGEM:
 
         # dict: {metabolite: lumped_reaction}
         lumps = {}
+        epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
+        epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
 
-        self._tfa_model.objective_direction = 'max' 
+        self._tfa_model.objective_direction = 'max'
 
         for met_BBB, (sink_id, stoech_coeff) in self._sinks.items():
 
@@ -275,29 +289,26 @@ class LumpGEM:
 
             n_da = self._tfa_model.slim_optimize()
 
-            print('Produced {}'.format(sink.flux), 'with {0:.0f} reactions deactivated'.format(n_da))
 
             try:
                 # Timeout reached
-                if self._tfa_model.solver.status == 'time_limit':
+                if self._tfa_model.solver.status == TIME_LIMIT:
                     raise TimeoutExcept(self._tfa_model.solver.configuration.timeout)
                 # Not optimal status -> infeasible
-                elif self._tfa_model.solver.status != 'optimal':
+                elif self._tfa_model.solver.status != OPTIMAL:
                     raise InfeasibleExcept( self._tfa_model.solver.status,
                                             self._tfa_model.solver.configuration.tolerances.feasibility)
             except (TimeoutExcept, InfeasibleExcept) as err:
                 # If the user want to continue anyway, suits him
                 if force_solve:
-                    pass
+                    # Raise a warning
+                    continue
                 else:
                     raise err
 
-            lumped_reaction = 0#sink
-            # for rxn in self._rcore:
-            #     lumped_reaction += (rxn * tfa_solution.fluxes.get(rxn.id))
+            # print('Produced {}'.format(sink.flux),
+            #       'with {0:.0f} reactions deactivated'.format(n_da))
 
-            epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
-            epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
             lump_dict = dict()
 
             for rxn in self._rncore:
@@ -307,21 +318,17 @@ class LumpGEM:
             lumped_reaction = sum(rxn * (flux / min_prod) 
                 for rxn, flux in lump_dict.items())
 
-
-            # for rxn in self._rcore:
-            #     if abs(rxn.flux) > epsilon_flux:
-            #         lumped_reaction += rxn * (rxn.flux / min_prod)
-
             if not lumped_reaction:
                 # No need for lump
                 self._tfa_model.logger.info('Metabolite {} is produced in enough '
                                         'quantity by core reactions'.format(met_BBB.id))
-                # 1/0
                 continue
 
             lumped_reaction.id   = sink.id  .replace('Sink_','LUMP_')
             lumped_reaction.name = sink.name.replace('Sink_','LUMP_')
             lumped_reaction.subnetwork = lump_dict
+
+            trim_epsilon_mets(lumped_reaction, epsilon=epsilon_flux)
 
             lumps[met_BBB] = lumped_reaction
 

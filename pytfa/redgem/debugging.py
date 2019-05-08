@@ -15,7 +15,7 @@ Debugging
 from cobra import Reaction
 from pandas import Series
 
-def make_sink(met, lb=0):
+def make_sink(met, ub=100, lb=0):
     rid = 'sink_' + met.id
     try:
         # if the sink already exists 
@@ -26,10 +26,11 @@ def make_sink(met, lb=0):
         new.add_metabolites({met:-1})
     
     new.lower_bound = lb
+    new.upper_bound = ub
 
     return new
 
-def add_BBB_sinks(model,biomass_rxn_id, lb=0):
+def add_BBB_sinks(model,biomass_rxn_id, ub=100, lb=0):
 
     bio_rxn = model.reactions.get_by_id(biomass_rxn_id)
 
@@ -37,7 +38,7 @@ def add_BBB_sinks(model,biomass_rxn_id, lb=0):
     all_sinks = list()
 
     for the_BBB in all_BBBs:
-        new = make_sink(the_BBB, lb=lb)
+        new = make_sink(the_BBB, ub=ub, lb=lb)
         all_sinks.append(new)
 
     model.add_reactions([x for x in all_sinks if not x.id in model.reactions])
@@ -61,22 +62,18 @@ def check_BBB_production(model, biomass_rxn_id, verbose = False):
 
 def min_BBB_uptake(model,biomass_rxn_id, min_growth_value, verbose=False):
     
-    all_sinks = add_BBB_sinks(model, biomass_rxn_id, lb = -100)
-    bio_rxn = model.reactions.get_by_id(biomass_rxn_id)
-    bio_rxn.lower_bound = min_growth_value
-
-    print(all_sinks)
+    all_sinks = add_BBB_sinks(model, biomass_rxn_id, ub = 0, lb = -100)
 
     with model:
         # Uptake is negative
         # Min absolute uptake = Max uptake
-        model.objective = sum(s.forward_variable - s.reverse_variable 
-            for s in all_sinks)
+        bio_rxn = model.reactions.get_by_id(biomass_rxn_id)
+        bio_rxn.lower_bound = min_growth_value
+        model.objective = sum( - 1* s.reverse_variable for s in all_sinks)
         model.objective_direction = 'max'
-        print(model.objective.expression)
-        model.slim_optimize()
+        model.optimize()
+        ret = Series({r:r.flux for r in all_sinks})
 
-    ret = Series({r:r.flux for r in all_sinks})
     if verbose:
         print(ret)
     return ret

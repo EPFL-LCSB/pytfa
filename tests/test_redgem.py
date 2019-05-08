@@ -16,9 +16,6 @@ path_to_compartment_data = join(this_directory,'..','models/iJO1366/compartment_
 
 model = import_matlab_model(path_to_model)
 
-for rxn in model.reactions:
-    if rxn.id.startswith('LMPD_'):
-        rxn.add_metabolites({x:v*(0.001 - 1) for x,v in rxn.metabolites.items()})
 
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)

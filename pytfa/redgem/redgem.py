@@ -80,6 +80,9 @@ class RedGEM():
         force_solve = self.params["force_solve"]
         timeout = self.params["timeout"]
         self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
+        self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        self._source_gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
+        self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
 
         print("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
