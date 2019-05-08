@@ -201,7 +201,7 @@ class ThermoModel(LCSBModel, Model):
             or len(reaction.metabolites) >= 100
             or balanceResult in ['missing atoms', 'drain flux']):
 
-            self.logger.info('{} : thermo constraint NOT created'.format(reaction.id))
+            self.logger.debug('{} : thermo constraint NOT created'.format(reaction.id))
             reaction.thermo['computed'] = False
             reaction.thermo['deltaGR'] = BIGM_DG
             reaction.thermo['deltaGRerr'] = BIGM_DG
@@ -346,7 +346,7 @@ class ThermoModel(LCSBModel, Model):
                                metDeltaGF)
 
         else:
-            self.logger.info('NOT generating thermo variables for {}'.format(met.id))
+            self.logger.debug('NOT generating thermo variables for {}'.format(met.id))
 
         if LC != None:
             # Register the variable to find it more easily
