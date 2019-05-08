@@ -19,8 +19,9 @@ from cobra import DictList, Model
 from cobra.core.solution import Solution
 
 from ..utils.str import camel2underscores
-from ..optim.variables import GenericVariable
-from ..optim.utils import get_primal
+from ..optim.variables import GenericVariable, ReactionVariable, MetaboliteVariable
+from ..optim.constraints import ReactionConstraint, MetaboliteConstraint
+from ..optim.utils import get_primal, get_all_subclasses
 
 import time
 
@@ -147,6 +148,49 @@ class LCSBModel(ABC):
         # self.add_cons_vars(cons.constraint)
 
         return cons
+
+    def remove_reactions(self, reactions, remove_orphans=False):
+        # Remove the constraints and variables associated to these reactions
+        all_cons_subclasses = get_all_subclasses(ReactionConstraint)
+        all_var_subclasses = get_all_subclasses(ReactionVariable)
+
+        self._remove_associated_consvar(all_cons_subclasses, all_var_subclasses,
+                                        reactions)
+
+        Model.remove_reactions(self,reactions,remove_orphans)
+
+    def remove_metabolites(self, metabolite_list, destructive=False):
+        # Remove the constraints and variables associated to these reactions
+        all_cons_subclasses = get_all_subclasses(MetaboliteConstraint)
+        all_var_subclasses = get_all_subclasses(MetaboliteVariable)
+
+        self._remove_associated_consvar(all_cons_subclasses, all_var_subclasses,
+                                        metabolite_list)
+
+        Model.remove_metabolites(self, metabolite_list, destructive)
+
+    def _remove_associated_consvar(self, all_cons_subclasses, all_var_subclasses,
+                                   collection):
+
+        if not hasattr(collection, '__iter__'):
+            collection = [collection]
+
+        strfy = lambda x:x if isinstance(x, str) else x.id
+
+        for cons_type in all_cons_subclasses:
+            for element in collection:
+                try:
+                    cons = self._cons_kinds[cons_type.__name__].get_by_id(strfy(element))
+                    self.remove_constraint(cons)
+                except KeyError:
+                    pass
+        for var_type in all_var_subclasses:
+            for element in collection:
+                try:
+                    var = self._var_kinds[var_type.__name__].get_by_id(strfy(element))
+                    self.remove_variable(var)
+                except KeyError:
+                    pass
 
     def remove_variable(self, var):
         """
