@@ -1,15 +1,25 @@
-from cobra.flux_analysis import flux_variability_analysis
+import numpy as np
+# from cobra.flux_analysis import flux_variability_analysis
+from pytfa.analysis.variability import variability_analysis
 
 def remove_blocked_reactions(model):
     epsilon = model.solver.configuration.tolerances.feasibility
-    fva = flux_variability_analysis(model)
+    # fva = flux_variability_analysis(model)
+    fva = variability_analysis(model, kind='reactions')
     # Blocked reactions have max and min at 0
-    rid_to_rm = fva[  (fva.max(axis=1).abs()<1*epsilon)
-                    & (fva.min(axis=1).abs()<1*epsilon)].index
+    df = fva[ (fva.max(axis=1).abs()<1*epsilon)
+            & (fva.min(axis=1).abs()<1*epsilon)]
+    rid_to_rm = df.index
 
     model.remove_reactions(rid_to_rm)
+
+    return df
 
 
 def trim_epsilon_mets(reaction, epsilon):
     rm_dict = {x:-v for x,v in reaction.metabolites.items() if abs(v)<=epsilon}
     reaction.add_metabolites(rm_dict)
+
+    n = int(-1*np.log10(epsilon))
+    round_dict = {x:-v+np.round(v,n) for x,v in reaction.metabolites.items()}
+    reaction.add_metabolites(round_dict)
