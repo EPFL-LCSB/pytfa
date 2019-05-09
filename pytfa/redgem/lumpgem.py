@@ -8,7 +8,7 @@ from ..thermo.utils import is_exchange, check_transport_reaction
 from .utils import trim_epsilon_mets
 
 from ..optim.variables import ReactionVariable, BinaryVariable, get_binary_type
-from ..optim.constraints import ReactionConstraint
+from ..optim.constraints import ReactionConstraint, ForbiddenProfile
 
 from numpy import sum, round
 
@@ -21,6 +21,9 @@ GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
 
+# Transforms (OnePerBBB --> oneperbbb), (one_per_bbb --> oneperbbb), etc ...
+disambiguate = lambda s:s.lower().replace('_','')
+
 class InfeasibleExcept(Exception):
     def __init__(self, status, feasibility):
         self.status = status
@@ -32,8 +35,8 @@ class TimeoutExcept(Exception):
         self.time_limit = time_limit
 
 
-class MyVariableClass(ReactionVariable, BinaryVariable):
-    prefix = 'VC_'
+class FluxKO(ReactionVariable, BinaryVariable):
+    prefix = 'KO_'
 
     def __init__(self, reaction, **kwargs):
         ReactionVariable.__init__(self, reaction,
@@ -41,8 +44,8 @@ class MyVariableClass(ReactionVariable, BinaryVariable):
                                   **kwargs)
 
 # Define a new constraint type:
-class MyConstraintClass(ReactionConstraint):
-    prefix = 'CC_'
+class UseOrKO(ReactionConstraint):
+    prefix = 'UK_'
 
 
 class LumpGEM:
@@ -121,7 +124,7 @@ class LumpGEM:
 
         # lumpgem binary variables to deactivate non-core reactions. The reaction is deactivated when the value of
         # the variable is 1
-        self._activation_vars = {rxn: self._tfa_model.add_variable(kind=MyVariableClass,
+        self._activation_vars = {rxn: self._tfa_model.add_variable(kind=FluxKO,
                                                                    hook=rxn,
                                                                    lb=0,
                                                                    ub=1,
@@ -164,10 +167,10 @@ class LumpGEM:
             bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
             reac_var = fu + bu + activation_var
             # adding the constraint to the model
-            self._tfa_model.add_constraint(kind=MyConstraintClass,
+            self._tfa_model.add_constraint(kind=UseOrKO,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=1,#bigM,#self._C_uptake,
+                                           ub=1,  #bigM,#self._C_uptake,
                                            # ub=bigM,#self._C_uptake,
                                            lb=0,
                                            queue=True)
@@ -268,6 +271,9 @@ class LumpGEM:
         self._tfa_model.convert()
         # self._tfa_model.objective_direction = 'min'
 
+        the_method = disambiguate(method)
+        print('Lumping method detected: {}'.format(the_method))
+
         # dict: {metabolite: lumped_reaction}
         lumps = {}
 
@@ -286,13 +292,28 @@ class LumpGEM:
             min_prod = self._growth_rate * stoech_coeff
             sink.lower_bound = min_prod
 
-            lumped_reaction = self._lump_one_per_bbb(force_solve,
-                                                     met_BBB, sink)
+            if the_method == 'oneperbbb':
+                this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
+                lumped_reactions = [this_lump] if this_lump is not None else list()
+            elif the_method.startswith('min+'):
+                try:
+                    p = int(the_method.replace('min+',''))
+                except ValueError:
+                    raise ValueError('Min+p method must have p as an integer')
+                lumped_reactions = self._lump_min_plus_p(met_BBB, sink, p, force_solve)
+            elif the_method.startswith('min'):
+                lumped_reactions = self._lump_min_plus_p(met_BBB, sink, 0, force_solve)
+            else:
+                raise ValueError('Lumping method not recognized: {}. '
+                                 'Valid methods are '
+                                 'OnePerBBB, Min, Min+p, p natural integer'
+                                 .format(the_method))
 
-            if lumped_reaction is None:
+
+            if not lumped_reactions:
                 continue
 
-            lumps[met_BBB] = lumped_reaction
+            lumps[met_BBB] = lumped_reactions
 
             # Deactivating reaction by setting both bounds to 0
             sink.lower_bound = prev_lb
@@ -300,9 +321,14 @@ class LumpGEM:
 
         return lumps
 
-    def _lump_one_per_bbb(self, force_solve, met_BBB, sink):
-        epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
-        epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
+    def _lump_one_per_bbb(self, met_BBB, sink, force_solve):
+        """
+
+        :param met_BBB:
+        :param sink:
+        :param force_solve:
+        :return:
+        """
 
         n_da = self._tfa_model.slim_optimize()
 
@@ -325,6 +351,88 @@ class LumpGEM:
 
         # print('Produced {}'.format(sink.flux),
         #       'with {0:.0f} reactions deactivated'.format(n_da))
+
+        lumped_reaction = self._build_lump(met_BBB, sink)
+
+        return lumped_reaction
+
+
+    def _lump_min_plus_p(self, met_BBB, sink, p, force_solve, max_lumps=1e2):
+        """
+
+        :param met_BBB:
+        :param sink:
+        :param force_solve:
+        :return:
+        """
+
+        epsilon = self._tfa_model.solver.configuration.tolerances.integrality
+
+        lumps = list()
+
+        with self._tfa_model as model:
+            activation_vars = model.get_variables_of_type(FluxKO)
+
+            # Solve a first time, obtain minimal subnet
+            this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
+
+            # If the model is infeasible, but no error was thrown in _lump,
+            # Then it is ok to have lo lump
+            if this_lump is None:
+                return list()
+
+            max_deactivated_rxns = model.objective.value
+            lumps.append(this_lump)
+
+            # Add constraint forbidding subnets bigger than p
+            expr = symbol_sum(activation_vars)
+
+            # The lower bound is the max number of deactivated, minus p
+            # Which allows activating the minimal number of reactions, plus p
+            lb = max_deactivated_rxns - p
+            model.add_constraint(kind=ForbiddenProfile,
+                                 id_ = 'MAX_DEACT_{}'.format(met_BBB.id),
+                                 expr = expr,
+                                 lb = lb,
+                                 ub = max_deactivated_rxns,
+                                 )
+
+            n_deactivated_reactions = max_deactivated_rxns
+
+            # While loop, break on infeasibility
+            while model.solver.status == OPTIMAL and len(lumps)<=max_lumps:
+                # Add constraint forbidding the previous solution
+                is_inactivated = [x for x in activation_vars
+                               if abs(x.variable.primal-1) < 2*epsilon]
+
+                expr = symbol_sum(is_inactivated)
+                model.add_constraint(kind=ForbiddenProfile,
+                                     id_ = '{}_{}_{}'.format(met_BBB.id,
+                                                             n_deactivated_reactions,
+                                                             n_lumps),
+                                     expr = expr,
+                                     lb = max_deactivated_rxns-p-1,
+                                     ub = n_deactivated_reactions-1,
+                                     )
+                this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
+                lumps.append(this_lump)
+
+        # TODO: Update of dynamic properties not handled yet
+        # upon exiting context manager
+        model.regenerate_constraints()
+
+
+    def _build_lump(self, met_BBB, sink):
+        """
+        This function uses the current solution of self._tfa_model
+
+        :param met_BBB:
+        :param sink:
+        :return:
+        """
+
+        epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
+        epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
 
         lump_dict = dict()
         for rxn in self._rncore:

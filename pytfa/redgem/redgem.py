@@ -122,8 +122,8 @@ class RedGEM():
         self.logger.info("Done.")
 
         self.logger.info("Create final network...")
-        for rxn in lumps.values():
-            reduced_gem.add_reaction(rxn)
+        for rxns in lumps.values():
+            reduced_gem.add_reactions(rxns)
         self.logger.info("Done.")
 
         reduced_gem.add_reactions(biomass_rxns)
