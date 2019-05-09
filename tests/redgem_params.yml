@@ -23,7 +23,7 @@ biomass_rxns:
     - "Ec_biomass_iJO1366_WT_53p95M"
 
 carbon_uptake: 10
-growth_rate: 0.1
+growth_rate: 0.7
 
 small_metabolites:
     - 'h'
@@ -41,9 +41,13 @@ cofactor_pairs:
 
 inorganics: "auto"
 
+lump_method: OnePerBBB # Smin, Smin+n
+remove_blocked_reactions: yes
+
 d: 2
 n: 2
 
+solver: auto
 force_solve: False
 timeout: 300
 feasibility: 1e-9

@@ -159,15 +159,16 @@ class LumpGEM:
             activation_var = self._activation_vars[rxn]
 
             # variable that should be bounded by carbon_uptake
-            reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
-            # fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
-            # bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
-            # reac_var = fu + bu + activation_var
+            # reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
+            fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+            bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
+            reac_var = fu + bu + activation_var
             # adding the constraint to the model
             self._tfa_model.add_constraint(kind=MyConstraintClass,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=bigM,#1,#bigM,#self._C_uptake,
+                                           ub=1,#bigM,#self._C_uptake,
+                                           # ub=bigM,#self._C_uptake,
                                            lb=0,
                                            queue=True)
 
@@ -255,7 +256,7 @@ class LumpGEM:
         # Set the sum as the objective function
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
-    def compute_lumps(self, force_solve=False):
+    def compute_lumps(self, force_solve=False, method='OnePerBBB'):
         """
         For each BBB (reactant of the biomass reaction), add the corresponding sink to the model, then optimize and
         lump the result into one lumped reaction
@@ -269,8 +270,6 @@ class LumpGEM:
 
         # dict: {metabolite: lumped_reaction}
         lumps = {}
-        epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
-        epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
 
         self._tfa_model.objective_direction = 'max'
 
@@ -287,48 +286,11 @@ class LumpGEM:
             min_prod = self._growth_rate * stoech_coeff
             sink.lower_bound = min_prod
 
-            n_da = self._tfa_model.slim_optimize()
+            lumped_reaction = self._lump_one_per_bbb(force_solve,
+                                                     met_BBB, sink)
 
-
-            try:
-                # Timeout reached
-                if self._tfa_model.solver.status == TIME_LIMIT:
-                    raise TimeoutExcept(self._tfa_model.solver.configuration.timeout)
-                # Not optimal status -> infeasible
-                elif self._tfa_model.solver.status != OPTIMAL:
-                    raise InfeasibleExcept( self._tfa_model.solver.status,
-                                            self._tfa_model.solver.configuration.tolerances.feasibility)
-            except (TimeoutExcept, InfeasibleExcept) as err:
-                # If the user want to continue anyway, suits him
-                if force_solve:
-                    # Raise a warning
-                    continue
-                else:
-                    raise err
-
-            # print('Produced {}'.format(sink.flux),
-            #       'with {0:.0f} reactions deactivated'.format(n_da))
-
-            lump_dict = dict()
-
-            for rxn in self._rncore:
-                if self._activation_vars[rxn].variable.primal < epsilon_int:
-                    lump_dict[rxn] = rxn.flux
-
-            lumped_reaction = sum(rxn * (flux / min_prod) 
-                for rxn, flux in lump_dict.items())
-
-            if not lumped_reaction:
-                # No need for lump
-                self._tfa_model.logger.info('Metabolite {} is produced in enough '
-                                        'quantity by core reactions'.format(met_BBB.id))
+            if lumped_reaction is None:
                 continue
-
-            lumped_reaction.id   = sink.id  .replace('Sink_','LUMP_')
-            lumped_reaction.name = sink.name.replace('Sink_','LUMP_')
-            lumped_reaction.subnetwork = lump_dict
-
-            trim_epsilon_mets(lumped_reaction, epsilon=epsilon_flux)
 
             lumps[met_BBB] = lumped_reaction
 
@@ -337,3 +299,50 @@ class LumpGEM:
             # sink.knock_out()
 
         return lumps
+
+    def _lump_one_per_bbb(self, force_solve, met_BBB, sink):
+        epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
+        epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
+
+        n_da = self._tfa_model.slim_optimize()
+
+        try:
+            # Timeout reached
+            if self._tfa_model.solver.status == TIME_LIMIT:
+                raise TimeoutExcept(self._tfa_model.solver.configuration.timeout)
+            # Not optimal status -> infeasible
+            elif self._tfa_model.solver.status != OPTIMAL:
+                raise InfeasibleExcept(self._tfa_model.solver.status,
+                                       self._tfa_model.solver.configuration.tolerances.feasibility)
+
+        except (TimeoutExcept, InfeasibleExcept) as err:
+            # If the user want to continue anyway, suits him
+            if force_solve:
+                # Raise a warning
+                return None
+            else:
+                raise err
+
+        # print('Produced {}'.format(sink.flux),
+        #       'with {0:.0f} reactions deactivated'.format(n_da))
+
+        lump_dict = dict()
+        for rxn in self._rncore:
+            if self._activation_vars[rxn].variable.primal < epsilon_int:
+                lump_dict[rxn] = rxn.flux
+        sigma = sink.flux
+        lumped_reaction = sum(rxn * (flux / sigma)
+                              for rxn, flux in lump_dict.items())
+        if not lumped_reaction:
+            # No need for lump
+            self._tfa_model.logger.info('Metabolite {} is produced in enough '
+                                        'quantity by core reactions'.format(met_BBB.id))
+            return None
+
+        lumped_reaction.id = sink.id.replace('Sink_', 'LUMP_')
+        lumped_reaction.name = sink.name.replace('Sink_', 'LUMP_')
+        lumped_reaction.subnetwork = lump_dict
+
+        trim_epsilon_mets(lumped_reaction, epsilon=epsilon_flux)
+
+        return lumped_reaction

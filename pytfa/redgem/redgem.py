@@ -38,18 +38,18 @@ class RedGEM():
 
         # If auto is activated, automatically extracts inorganics from the gem
         if "inorganic" not in self.params or self.params["inorganics"] == "auto":
-            print("Automatically computing inorganics to use")
+            self.logger.info("Automatically computing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
 
         if "force_solve" not in self.params:
             self.params["force_solve"] = False
 
         if "timeout" not in self.params:
-            print("Using default timeout : 3600s")
+            self.logger.info("Using default timeout : 3600s")
             self.params["timeout"] = 3600
 
         if "feasibility" not in self.params:
-            print("Using default solver feasibility : 1e-9")
+            self.logger.info("Using default solver feasibility : 1e-9")
             self.params["feasibility"] = 1e-9
         else:
             # numbers like 1e-9 are detected as strings by yaml module
@@ -57,7 +57,25 @@ class RedGEM():
             try:
                 self.params["feasibility"] = float(self.params["feasibility"])
             except ValueError as v:
-                print(v)
+                self.logger.error(v)
+
+        self.set_solver()
+
+    def set_solver(self):
+        if "solver" not in self.params or self.params["solver"].lower() == "auto":
+            return None
+        elif 'gurobi' in self.params["solver"].lower():
+            solver = 'gurobi'
+        elif 'cplex' in self.params["solver"].lower():
+            solver = 'cplex'
+        elif 'glpk' in self.params["solver"].lower():
+            solver = 'glpk'
+        else:
+            solver = self.params["solver"]
+
+        self._gem.solver = solver
+        self._source_gem.solver = solver
+
 
     def run(self):
         # Extracting parameters
@@ -66,7 +84,7 @@ class RedGEM():
         biomass_rxn_ids = self.params["biomass_rxns"]
 
         biomass_rxns = [self._gem.reactions.get_by_id(x) for x in biomass_rxn_ids]
-        main_bio_rxn = biomass_rxns[0].id
+        main_bio_rxn = biomass_rxns[0]
 
         carbon_uptake = self.params["carbon_uptake"]
         growth_rate = self.params["growth_rate"]
@@ -79,6 +97,7 @@ class RedGEM():
 
         d = self.params["d"]
         n = self.params["n"]
+        lump_method = self.params["lump_method"]
 
         force_solve = self.params["force_solve"]
         timeout = self.params["timeout"]
@@ -99,7 +118,7 @@ class RedGEM():
 
         self.logger.info("Computing lumps...")
         lumper = LumpGEM(self._source_gem, core_reactions, self.params)
-        lumps = lumper.compute_lumps(force_solve)
+        lumps = lumper.compute_lumps(force_solve, method = lump_method)
         self.logger.info("Done.")
 
         self.logger.info("Create final network...")
@@ -111,22 +130,26 @@ class RedGEM():
         reduced_gem.add_reactions(lumper._exchanges)
         reduced_gem.add_reactions(lumper._transports)
 
-        # self.logger.info('Detecting blocked reactions')
-        # # Remove blocked reactions
-        # nrxn_1 = len(reduced_gem.reactions)
-        # remove_blocked_reactions(reduced_gem)
-        # nrxn_2 = len(reduced_gem.reactions)
-        #
-        # self.logger.info('Removed {} blocked reaction with '
-        #                  'FVA post-processing'.format(nrxn_2-nrxn_1))
+        reduced_gem.objective = main_bio_rxn
+        reduced_gem.reactions.get_by_id(main_bio_rxn.id).lower_bound = growth_rate
 
-        if main_bio_rxn not in reduced_gem.reactions:
+        if self.params['remove_blocked_reactions']:
+            self.logger.info('Detecting blocked reactions')
+            # Remove blocked reactions
+            nrxn_1 = len(reduced_gem.reactions)
+            self.removed_reactions = remove_blocked_reactions(reduced_gem)
+            nrxn_2 = len(reduced_gem.reactions)
+
+        self.logger.info('Removed {} blocked reaction with '
+                         'FVA post-processing'.format(nrxn_1-nrxn_2))
+
+        if main_bio_rxn.id not in reduced_gem.reactions:
             raise RuntimeError('Main Biomass reaction appears blocked')
 
-        reduced_gem.objective = main_bio_rxn
 
         # For debugging purposes
         self.lumper = lumper
+        main_bio_rxn.lower_bound = 0
 
         return reduced_gem
 
