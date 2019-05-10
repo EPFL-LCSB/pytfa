@@ -16,6 +16,7 @@ path_to_compartment_data = join(this_directory,'..','models/iJO1366/compartment_
 
 model = import_matlab_model(path_to_model)
 
+# Scaling to avoid numerical errors with bad lumps
 for rxn in model.reactions:
     if rxn.id.startswith('LMPD_'):
         rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
@@ -37,5 +38,13 @@ tfa_model.logger.setLevel = 30
 
 path_to_params = join(this_directory,'..','tests/redgem_params.yml')
 
-redgem = RedGEM(tfa_model, path_to_params, False)
-rgem = redgem.run()
+def test_redgem():
+    redgem = RedGEM(tfa_model, path_to_params, False)
+    rgem = redgem.run()
+    obj_val  = rgem.slim_optimize()
+    assert(obj_val > 0)
+    return rgem
+
+
+if __name__ == '__main__':
+    rgem = test_redgem()

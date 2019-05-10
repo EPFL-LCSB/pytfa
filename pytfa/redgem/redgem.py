@@ -14,21 +14,28 @@ Model class
 
 from pytfa.redgem.network_expansion import NetworkExpansion
 from pytfa.redgem.lumpgem import LumpGEM
-from .utils import remove_blocked_reactions
+from .utils import remove_blocked_reactions, set_medium
 import yaml
 
 class RedGEM():
     def __init__(self, gem, parameters_path, inplace=False):
-        # If inplace is True, no deepcopy is performed : the modifications are applied directly onto the gem
-        if inplace:
-            self._gem = gem
-        else:
-            self._gem = gem.copy()
 
+        self.read_parameters(parameters_path)
+
+        # If inplace is True, no deepcopy is performed : the modifications are applied directly onto the gem
+        prepared_gem = set_medium(gem, self.params['medium'], inplace)
+
+        self._gem = prepared_gem
         # This one is used to perform the lumping
-        self._source_gem = gem
+        self._source_gem = prepared_gem.copy()
+
         self.logger = self._gem.logger
 
+        self.fill_default_params()
+
+        self.set_solver()
+
+    def read_parameters(self, parameters_path):
         with open(parameters_path, 'r') as stream:
             try:
                 self.params = yaml.safe_load(stream)
@@ -36,18 +43,20 @@ class RedGEM():
             except yaml.YAMLError as exc:
                 print(exc)
 
+    def fill_default_params(self):
         # If auto is activated, automatically extracts inorganics from the gem
         if "inorganic" not in self.params or self.params["inorganics"] == "auto":
             self.logger.info("Automatically computing inorganics to use")
             self.params["inorganics"] = self._extract_inorganics()
-
+        if "growth_rate" not in self.params or self.params["growth_rate"] == "auto":
+            self.logger.info("Setting minimal growth rate to 95% of the TFA solution")
+            obj_val = self._source_gem.slim_optimize()
+            self.params["growth_rate"] = 0.95*obj_val
         if "force_solve" not in self.params:
             self.params["force_solve"] = False
-
         if "timeout" not in self.params:
             self.logger.info("Using default timeout : 3600s")
             self.params["timeout"] = 3600
-
         if "feasibility" not in self.params:
             self.logger.info("Using default solver feasibility : 1e-9")
             self.params["feasibility"] = 1e-9
@@ -58,8 +67,6 @@ class RedGEM():
                 self.params["feasibility"] = float(self.params["feasibility"])
             except ValueError as v:
                 self.logger.error(v)
-
-        self.set_solver()
 
     def set_solver(self):
         if "solver" not in self.params or self.params["solver"].lower() == "auto":
@@ -86,7 +93,6 @@ class RedGEM():
         biomass_rxns = [self._gem.reactions.get_by_id(x) for x in biomass_rxn_ids]
         main_bio_rxn = biomass_rxns[0]
 
-        carbon_uptake = self.params["carbon_uptake"]
         growth_rate = self.params["growth_rate"]
 
         small_metabolites = self.params["small_metabolites"]

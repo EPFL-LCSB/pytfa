@@ -8,42 +8,51 @@ core_subsystems:
     - 'Oxidative Phosphorylation'
 
 extracellular_system:
-    - 'DM_ac_e'
-    - 'DM_etoh_e'
-    - 'DM_glyc_e'
-    - 'DM_lac-D_e'
-    - 'DM_akg_e'
-    - 'DM_for_e'
-    - 'DM_pyr_e'
-    - 'DM_fum_e'
-    - 'DM_co2_e'
-    - 'DM_mal-L_e'
+    - DM_ac_e
+    - DM_etoh_e
+    - DM_glyc_e
+    - DM_lac-D_e
+    - DM_akg_e
+    - DM_for_e
+    - DM_pyr_e
+    - DM_fum_e
+    - DM_co2_e
+    - DM_mal-L_e
 
 biomass_rxns:
-    - "Ec_biomass_iJO1366_WT_53p95M"
+    - Ec_biomass_iJO1366_WT_53p95M
 
-carbon_uptake: 10
-growth_rate: 0.7
+# Define minimal growth to reach. If auto, sets to 95% of max TFA growth
+growth_rate: auto
+
+# Define the medium. Any other reaction will be kept as provided by the model
+medium:
+    DM_cbl1_e: -0.01
+    DM_glc_e: -8.16
+    DM_glycogenn1_c: -10.0
 
 small_metabolites:
-    - 'h'
-    - 'h2o'
-    - 'co2'
-    - 'o2'
-    - 'pi'
-    - 'ppi'
-    - 'nh4'
-    - 'h2o2'
+    - h_c
+    - h2o_c
+    - co2_c
+    - o2_c
+    - pi_c
+    - ppi_c
+    - nh4_c
+    - h2o2_c
+
+inorganics: auto
 
 cofactor_pairs:
     - ['atp_c', 'adp_c']
     - ['nad_c', 'nadh_c']
+    - ['nadp_c', 'nadph_c']
 
-inorganics: "auto"
-
-lump_method: Min+1 # OnePerBBB, Min, Min+n
-max_lumps_per_BBB: 2
-remove_blocked_reactions: no
+# Reduction parameters
+lump_method: Min+1 # OnePerBBB, Min, Min+p
+max_lumps_per_BBB: 2 # Only used if method = Min or Min+p
+remove_blocked_reactions: no  # Remove reactions that cannot carry flux
+                              # at the end of the reduction
 
 d: 2
 n: 2

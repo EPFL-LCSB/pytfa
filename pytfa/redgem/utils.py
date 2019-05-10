@@ -23,3 +23,14 @@ def trim_epsilon_mets(reaction, epsilon):
     n = int(-1*np.log10(epsilon))
     round_dict = {x:-v+np.round(v,n) for x,v in reaction.metabolites.items()}
     reaction.add_metabolites(round_dict)
+
+def set_medium(model, medium_dict, inplace):
+    if inplace:
+        new = model
+    else:
+        new = model.copy()
+
+    for rxn_id, lb in medium_dict.items():
+     new.reactions.get_by_id(rxn_id).lower_bound = lb
+
+    return new

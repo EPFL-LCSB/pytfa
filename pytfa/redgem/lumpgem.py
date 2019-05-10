@@ -63,9 +63,6 @@ class LumpGEM:
         :param core_subsystems: list of Core subsystems names
         :type core_subsystems: [string]
 
-        :param carbon_uptake: the amount of carbon atoms the cell can uptake from its surrounding
-        :type carbon_uptake: float
-
         :param growth_rate: theoretical maximum specific growth rate in 1/hr units
         :type growth_rate: float
 
@@ -110,8 +107,6 @@ class LumpGEM:
             else:
                 self._rncore.append(rxn)
 
-        # Carbon uptake
-        self._C_uptake = self.carbon_uptake
         # Growth rate
         self._growth_rate = self.growth_rate
 
@@ -140,7 +135,6 @@ class LumpGEM:
         self.extracellular_system = self._param_dict["extracellular_system"]
         self.biomass_rxns = self._param_dict["biomass_rxns"]
 
-        self.carbon_uptake = self._param_dict["carbon_uptake"]
         self.growth_rate = self._param_dict["growth_rate"]
 
         self.small_metabolites = self._param_dict["small_metabolites"]
@@ -157,11 +151,9 @@ class LumpGEM:
         For each reaction rxn : rxn.forward_variable + rxn.reverse_variable + activation_var * C_uptake < C_uptake
         """
 
-        bigM = self._C_uptake
         for rxn in self._rncore:
             activation_var = self._activation_vars[rxn]
 
-            # variable that should be bounded by carbon_uptake
             # reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
             fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
             bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
@@ -170,8 +162,8 @@ class LumpGEM:
             self._tfa_model.add_constraint(kind=UseOrKO,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=1,  #bigM,#self._C_uptake,
-                                           # ub=bigM,#self._C_uptake,
+                                           ub=1,  #bigM,
+                                           # ub=bigM,
                                            lb=0,
                                            queue=True)
 
@@ -461,8 +453,8 @@ class LumpGEM:
             if self._activation_vars[rxn].variable.primal < epsilon_int:
                 lump_dict[rxn] = rxn.flux
         sigma = sink.flux
-        lumped_reaction = sum(rxn * (flux / sigma)
-                              for rxn, flux in lump_dict.items())
+        lumped_reaction = sum([rxn * (flux / sigma)
+                              for rxn, flux in lump_dict.items()])
         if not lumped_reaction:
             # No need for lump
             self._tfa_model.logger.info('Metabolite {} is produced in enough '
