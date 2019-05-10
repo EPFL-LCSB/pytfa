@@ -7,6 +7,8 @@ from pytfa.io import  read_compartment_data, apply_compartment_data, read_lexico
 from settings import this_directory
 from os.path import join
 
+import pytest
+
 # Check if we are running on Travis CI, to make the run lighter
 import os
 is_travis = 'TRAVIS' in os.environ \
@@ -53,6 +55,8 @@ tfa_model.logger.setLevel = 30
 
 path_to_params = join(this_directory,'..','tests/redgem_params.yml')
 
+
+@pytest.mark.skip("This can be too long for CI")
 def test_redgem():
     redgem = RedGEM(tfa_model, path_to_params, False)
     rgem = redgem.run()

@@ -30,7 +30,10 @@ def set_medium(model, medium_dict, inplace):
     else:
         new = model.copy()
 
+    if medium_dict is None or not medium_dict:
+        return new
+
     for rxn_id, lb in medium_dict.items():
-     new.reactions.get_by_id(rxn_id).lower_bound = lb
+        new.reactions.get_by_id(rxn_id).lower_bound = lb
 
     return new
