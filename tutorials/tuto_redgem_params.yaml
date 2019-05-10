@@ -27,10 +27,10 @@ growth_rate: auto
 
 # Define the medium. Any other reaction will be kept as provided by the model
 medium:
-    DM_cbl1_e: -0.01
-    DM_glc_e: -8.16
-    DM_glycogenn1_c: -10.0
-    DM_bglycogenn1_c: -10.0
+#    DM_cbl1_e: -0.01
+#    DM_glc_e: -8.16
+#    DM_glycogenn1_c: -10.0
+#    DM_bglycogenn1_c: -10.0
 
 small_metabolites:
     - h_c
