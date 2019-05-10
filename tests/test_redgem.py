@@ -9,7 +9,9 @@ from os.path import join
 
 # Check if we are running on Travis CI, to make the run lighter
 import os
-is_travis = 'TRAVIS' in os.environ or 'CI' in os.environ
+is_travis = 'TRAVIS' in os.environ \
+            or 'CI' in os.environ \
+            or os.environ.get('USER')=='travis'
 
 
 path_to_model = join(this_directory,'..','models/small_ecoli.mat')
@@ -31,7 +33,7 @@ if is_travis:
     bio_rxn = model.reactions.get_by_id('Ec_biomass_iJO1366_WT_53p95M')
     bio_rxn.add_metabolites({k:-v for e,(k,v) in
                              enumerate(bio_rxn.metabolites.items())
-                             if e == 1})
+                             if e != 1})
                              # if e%10 != 0})
 
 thermo_data = load_thermoDB(thermoDB)
