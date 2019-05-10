@@ -7,6 +7,10 @@ from pytfa.io import  read_compartment_data, apply_compartment_data, read_lexico
 from settings import this_directory
 from os.path import join
 
+# Check if we are running on Travis CI, to make the run lighter
+import os
+is_travis = 'TRAVIS' in os.environ
+
 
 path_to_model = join(this_directory,'..','models/small_ecoli.mat')
 # path_to_model = join(this_directory,'..','models/GSmodel_Ecoli.mat')
@@ -20,6 +24,14 @@ model = import_matlab_model(path_to_model)
 for rxn in model.reactions:
     if rxn.id.startswith('LMPD_'):
         rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
+
+if is_travis:
+    # Remove 80% of the mets of the biomass reaction so that less lumps need to be computed:
+    print('Travis env detected. Trimming the biomass reaction')
+    bio_rxn = model.reactions.get_by_id('Ec_biomass_iJO1366_WT_53p95M')
+    bio_rxn.add_metabolites({k:-v for e,(k,v) in
+                             enumerate(bio_rxn.metabolites.itmes)
+                             if e%5 != 0})
 
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)
