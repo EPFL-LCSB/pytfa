@@ -139,9 +139,8 @@ class RedGEM():
             nrxn_1 = len(reduced_gem.reactions)
             self.removed_reactions = remove_blocked_reactions(reduced_gem)
             nrxn_2 = len(reduced_gem.reactions)
-
-        self.logger.info('Removed {} blocked reaction with '
-                         'FVA post-processing'.format(nrxn_1-nrxn_2))
+            self.logger.info('Removed {} blocked reaction with '
+                             'FVA post-processing'.format(nrxn_1-nrxn_2))
 
         if main_bio_rxn.id not in reduced_gem.reactions:
             raise RuntimeError('Main Biomass reaction appears blocked')

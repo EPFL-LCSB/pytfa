@@ -282,6 +282,7 @@ class LumpGEM:
         sink_iter = tqdm(self._sinks.items(), desc = 'met')
 
         for met_BBB, (sink_id, stoech_coeff) in sink_iter:
+
             # Cute stuff
             sink_iter.set_description('met={}'.format(met_BBB.id[:10]))
             sink_iter.refresh()
@@ -319,6 +320,7 @@ class LumpGEM:
             sink.lower_bound = prev_lb
             # sink.knock_out()
 
+        self.lumps = lumps
         return lumps
 
     def _lump_one_per_bbb(self, met_BBB, sink, force_solve):
@@ -357,7 +359,7 @@ class LumpGEM:
         return lumped_reaction
 
 
-    def _lump_min_plus_p(self, met_BBB, sink, p, force_solve, max_lumps=1e2):
+    def _lump_min_plus_p(self, met_BBB, sink, p, force_solve):
         """
 
         :param met_BBB:
@@ -368,21 +370,20 @@ class LumpGEM:
 
         epsilon = self._tfa_model.solver.configuration.tolerances.integrality
 
+        try:
+            max_lumps =self._param_dict['max_lumps_per_BBB']
+        except KeyError:
+            # TODO: Put a warning
+            max_lumps=10
+
         lumps = list()
 
         with self._tfa_model as model:
             activation_vars = model.get_variables_of_type(FluxKO)
 
             # Solve a first time, obtain minimal subnet
-            this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
-
-            # If the model is infeasible, but no error was thrown in _lump,
-            # Then it is ok to have lo lump
-            if this_lump is None:
-                return list()
-
+            model.slim_optimize()
             max_deactivated_rxns = model.objective.value
-            lumps.append(this_lump)
 
             # Add constraint forbidding subnets bigger than p
             expr = symbol_sum(activation_vars)
@@ -391,6 +392,7 @@ class LumpGEM:
             # Which allows activating the minimal number of reactions, plus p
             lb = max_deactivated_rxns - p
             model.add_constraint(kind=ForbiddenProfile,
+                                 hook = model,
                                  id_ = 'MAX_DEACT_{}'.format(met_BBB.id),
                                  expr = expr,
                                  lb = lb,
@@ -400,26 +402,46 @@ class LumpGEM:
             n_deactivated_reactions = max_deactivated_rxns
 
             # While loop, break on infeasibility
-            while model.solver.status == OPTIMAL and len(lumps)<=max_lumps:
+            while len(lumps)<max_lumps:
+
+                try:
+                    this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
+                except (InfeasibleExcept, TimeoutExcept) as e:
+                    if force_solve:
+                        pass
+                    elif len(lumps) == 0:
+                        # No solution AND no lump found
+                        raise e
+
+                if model.solver.status != OPTIMAL:
+                    break
+                elif this_lump is None:
+                    # Since the solver is optimal, and we caught optim errors before,
+                    # Then the BBB is simply produced in enough quantity by the core
+                    break
+
+                this_lump.id += '_{}'.format(len(lumps)+1)
+                lumps.append(this_lump)
+
                 # Add constraint forbidding the previous solution
                 is_inactivated = [x for x in activation_vars
                                if abs(x.variable.primal-1) < 2*epsilon]
 
                 expr = symbol_sum(is_inactivated)
                 model.add_constraint(kind=ForbiddenProfile,
+                                 hook = model,
                                      id_ = '{}_{}_{}'.format(met_BBB.id,
                                                              n_deactivated_reactions,
-                                                             n_lumps),
+                                                             len(lumps)),
                                      expr = expr,
                                      lb = max_deactivated_rxns-p-1,
                                      ub = n_deactivated_reactions-1,
                                      )
-                this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
-                lumps.append(this_lump)
 
         # TODO: Update of dynamic properties not handled yet
         # upon exiting context manager
         model.regenerate_constraints()
+        return lumps
 
 
     def _build_lump(self, met_BBB, sink):

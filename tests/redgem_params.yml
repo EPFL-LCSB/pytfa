@@ -41,8 +41,9 @@ cofactor_pairs:
 
 inorganics: "auto"
 
-lump_method: OnePerBBB # Smin, Smin+n
-remove_blocked_reactions: yes
+lump_method: Min+1 # OnePerBBB, Min, Min+n
+max_lumps_per_BBB: 2
+remove_blocked_reactions: no
 
 d: 2
 n: 2
