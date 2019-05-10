@@ -30,9 +30,9 @@ if is_travis:
     print('Travis env detected. Trimming the biomass reaction')
     bio_rxn = model.reactions.get_by_id('Ec_biomass_iJO1366_WT_53p95M')
     bio_rxn.add_metabolites({k:-v for e,(k,v) in
-                             enumerate(bio_rxn.metabolites.items()),
+                             enumerate(bio_rxn.metabolites.items())
+                             if e == 1})
                              # if e%10 != 0})
-                             e == 1})
 
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)
