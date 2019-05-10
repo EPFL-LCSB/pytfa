@@ -126,7 +126,7 @@ class LumpGEM:
                                                                    queue=False)
                                  for rxn in self._rncore}
 
-        self._generate_carbon_constraints()
+        self._generate_usage_constraints()
         self._generate_objective()
         self._sinks = self._prepare_sinks()
 
@@ -145,7 +145,7 @@ class LumpGEM:
 
         self.timeout_limit = self._param_dict["timeout"]
 
-    def _generate_carbon_constraints(self):
+    def _generate_usage_constraints(self):
         """
         Generate carbon intake related constraints for each non-core reaction
         For each reaction rxn : rxn.forward_variable + rxn.reverse_variable + activation_var * C_uptake < C_uptake
@@ -162,7 +162,7 @@ class LumpGEM:
             self._tfa_model.add_constraint(kind=UseOrKO,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=1,  #bigM,
+                                           ub=1,
                                            # ub=bigM,
                                            lb=0,
                                            queue=True)

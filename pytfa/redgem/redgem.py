@@ -51,6 +51,7 @@ class RedGEM():
         if "growth_rate" not in self.params or self.params["growth_rate"] == "auto":
             self.logger.info("Setting minimal growth rate to 95% of the TFA solution")
             obj_val = self._source_gem.slim_optimize()
+            self.logger.info("Setting minimal growth rate to {}".format(obj_val))
             self.params["growth_rate"] = 0.95*obj_val
         if "force_solve" not in self.params:
             self.params["force_solve"] = False
