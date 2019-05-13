@@ -14,9 +14,9 @@ import os
 is_travis = 'TRAVIS' in os.environ \
             or 'CI' in os.environ \
             or os.environ.get('USER')=='travis'
+DEBUG = False
 
-
-if is_travis:
+if is_travis or DEBUG:
     # # Remove 80% of the mets of the biomass reaction so that less lumps need to be computed:
     # print('Travis env detected. Trimming the biomass reaction')
     # bio_rxn = model.reactions.get_by_id('Ec_biomass_iJO1366_WT_53p95M')
@@ -50,9 +50,9 @@ path_to_compartment_data = join(this_directory, '..', 'models/iJO1366/compartmen
 
 
 # Scaling to avoid numerical errors with bad lumps
-for rxn in model.reactions:
-    if rxn.id.startswith('LMPD_'):
-        rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
+# for rxn in model.reactions:
+#     if rxn.id.startswith('LMPD_'):
+#         rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
 
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)

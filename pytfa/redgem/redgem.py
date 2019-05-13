@@ -14,6 +14,7 @@ Model class
 
 from pytfa.redgem.network_expansion import NetworkExpansion
 from pytfa.redgem.lumpgem import LumpGEM
+from cobra import Reaction
 from .utils import remove_blocked_reactions, set_medium
 import yaml
 
@@ -129,13 +130,18 @@ class RedGEM():
         self.logger.info("Done.")
 
         self.logger.info("Create final network...")
-        for rxns in lumps.values():
-            reduced_gem.add_reactions(rxns)
-        self.logger.info("Done.")
+        to_add = [x for x in biomass_rxns
+                            +lumper._exchanges
+                            +lumper._transports
+                            +lumper._rcore
+                  if not x.id in reduced_gem.reactions]
+        reduced_gem.add_reactions(to_add)
 
-        reduced_gem.add_reactions(biomass_rxns)
-        reduced_gem.add_reactions(lumper._exchanges)
-        reduced_gem.add_reactions(lumper._transports)
+        for rxns in lumps.values():
+            the_lumps = [add_lump(reduced_gem,rxn,id_suffix='_{}'.format(e))
+                         for e,rxn in enumerate(rxns)]
+            # reduced_gem.add_reactions(rxns)
+        self.logger.info("Done.")
 
         reduced_gem.objective = main_bio_rxn
         reduced_gem.reactions.get_by_id(main_bio_rxn.id).lower_bound = growth_rate
@@ -175,5 +181,11 @@ class RedGEM():
 
         return inorganics
 
+def add_lump(model, lump_object, id_suffix=''):
+    new = Reaction(id = lump_object.id_+id_suffix)
+    model.add_reaction(new)
+    new.add_metabolites(lump_object.metabolites)
+    new.gene_reaction_rule = lump_object.gene_reaction_rule
+    new.subnetwork = lump_object.subnetwork
 
-
+    return new

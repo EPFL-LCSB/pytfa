@@ -62,9 +62,9 @@ def check_BBB_production(model, biomass_rxn_id, verbose = False):
 
 def min_BBB_uptake(model,biomass_rxn_id, min_growth_value, verbose=False):
     
-    all_sinks = add_BBB_sinks(model, biomass_rxn_id, ub = 0, lb = -100)
 
     with model:
+        all_sinks = add_BBB_sinks(model, biomass_rxn_id, ub = 0, lb = -100)
         # Uptake is negative
         # Min absolute uptake = Max uptake
         bio_rxn = model.reactions.get_by_id(biomass_rxn_id)

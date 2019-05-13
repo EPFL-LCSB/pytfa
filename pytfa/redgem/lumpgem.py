@@ -16,7 +16,7 @@ from optlang.interface import INFEASIBLE, TIME_LIMIT, OPTIMAL
 
 from tqdm import tqdm
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
@@ -25,6 +25,8 @@ GLPK = 'optlang-glpk'
 
 # Transforms (OnePerBBB --> oneperbbb), (one_per_bbb --> oneperbbb), etc ...
 disambiguate = lambda s:s.lower().replace('_','')
+
+Lump = namedtuple('Lump', ['id_', 'metabolites', 'subnetwork', 'gene_reaction_rule'])
 
 class InfeasibleExcept(Exception):
     def __init__(self, status, feasibility):
@@ -155,17 +157,17 @@ class LumpGEM:
 
         for rxn in self._rncore:
             activation_var = self._activation_vars[rxn]
-
-            # reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
-            fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
-            bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
-            reac_var = fu + bu + activation_var
+            bigM = 100
+            reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
+            # fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+            # bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
+            # reac_var = fu + bu + activation_var
             # adding the constraint to the model
             self._tfa_model.add_constraint(kind=UseOrKO,
                                            hook=rxn,
                                            expr=reac_var,
-                                           ub=1,
-                                           # ub=bigM,
+                                           # ub=1,
+                                           ub=bigM,
                                            lb=0,
                                            queue=True)
 
@@ -266,6 +268,8 @@ class LumpGEM:
         self._tfa_model.convert()
         # self._tfa_model.objective_direction = 'min'
 
+        epsilon = self._tfa_model.solver.configuration.tolerances.feasibility
+
         the_method = disambiguate(method)
         print('Lumping method detected: {}'.format(the_method))
 
@@ -286,7 +290,7 @@ class LumpGEM:
             # Activate reaction by setting its lower bound
             prev_lb = sink.lower_bound
             min_prod = self._growth_rate * stoech_coeff
-            sink.lower_bound = min_prod
+            sink.lower_bound = min_prod - epsilon
 
             if the_method == 'oneperbbb':
                 this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
@@ -415,7 +419,6 @@ class LumpGEM:
                     # Then the BBB is simply produced in enough quantity by the core
                     break
 
-                this_lump.id += '_{}'.format(len(lumps)+1)
                 lumps.append(this_lump)
 
                 # Add constraint forbidding the previous solution
@@ -424,7 +427,7 @@ class LumpGEM:
 
                 expr = symbol_sum(is_inactivated)
                 model.add_constraint(kind=ForbiddenProfile,
-                                 hook = model,
+                                     hook = model,
                                      id_ = '{}_{}_{}'.format(met_BBB.id,
                                                              n_deactivated_reactions,
                                                              len(lumps)),
@@ -435,7 +438,7 @@ class LumpGEM:
 
         # TODO: Update of dynamic properties not handled yet
         # upon exiting context manager
-        model.regenerate_constraints()
+        model.repair()
         return lumps
 
 
@@ -451,13 +454,14 @@ class LumpGEM:
         epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
         epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
 
+        sigma = sink.flux
         lump_dict = dict()
+
         for rxn in self._rncore:
             if self._activation_vars[rxn].variable.primal < epsilon_int:
-                lump_dict[rxn] = rxn.flux
-        sigma = sink.flux
-        lumped_reaction = sum([rxn * (flux / sigma)
-                              for rxn, flux in lump_dict.items()])
+                lump_dict[rxn] = rxn.flux / sigma
+        # lumped_reaction1 = sum([rxn * (flux / sigma)
+        #                       for rxn, flux in lump_dict.items()])
 
         if not lump_dict:
             # No need for lump
@@ -465,33 +469,32 @@ class LumpGEM:
                                         'quantity by core reactions'.format(met_BBB.id))
             return None
 
-        # lumped_reaction = sum_reactions(lump_dict, scaling_factor=sigma)
-
-
-        lumped_reaction.id = sink.id.replace('Sink_', 'LUMP_')
-        lumped_reaction.name = sink.name.replace('Sink_', 'LUMP_')
-        lumped_reaction.subnetwork = lump_dict
-
-        trim_epsilon_mets(lumped_reaction, epsilon=epsilon_flux)
-
+        lumped_reaction = sum_reactions(lump_dict,
+                                        id_=sink.id.replace('Sink_', 'LUMP_'),
+                                        epsilon = epsilon_flux)
         return lumped_reaction
 
 
-def sum_reactions(rxn_dict, id_ = 'summed_reaction', scaling_factor=1):
+def sum_reactions(rxn_dict, id_ = 'summed_reaction', epsilon = 1e-9):
     """
     Keys are reactions
     Values are their multiplicative coefficient
     """
     stoich = defaultdict(int)
 
-    for rxn,value in rxn_dict.items():
-        for met,met_stoich in rxn.metabolites.items():
-            stoich[met] += value*met_stoich/scaling_factor
+    for rxn,flux in rxn_dict.items():
+        for x, coeff in rxn.metabolites.items():
+            stoich[x.id] += coeff * flux
 
-    gpr = '(' + ') and ('.join(x.gene_reaction_rule for x in rxn_dict if x.gene_reaction_rule) + ')'
+    gpr = ') and ('.join(x.gene_reaction_rule for x in rxn_dict if x.gene_reaction_rule)
 
-    new = Reaction(id = id_)
-    new.add_metabolites(stoich)
-    new.gene_reaction_rule = gpr
+    gpr = ('(' + gpr + ')') if gpr else ''
+
+    stoich = trim_epsilon_mets(stoich, epsilon=epsilon)
+
+    new = Lump(id_ = id_,
+               metabolites = stoich,
+               subnetwork = {x.id:v for x,v in rxn_dict.items()},
+               gene_reaction_rule=gpr)
 
     return new

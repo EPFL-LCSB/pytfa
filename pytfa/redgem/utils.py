@@ -16,13 +16,16 @@ def remove_blocked_reactions(model):
     return df
 
 
-def trim_epsilon_mets(reaction, epsilon):
-    rm_dict = {x:-v for x,v in reaction.metabolites.items() if abs(v)<=epsilon}
-    reaction.add_metabolites(rm_dict)
+def trim_epsilon_mets(met_dict, epsilon):
 
     n = int(-1*np.log10(epsilon))
-    round_dict = {x:-v+np.round(v,n) for x,v in reaction.metabolites.items()}
-    reaction.add_metabolites(round_dict)
+    round_dict = {x:np.round(v,n) for x,v in met_dict.items()}
+    met_dict.update(round_dict)
+
+    rm_list = [x for x,v in met_dict.items() if abs(v) <= epsilon]
+    [met_dict.pop(x) for x in rm_list]
+
+    return met_dict
 
 def set_medium(model, medium_dict, inplace):
     if inplace:
