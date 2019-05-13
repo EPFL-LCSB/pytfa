@@ -61,3 +61,4 @@ solver: auto
 force_solve: False
 timeout: 300
 feasibility: 1e-9
+constraint_method: integer # flux, integer, or both

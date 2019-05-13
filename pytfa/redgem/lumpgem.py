@@ -48,8 +48,11 @@ class FluxKO(ReactionVariable, BinaryVariable):
                                   **kwargs)
 
 # Define a new constraint type:
-class UseOrKO(ReactionConstraint):
-    prefix = 'UK_'
+class UseOrKOInt(ReactionConstraint):
+    prefix = 'UKI_'
+# Define a new constraint type:
+class UseOrKOFlux(ReactionConstraint):
+    prefix = 'UKF_'
 
 
 class LumpGEM:
@@ -149,27 +152,48 @@ class LumpGEM:
 
         self.timeout_limit = self._param_dict["timeout"]
 
+        self.constraint_method = self._param_dict["constraint_method"]
+
     def _generate_usage_constraints(self):
         """
         Generate carbon intake related constraints for each non-core reaction
         For each reaction rxn : rxn.forward_variable + rxn.reverse_variable + activation_var * C_uptake < C_uptake
         """
+        flux_methods = ['flux', 'fluxes', 'both']
+        int_methods = ['int', 'integer', 'both']
+
+        if self.constraint_method.lower() not in flux_methods + int_methods:
+            raise ArgumentError('{} is not a correct constraint method. '
+                                'Choose among [Flux, Integer, Both]. '
+                                'If you do not know what to choose, go for Flux.'
+                                'If it is too slow, go for integer.'
+                                'If you get strange lumps, go for both'
+                                .format(self.constraint_method))
 
         for rxn in self._rncore:
             activation_var = self._activation_vars[rxn]
-            bigM = 100
-            reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
-            # fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
-            # bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
-            # reac_var = fu + bu + activation_var
-            # adding the constraint to the model
-            self._tfa_model.add_constraint(kind=UseOrKO,
-                                           hook=rxn,
-                                           expr=reac_var,
-                                           # ub=1,
-                                           ub=bigM,
-                                           lb=0,
-                                           queue=True)
+            if self.constraint_method.lower() in flux_methods:
+                bigM = 100
+                reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
+                # adding the constraint to the model
+                self._tfa_model.add_constraint(kind=UseOrKOFlux,
+                                               hook=rxn,
+                                               expr=reac_var,
+                                               ub=bigM,
+                                               lb=0,
+                                               queue=True)
+            if self.constraint_method.lower() in int_methods:
+                fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+                bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
+                reac_var = fu + bu + activation_var
+                # adding the constraint to the model
+                self._tfa_model.add_constraint(kind=UseOrKOInt,
+                                               hook=rxn,
+                                               expr=reac_var,
+                                               ub=1,
+                                               lb=0,
+                                               queue=True)
+
 
         # push constraints in one bulk (faster)
         self._tfa_model._push_queue()

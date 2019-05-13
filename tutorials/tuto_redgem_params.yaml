@@ -62,3 +62,10 @@ solver: auto
 force_solve: False
 timeout: 300
 feasibility: 1e-9
+
+# Optimisation shenanigans
+# Integer is faster with a good parallel solver, but might yield some numerical errors
+# Flux is slower but more reliable
+# Both is good if you can afford it
+constraint_method: both # flux, integer, or both.
+

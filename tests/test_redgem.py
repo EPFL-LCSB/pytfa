@@ -39,8 +39,6 @@ if is_travis or DEBUG:
 
 else:
     path_to_model = join(this_directory, '..', 'models/small_ecoli.mat')
-    # path_to_model = join(this_directory,'..','models/GSmodel_Ecoli.mat')
-
     model = import_matlab_model(path_to_model)
     path_to_params = join(this_directory, '..', 'tests/redgem_params.yml')
 
@@ -50,9 +48,9 @@ path_to_compartment_data = join(this_directory, '..', 'models/iJO1366/compartmen
 
 
 # Scaling to avoid numerical errors with bad lumps
-# for rxn in model.reactions:
-#     if rxn.id.startswith('LMPD_'):
-#         rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
+for rxn in model.reactions:
+    if rxn.id.startswith('LMPD_'):
+        rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
 
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)
