@@ -1,5 +1,6 @@
 cobra>=0.11.3
 bokeh>=0.12.1
+networkx
 optlang
 sympy
 pytest

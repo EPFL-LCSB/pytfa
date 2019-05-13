@@ -19,6 +19,7 @@ import pandas as pd
 from cobra.core import Reaction
 from optlang.exceptions import SolverError
 from optlang.interface import INFEASIBLE
+from tqdm import tqdm
 
 from ..optim import DeltaG
 from ..optim.constraints import ForbiddenProfile
@@ -155,7 +156,7 @@ def variability_analysis(tmodel, kind='reactions', proc_num = BEST_THREAD_RATIO)
 
     results = {'min':{}, 'max':{}}
     for sense in ['min','max']:
-        for k,var in these_vars.items():
+        for k,var in tqdm(these_vars.items(), desc=sense+'imizing'):
             tmodel.logger.debug(sense + '-' + k)
             results[sense][k] = _variability_analysis_element(tmodel,var,sense)
 

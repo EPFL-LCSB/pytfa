@@ -136,11 +136,11 @@ class ThermoModel(LCSBModel, Model):
         # Which index of the reaction DB do you correspond to ?
         if not 'seed_id' in met.annotation:
             # raise Exception("seed_id missing for " + met.name)
-            self.logger.warning("Metabolite {} ({}) has no seed_id".\
+            self.logger.debug("Metabolite {} ({}) has no seed_id".\
                                 format(met.id, met.name))
             metData = None
         elif not met.annotation['seed_id'] in self.compounds_data:
-            self.logger.warning("Metabolite {} ({}) not present in thermoDB"
+            self.logger.debug("Metabolite {} ({}) not present in thermoDB"
                   .format(met.annotation['seed_id'], met.name))
             metData = None
         else:
@@ -201,7 +201,7 @@ class ThermoModel(LCSBModel, Model):
             or len(reaction.metabolites) >= 100
             or balanceResult in ['missing atoms', 'drain flux']):
 
-            self.logger.info('{} : thermo constraint NOT created'.format(reaction.id))
+            self.logger.debug('{} : thermo constraint NOT created'.format(reaction.id))
             reaction.thermo['computed'] = False
             reaction.thermo['deltaGR'] = BIGM_DG
             reaction.thermo['deltaGRerr'] = BIGM_DG
@@ -346,7 +346,7 @@ class ThermoModel(LCSBModel, Model):
                                metDeltaGF)
 
         else:
-            self.logger.info('NOT generating thermo variables for {}'.format(met.id))
+            self.logger.debug('NOT generating thermo variables for {}'.format(met.id))
 
         if LC != None:
             # Register the variable to find it more easily

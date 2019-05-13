@@ -186,3 +186,7 @@ def is_same_stoichiometry(this_reaction, that_reaction):
     this_met_dict = {k.id:v for k,v in this_reaction.metabolites.items()}
     that_met_dict = {k.id:v for k,v in that_reaction.metabolites.items()}
     return this_met_dict == that_met_dict
+
+
+def is_exchange(rxn):
+    return len(rxn.metabolites) == 1

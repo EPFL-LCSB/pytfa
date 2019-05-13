@@ -25,6 +25,22 @@ from .variables import GenericVariable
 SYMPY_ADD_CHUNKSIZE = 100
 INTEGER_VARIABLE_TYPES = ('binary','integer')
 
+def get_all_subclasses(cls):
+    """
+    Given a variable or constraint class, get all the subclassses
+    that inherit from it
+
+    :param cls:
+    :return:
+    """
+    all_subclasses = []
+
+    for subclass in cls.__subclasses__():
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+
+    return all_subclasses
+
 def chunk_sum(variables):
     """
     This functions handles the sum of many sympy variables by chunks, which
