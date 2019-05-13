@@ -136,11 +136,11 @@ class ThermoModel(LCSBModel, Model):
         # Which index of the reaction DB do you correspond to ?
         if not 'seed_id' in met.annotation:
             # raise Exception("seed_id missing for " + met.name)
-            self.logger.warning("Metabolite {} ({}) has no seed_id".\
+            self.logger.debug("Metabolite {} ({}) has no seed_id".\
                                 format(met.id, met.name))
             metData = None
         elif not met.annotation['seed_id'] in self.compounds_data:
-            self.logger.warning("Metabolite {} ({}) not present in thermoDB"
+            self.logger.debug("Metabolite {} ({}) not present in thermoDB"
                   .format(met.annotation['seed_id'], met.name))
             metData = None
         else:
