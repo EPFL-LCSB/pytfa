@@ -16,6 +16,8 @@ from optlang.interface import INFEASIBLE, TIME_LIMIT, OPTIMAL
 
 from tqdm import tqdm
 
+from collections import defaultdict
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
@@ -183,11 +185,11 @@ class LumpGEM:
                 n = na+nb # looks like -1
 
                 if n == 0:
-                    n = na
                     self._tfa_model.logger.warn(
                         'Cofactor pair {}/{} is equimolar in reaction {}'
                         .format(a,b,rxn.id))
                 elif n > 0:
+                    n = -n
                     self._tfa_model.logger.warn(
                         'Cofactor pair {}/{} looks inverted in reaction {}'
                         .format(a,b,rxn.id))
@@ -210,7 +212,7 @@ class LumpGEM:
 
         for bio_rxn in self._rBBB:
             stoich_dict = self.get_cofactor_adjusted_stoich(bio_rxn)
-            for met in bio_rxn.metabolites:
+            for met in bio_rxn.reactants:
                 stoech_coeff = stoich_dict[met.id]
                 # stoech_coeff < 0 indicates that the metabolite is a reactant
                 if (stoech_coeff < 0) and (met not in all_sinks.keys()):
@@ -221,6 +223,7 @@ class LumpGEM:
 
                     # A sink is simply a reaction which consumes the BBB
                     sink.add_metabolites({met: -1})
+
                     # The sinks will be activated later (cf compute_lumps), one at a time
                     # sink.knock_out()
 
@@ -455,11 +458,15 @@ class LumpGEM:
         sigma = sink.flux
         lumped_reaction = sum([rxn * (flux / sigma)
                               for rxn, flux in lump_dict.items()])
-        if not lumped_reaction:
+
+        if not lump_dict:
             # No need for lump
             self._tfa_model.logger.info('Metabolite {} is produced in enough '
                                         'quantity by core reactions'.format(met_BBB.id))
             return None
+
+        # lumped_reaction = sum_reactions(lump_dict, scaling_factor=sigma)
+
 
         lumped_reaction.id = sink.id.replace('Sink_', 'LUMP_')
         lumped_reaction.name = sink.name.replace('Sink_', 'LUMP_')
@@ -468,3 +475,23 @@ class LumpGEM:
         trim_epsilon_mets(lumped_reaction, epsilon=epsilon_flux)
 
         return lumped_reaction
+
+
+def sum_reactions(rxn_dict, id_ = 'summed_reaction', scaling_factor=1):
+    """
+    Keys are reactions
+    Values are their multiplicative coefficient
+    """
+    stoich = defaultdict(int)
+
+    for rxn,value in rxn_dict.items():
+        for met,met_stoich in rxn.metabolites.items():
+            stoich[met] += value*met_stoich/scaling_factor
+
+    gpr = '(' + ') and ('.join(x.gene_reaction_rule for x in rxn_dict if x.gene_reaction_rule) + ')'
+
+    new = Reaction(id = id_)
+    new.add_metabolites(stoich)
+    new.gene_reaction_rule = gpr
+
+    return new
