@@ -16,27 +16,43 @@ is_travis = 'TRAVIS' in os.environ \
             or os.environ.get('USER')=='travis'
 
 
-path_to_model = join(this_directory,'..','models/small_ecoli.mat')
-# path_to_model = join(this_directory,'..','models/GSmodel_Ecoli.mat')
-thermoDB = join(this_directory,'..','data/thermo_data.thermodb')
-path_to_lexicon = join(this_directory,'..','models/iJO1366/lexicon.csv')
-path_to_compartment_data = join(this_directory,'..','models/iJO1366/compartment_data.json')
+if is_travis:
+    # # Remove 80% of the mets of the biomass reaction so that less lumps need to be computed:
+    # print('Travis env detected. Trimming the biomass reaction')
+    # bio_rxn = model.reactions.get_by_id('Ec_biomass_iJO1366_WT_53p95M')
+    # bio_rxn.add_metabolites({k:-v for e,(k,v) in
+    #                          enumerate(bio_rxn.metabolites.items())
+    #                          if e != 1})
+    #                          # if e%10 != 0})
+    from cobra.test import create_test_model
+    model = create_test_model('textbook')
+    gly_rxns = ['ENO','FBA','FBP','GAPD','PDH','PFK','PGI','PGK','PGM','PPS',
+                'PYK','TPI']
+    cofactor_regen_rxns = ['NADTRHD','NADH16','NADTRHD','ATPM','ATPS4r']
+    for x in gly_rxns:
+        model.reactions.get_by_id(x).subsystem = 'Glycolysis'
+    for x in cofactor_regen_rxns:
+        model.reactions.get_by_id(x).subsystem = 'Cofactor Regeneration'
 
-model = import_matlab_model(path_to_model)
+    path_to_params = join(this_directory, '..', 'tests/redgem_params_textbook.yaml')
+
+
+else:
+    path_to_model = join(this_directory, '..', 'models/small_ecoli.mat')
+    # path_to_model = join(this_directory,'..','models/GSmodel_Ecoli.mat')
+
+    model = import_matlab_model(path_to_model)
+    path_to_params = join(this_directory, '..', 'tests/redgem_params.yml')
+
+thermoDB = join(this_directory, '..', 'data/thermo_data.thermodb')
+path_to_lexicon = join(this_directory, '..', 'models/iJO1366/lexicon.csv')
+path_to_compartment_data = join(this_directory, '..', 'models/iJO1366/compartment_data.json')
+
 
 # Scaling to avoid numerical errors with bad lumps
 for rxn in model.reactions:
     if rxn.id.startswith('LMPD_'):
         rxn.add_metabolites({x:v*(0.1 - 1) for x,v in rxn.metabolites.items()})
-
-if is_travis:
-    # Remove 80% of the mets of the biomass reaction so that less lumps need to be computed:
-    print('Travis env detected. Trimming the biomass reaction')
-    bio_rxn = model.reactions.get_by_id('Ec_biomass_iJO1366_WT_53p95M')
-    bio_rxn.add_metabolites({k:-v for e,(k,v) in
-                             enumerate(bio_rxn.metabolites.items())
-                             if e != 1})
-                             # if e%10 != 0})
 
 thermo_data = load_thermoDB(thermoDB)
 lexicon = read_lexicon(path_to_lexicon)
@@ -51,19 +67,15 @@ tfa_model.prepare()
 tfa_model.convert()
 
 # tfa_model.solver.configuration.verbosity = True
-tfa_model.logger.setLevel = 30 
+tfa_model.logger.setLevel = 30
 
-path_to_params = join(this_directory,'..','tests/redgem_params.yml')
-
-
-@pytest.mark.skip("This can be too long for CI")
 def test_redgem():
     redgem = RedGEM(tfa_model, path_to_params, False)
     rgem = redgem.run()
     obj_val  = rgem.slim_optimize()
-    assert(obj_val > 0)
-    return rgem
+    # assert(obj_val > 0)
+    return rgem, redgem
 
 
 if __name__ == '__main__':
-    rgem = test_redgem()
+    rgem, redgem = test_redgem()
