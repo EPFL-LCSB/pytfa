@@ -187,15 +187,16 @@ class LCSBModel(ABC):
                 try:
                     cons = self._cons_kinds[cons_type.__name__].get_by_id(strfy(element))
                     self.remove_constraint(cons)
-                except KeyError:
+                except KeyError as e:
                     pass
         for var_type in all_var_subclasses:
             for element in collection:
                 try:
                     var = self._var_kinds[var_type.__name__].get_by_id(strfy(element))
                     self.remove_variable(var)
-                except KeyError:
+                except KeyError as e:
                     pass
+
 
     def remove_variable(self, var):
         """
@@ -210,6 +211,7 @@ class LCSBModel(ABC):
 
         self._var_dict.pop(var.name)
         self.remove_cons_vars(var.variable)
+        self.logger.debug('Removed variable {}'.format(var.name))
 
     def remove_constraint(self, cons):
         """
@@ -224,6 +226,7 @@ class LCSBModel(ABC):
 
         self._cons_dict.pop(cons.name)
         self.remove_cons_vars(cons.constraint)
+        self.logger.debug('Removed constraint {}'.format(cons.name))
 
     def _push_queue(self):
         """
