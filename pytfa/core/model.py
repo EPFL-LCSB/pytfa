@@ -115,6 +115,7 @@ class LCSBModel(ABC):
                    **kwargs)
 
         self._var_dict[var.name] = var
+        self.logger.debugmodel('Added variable: {}'.format(var.name))
         # self.add_cons_vars(var.variable)
 
         return var
@@ -144,6 +145,7 @@ class LCSBModel(ABC):
                     queue=queue,
                     **kwargs)
         self._cons_dict[cons.name] = cons
+        self.logger.debug('Added constraint: {}'.format(cons.name))
         # self.add_cons_vars(cons.constraint)
 
         return cons
