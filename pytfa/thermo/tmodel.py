@@ -73,9 +73,6 @@ class ThermoModel(LCSBModel, Model):
         self.MAX_pH = max_ph
         self.MIN_pH = min_ph
 
-        self._var_dict = dict()
-        self._cons_dict = dict()
-
         self._init_thermo()
 
         self.logger.info('# Model initialized with units {} and temperature {} K'  \

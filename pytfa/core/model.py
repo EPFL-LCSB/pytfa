@@ -14,6 +14,7 @@ from collections import defaultdict
 
 import pandas as pd
 from numpy import empty
+import optlang
 from optlang.exceptions import SolverError
 from cobra import DictList, Model
 from cobra.core.solution import Solution
@@ -63,6 +64,10 @@ class LCSBModel(ABC):
 
         self._cons_queue = list()
         self._var_queue = list()
+
+        self._var_dict = dict()
+        self._cons_dict = dict()
+
         self.sloppy=sloppy
 
 
@@ -199,6 +204,9 @@ class LCSBModel(ABC):
         :param var:
         :return:
         """
+        # Get the pytfa var object if an optlang variable is passed
+        if isinstance(var,optlang.Variable):
+            var = self._var_dict[var.name]
 
         self._var_dict.pop(var.name)
         self.remove_cons_vars(var.variable)
@@ -210,6 +218,9 @@ class LCSBModel(ABC):
         :param cons:
         :return:
         """
+        # Get the pytfa var object if an optlang variable is passed
+        if isinstance(cons,optlang.Constraint):
+            cons = self._cons_dict[cons.name]
 
         self._cons_dict.pop(cons.name)
         self.remove_cons_vars(cons.constraint)
