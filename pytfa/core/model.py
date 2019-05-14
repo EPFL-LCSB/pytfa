@@ -121,7 +121,7 @@ class LCSBModel(ABC):
                    **kwargs)
 
         self._var_dict[var.name] = var
-        self.logger.debugmodel('Added variable: {}'.format(var.name))
+        self.logger.debug('Added variable: {}'.format(var.name))
         # self.add_cons_vars(var.variable)
 
         return var
