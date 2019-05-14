@@ -276,7 +276,10 @@ class LCSBModel(ABC):
         if hasattr(self, '_cons_kinds'):
             for k in self._cons_kinds:
                 attrname = camel2underscores(k)
-                delattr(self, attrname)
+                try:
+                    delattr(self, attrname)
+                except AttributeError:
+                    pass # The attribute may not have been set up yet
 
         _cons_kinds = defaultdict(DictList)
 
