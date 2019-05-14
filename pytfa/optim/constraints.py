@@ -146,6 +146,45 @@ class GenericConstraint:
     def __repr__(self):
         return self.name + ': ' + self.constraint.expression.__repr__()
 
+class ModelConstraint(GenericConstraint):
+    """
+    Class to represent a variable attached to the model
+    """
+
+    def __init__(self, model, expr, id_, **kwargs):
+        GenericConstraint.__init__(self,
+                                   id_= id_,
+                                   expr=expr,
+                                   model=model,
+                                   hook=model,
+                                   **kwargs)
+
+
+class GeneConstraint(GenericConstraint):
+    """
+    Class to represent a variable attached to a enzyme
+    """
+
+    def __init__(self, gene, expr, **kwargs):
+        model = gene.model
+
+        GenericConstraint.__init__(self,
+                                   expr=expr,
+                                   model=model,
+                                   hook=gene,
+                                   **kwargs)
+
+    @property
+    def gene(self):
+        return self.hook
+
+    @property
+    def id(self):
+        return self.gene.id
+
+    @property
+    def model(self):
+        return self.gene.model
 
 class ReactionConstraint(GenericConstraint):
     """
