@@ -14,10 +14,12 @@ from cobra.exceptions import SolverNotFound
 
 from ..thermo.tmodel import ThermoModel
 
-from ..optim.variables import ReactionVariable, MetaboliteVariable
-from ..optim.constraints import ReactionConstraint, MetaboliteConstraint
+from ..optim.variables import ReactionVariable, MetaboliteVariable, ModelVariable
+from ..optim.constraints import ReactionConstraint, MetaboliteConstraint, ModelConstraint
 
 from optlang.util import expr_to_json, parse_expr
+
+from copy import copy
 
 
 def get_all_subclasses(cls):
@@ -34,10 +36,17 @@ def make_subclasses_dict(cls):
     the_dict[cls.__name__] = cls
     return the_dict
 
-REACTION_VARIABLE_SUBCLASSES    = make_subclasses_dict(ReactionVariable)
-REACTION_CONSTRAINT_SUBCLASSES  = make_subclasses_dict(ReactionConstraint)
-METABOLITE_VARIABLE_SUBCLASSES  = make_subclasses_dict(MetaboliteVariable)
-METABOLITE_CONSTRAINT_SUBCLASSES= make_subclasses_dict(MetaboliteConstraint)
+
+MODEL_VARIABLE_SUBCLASSES  = make_subclasses_dict(ModelVariable)
+MODEL_CONSTRAINT_SUBCLASSES= make_subclasses_dict(ModelConstraint)
+
+BASE_NAME2HOOK = {
+                    ReactionVariable    :'reactions',
+                    ReactionConstraint  :'reactions',
+                    MetaboliteVariable  :'metabolites',
+                    MetaboliteConstraint:'metabolites',
+                }
+
 
 SOLVER_DICT = {
     'optlang.gurobi_interface':'optlang-gurobi',
@@ -212,31 +221,54 @@ def _add_thermo_metabolite_info(met, met_dict):
     if hasattr(met, 'thermo'):
         met_dict['thermo'] = metabolite_thermo_to_dict(met)
 
-def model_from_dict(obj, solver=None):
+def model_from_dict(obj, solver=None, custom_hooks = None):
+    """
+    Custom_hooks looks like
+
+    .. code:: python
+
+        custom_hooks = {<EnzymeVariable Class at 0xffffff> : 'enzymes',
+                        ... }
+
+    :param obj:
+    :param solver:
+    :param custom_hooks:
+    :return:
+    """
     # Take advantage of cobra's serialization of mets and reactions
-    new = cbd.model_from_dict(obj)
+    cbm = cbd.model_from_dict(obj)
 
     if solver is not None:
         try:
-            new.solver = solver
+            cbm.solver = solver
         except SolverNotFound as snf:
             raise snf
     else:
         try:
-            new.solver = obj['solver']
+            cbm.solver = obj['solver']
         except KeyError:
             pass
 
+    if custom_hooks is None:
+        custom_hooks = dict()
+
+    custom_hooks.update(BASE_NAME2HOOK)
+
     if obj['kind'] == 'ThermoModel':
         new = ThermoModel(thermo_data=obj['thermo_data'],
-                          model=new,
+                          model=cbm,
                           name=obj['name'],
                           temperature=obj['temperature'],
                           min_ph=obj['min_ph'],
                           max_ph=obj['max_ph'])
         new = init_thermo_model_from_dict(new, obj)
+    else:
+        new = ThermoModel(model=cbm,
+                          name=obj['name'])
 
     new._push_queue()
+
+    name2class, name2hook = add_custom_classes(new,custom_hooks)
 
     for the_var_dict in obj['variables']:
         this_id = the_var_dict['id']
@@ -245,43 +277,23 @@ def model_from_dict(obj, solver=None):
         ub = the_var_dict['ub']
         scaling_factor = the_var_dict['scaling_factor']
 
-        if classname in REACTION_VARIABLE_SUBCLASSES:
-            hook = new.reactions.get_by_id(this_id)
-            this_class = REACTION_VARIABLE_SUBCLASSES[classname]
-            nv = new.add_variable(kind=this_class,
-                                  hook=hook,
-                                  ub = ub,
-                                  lb = lb,
-                                  queue=True)
-
-        elif classname in METABOLITE_VARIABLE_SUBCLASSES:
-            hook = new.metabolites.get_by_id(this_id)
-            this_class = METABOLITE_VARIABLE_SUBCLASSES[classname]
-            nv = new.add_variable(kind=this_class,
-                                  hook=hook,
-                                  ub = ub,
-                                  lb = lb,
-                                  queue=True)
-
-        elif classname in ENZYME_VARIABLE_SUBCLASSES:
-            hook = new.enzymes.get_by_id(this_id)
-            this_class = ENZYME_VARIABLE_SUBCLASSES[classname]
-            nv = new.add_variable(kind=this_class,
-                                  hook=hook,
-                                  ub = ub,
-                                  lb = lb,
-                                  queue=True)
-
-        elif classname in MODEL_VARIABLE_SUBCLASSES:
+        if classname in MODEL_VARIABLE_SUBCLASSES:
             hook = new
             this_class = MODEL_VARIABLE_SUBCLASSES[classname]
             nv = new.add_variable(kind=this_class,
                                   hook=hook,
-                                  id_ = this_id,
+                                  id_=this_id,
+                                  ub=ub,
+                                  lb=lb,
+                                  queue=True)
+        elif classname in name2class:
+            hook = name2hook[classname].get_by_id(this_id)
+            this_class = name2class[classname]
+            nv = new.add_variable(kind=this_class,
+                                  hook=hook,
                                   ub = ub,
                                   lb = lb,
                                   queue=True)
-
         else:
             raise TypeError(
                 'Class {} serialization not handled yet' \
@@ -307,38 +319,21 @@ def model_from_dict(obj, solver=None):
         lb = the_cons_dict['lb']
         ub = the_cons_dict['ub']
 
-        if classname in REACTION_CONSTRAINT_SUBCLASSES:
-            hook = new.reactions.get_by_id(this_id)
-            this_class = REACTION_CONSTRAINT_SUBCLASSES[classname]
-            nc = new.add_constraint(kind=this_class, hook=hook,
-                                    expr=new_expr,
-                                    ub = ub,
-                                    lb = lb,
-                                    queue=True)
+        # Look for the corresponding class:
 
-        elif classname in METABOLITE_CONSTRAINT_SUBCLASSES:
-            hook = new.metabolites.get_by_id(this_id)
-            this_class = METABOLITE_CONSTRAINT_SUBCLASSES[classname]
-            nc = new.add_constraint(kind=this_class, hook=hook,
-                                    expr=new_expr,
-                                    ub = ub,
-                                    lb = lb,
-                                    queue=True)
-
-        elif classname in ENZYME_CONSTRAINT_SUBCLASSES:
-            hook = new.enzymes.get_by_id(this_id)
-            this_class = ENZYME_CONSTRAINT_SUBCLASSES[classname]
-            nc = new.add_constraint(kind=this_class, hook=hook,
-                                    expr=new_expr,
-                                    ub = ub,
-                                    lb = lb,
-                                    queue=True)
-
-        elif classname in MODEL_CONSTRAINT_SUBCLASSES:
+        if classname in MODEL_CONSTRAINT_SUBCLASSES:
             hook=new
             this_class = MODEL_CONSTRAINT_SUBCLASSES[classname]
             nc = new.add_constraint(kind=this_class, hook=hook,
                                     expr=new_expr, id_ = this_id,
+                                    ub = ub,
+                                    lb = lb,
+                                    queue=True)
+        elif classname in name2class:
+            hook = name2hook[classname].get_by_id(this_id)
+            this_class = name2class[classname]
+            nc = new.add_constraint(kind=this_class, hook=hook,
+                                    expr=new_expr,
                                     ub = ub,
                                     lb = lb,
                                     queue=True)
@@ -356,6 +351,39 @@ def model_from_dict(obj, solver=None):
 
     return new
 
+def add_custom_classes(model, custom_hooks):
+    """
+    Allows custom variable serialization
+
+    :param model:
+    :param base_classes:
+    :param base_hooks:
+    :param custom_hooks:
+    :return:
+    """
+
+    base_classes = dict()
+    base_hooks = dict()
+
+    for this_class, hookname in custom_hooks.items():
+        # Build the subclass dict of the shape
+        # {'MyClass':<MyClass Object>}
+        this_subclass_dict = make_subclasses_dict(this_class)
+        base_classes.update(this_subclass_dict)
+
+        # Build the Hook dict, of the shape
+        # {'MySubClass':model.my_attr}
+        hooks = getattr(model,hookname)
+        this_hook_dict = {k:hooks for k in this_subclass_dict}
+        base_hooks.update(this_hook_dict)
+
+    return  base_classes, base_hooks
+
+
+def get_hook_dict(model,custom_hooks):
+
+    return {classname:getattr(model,hookname)
+            for classname, hookname in custom_hooks.items()}
 
 def init_thermo_model_from_dict(new, obj):
     for rxn_dict in obj['reactions']:
