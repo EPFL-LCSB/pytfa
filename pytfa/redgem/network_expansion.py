@@ -11,9 +11,6 @@
 Model class
 """
 
-import os
-from pytfa.io import import_matlab_model
-
 import networkx as nx
 from cobra import Metabolite, Reaction, Model
 from copy import deepcopy
@@ -21,50 +18,45 @@ from copy import deepcopy
 
 class NetworkExpansion:
 
-    def __init__(self, gem, core_subsystems, carbon_uptake, cofactor_pairs, small_metabolites,
-                 inorganics, d, extracellular_system, subsystem_names=(), n=0):
+    def __init__(self, gem, core_subsystems, extracellular_system,
+                 cofactors, small_metabolites, inorganics,
+                 d, n):
         """
         A class encapsulating the RedGEM algorithm
 
         :param gem: The studied GEM
-        :param core_subsystems: List of core subsystems names
-        :param carbon_uptake:
-        :param cofactor_pairs: List of cofactor pairs id
+        :param core_subsystems: Core subsystems
+        :param extracellular_system: Extracellular metabolite ids
+        :param cofactors: List of cofactors id
         :param small_metabolites: List of small metabolites id
         :param inorganics: List of inorganics id
         :param d: Degree
-        :param extracellular_system:
-        :param subsystem_names:
         :param n: User parameter
         """
-        self._gem = gem
-        self._redgem = gem.copy()
-        self._redgem.name = 'redgem'
-        self._reduced_model = Model('graph')
+        # Shallow copy of the GEM : the deepcopy is possibly performed in redgem, before
+        # calling NetworkExpansion
+        self._redgem = gem
+        #self._redgem.name = 'redgem'
         self._graph = nx.DiGraph()
 
         # Subsystems
-        self._subsystem_names = subsystem_names
-        self._subsystem_count = len(subsystem_names)
         self._core_subsystems = core_subsystems
-
-        # Sets of core reactions and metabolites
-        self._rcore = set()
-        self._mcore = set()
+        self._subsystem_count = len(core_subsystems)
+        self._extracellular_system = extracellular_system
 
         # Dicts to save extracted reactions and metabolites for each subsystem
         # TODO: Improve structure definition
         dict_of_lists_of_sets = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_lists_of_sets[name] = [set() for _ in range(d+1)]
         dict_of_dicts_of_lists_of_sets = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_dicts_of_lists_of_sets[name] = deepcopy(dict_of_lists_of_sets)
         dict_of_int = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_int[name] = -1
         dict_of_dicts_of_int = {}
-        for name in subsystem_names:
+        for name in core_subsystems:
             dict_of_dicts_of_int[name] = deepcopy(dict_of_int)
 
         self._subsystem_reactions = {}
@@ -83,28 +75,11 @@ class NetworkExpansion:
         self._path_dict = {}
 
         # Save others parameters
-        self._carbon_uptake = carbon_uptake
-        self._cofactor_pairs = cofactor_pairs
+        self._cofactor_pairs = cofactors
         self._small_metabolites = small_metabolites
         self._inorganics = inorganics
         self._d = d
-        self._extracellular_system = extracellular_system
         self._n = n
-
-    def extract_core_reactions(self):
-        for rxn in self._gem.reactions:
-            if rxn.subsystem in self._core_subsystems:
-                self._rcore.add(rxn)
-
-    def extract_core_metabolites(self):
-        for rxn in self._rcore:
-            for metabolite in rxn.metabolites:
-                metabolite_id = metabolite.id
-                if metabolite_id in self._cofactor_pairs \
-                        or metabolite_id in self._small_metabolites \
-                        or metabolite_id in self._inorganics:
-                    continue
-                self._mcore.add(metabolite)
 
     def extract_subsystem_reactions(self, subsystem):
         """
@@ -116,7 +91,7 @@ class NetworkExpansion:
         """
         rxns = set()
         rxns_id = set()
-        for rxn in self._gem.reactions:
+        for rxn in self._redgem.reactions:
             if rxn.subsystem == subsystem:
                 rxns.add(rxn)
                 rxns_id.add(rxn.id)
@@ -156,7 +131,7 @@ class NetworkExpansion:
         """
         kept_rxns = []
         kept_metabolites = set()
-        for rxn in self._gem.reactions:
+        for rxn in self._redgem.reactions:
             metabolites = {}
             for metabolite, coefficient in rxn.metabolites.items():
                 metabolite_id = metabolite.id
@@ -177,7 +152,6 @@ class NetworkExpansion:
                                upper_bound=rxn.upper_bound)
             new_rxn.add_metabolites(metabolites)
             kept_rxns.append(new_rxn)
-        self._reduced_model.add_reactions(kept_rxns)
 
         paths_struct = [{} for _ in range(self._d+1)]  # Comprehension list to create multiple dicts
         to_struct = [""] * (self._d+1)
@@ -224,15 +198,6 @@ class NetworkExpansion:
             # Handle d = 0 case, since it didn't go through the loop
             if d == 0 and metabolite_id not in self._subsystem_metabolites_id[subsystem_j]:
                 frontier = {}
-            """
-            self._graph.nodes[metabolite_id]['paths'][d] = ancestors
-            self._graph.nodes[metabolite_id]['to'][d] = frontier
-            for node in frontier:
-                if 'from_'+subsystem_i in self._graph.nodes[node]:
-                    self._graph.nodes[node]['from_'+subsystem_i].append(metabolite_id)
-                else:
-                    self._graph.nodes[node]['from_'+subsystem_i] = [metabolite_id]
-            """
             # Retrieve and save metabolites, reactions and paths
             for node in frontier:
                 paths = self.retrieve_all_paths(node, metabolite_id, ancestors)
@@ -319,8 +284,8 @@ class NetworkExpansion:
 
         :return: Dict with distances
         """
-        for i in self._subsystem_names:
-            for j in self._subsystem_names:
+        for i in self._core_subsystems:
+            for j in self._core_subsystems:
                 for k in range(self._d+1):
                     # If there path of length d
                     if self._intermediate_paths[i][j][k]:
@@ -346,6 +311,8 @@ class NetworkExpansion:
         """
         for metabolite_id in self._extracellular_system:
             # Find metabolites at a distance n from metabolite_id
+            if metabolite_id not in self._graph:
+                continue
             ancestors = {}
             frontier = {metabolite_id}
             explored = {metabolite_id}
@@ -423,12 +390,12 @@ class NetworkExpansion:
 
         :return: None
         """
-        for subsystem in self._subsystem_names:
+        for subsystem in self._core_subsystems:
             self.extract_subsystem_reactions(subsystem)
             self.extract_subsystem_metabolites(subsystem)
 
-        for subsystem_i in self._subsystem_names:
-            for subsystem_j in self._subsystem_names:
+        for subsystem_i in self._core_subsystems:
+            for subsystem_j in self._core_subsystems:
                 for k in range(self._d+1):
                     self.breadth_search_subsystems_paths_length_d(subsystem_i, subsystem_j, k)
 
@@ -438,7 +405,7 @@ class NetworkExpansion:
 
         :return: None
         """
-        for subsystem in self._subsystem_names:
+        for subsystem in self._core_subsystems:
             for k in range(self._n + 1):
                 self.breadth_search_extracellular_system_paths(subsystem, k)
 
@@ -450,17 +417,17 @@ class NetworkExpansion:
         """
         def extract_id(x):
             return x.id
-        to_remove_metabolites = set(map(extract_id, self._gem.metabolites))
-        to_remove_reactions = set(map(extract_id, self._gem.reactions))
+        to_remove_metabolites = set(map(extract_id, self._redgem.metabolites))
+        to_remove_reactions = set(map(extract_id, self._redgem.reactions))
 
         # Keep subsystems reactions and metabolites
-        for name in self._subsystem_names:
+        for name in self._core_subsystems:
             to_remove_reactions = to_remove_reactions - self._subsystem_reactions_id[name]
             to_remove_metabolites = to_remove_metabolites - self._subsystem_metabolites_id[name]
 
         # Keep intermediate reactions and metabolites
-        for i in self._subsystem_names:
-            for j in self._subsystem_names:
+        for i in self._core_subsystems:
+            for j in self._core_subsystems:
                 for k in range(self._d+1):
                     to_remove_reactions = to_remove_reactions \
                                           - self._intermediate_reactions_id[i][j][k]
@@ -471,41 +438,14 @@ class NetworkExpansion:
         to_remove_metabolites = to_remove_metabolites - set(self._extracellular_system)
 
         # Keep intermediate extracellular reactions and metabolites
-        for i in self._subsystem_names:
+        for i in self._core_subsystems:
             for k in range(self._d+1):
                 to_remove_reactions = to_remove_reactions \
                                       - self._intermediate_extracellular_reactions_id[i][k]
                 to_remove_metabolites = to_remove_metabolites \
                                         - self._intermediate_extracellular_metabolites_id[i][k]
 
-        print(to_remove_metabolites, to_remove_reactions)
         self._redgem.remove_reactions(to_remove_reactions, True)
-        # self._redgem.remove_metabolites(to_remove_metabolites)
-
-    """
-    def create_sub_network(self):
-        to_add_metabolites_id = set()
-        to_add_reactions_id = set()
-
-        for name in self._subsystem_names:
-            to_add_reactions_id = to_add_reactions_id.union(self._subsystem_reactions_id[name])
-            to_add_metabolites_id = to_add_metabolites_id.union(self._subsystem_metabolites_id[name])
-
-        for i in self._subsystem_names:
-            for j in self._subsystem_names:
-                for k in range(self._d+1):
-                    to_add_reactions_id = to_add_reactions_id.union(self._intermediate_reactions_id[i][j][k])
-                    to_add_metabolites_id = to_add_metabolites_id.union(self._intermediate_metabolites_id[i][j][k])
-
-        to_add_reactions = []
-        to_add_metabolites = []
-        for reaction_id in to_add_reactions_id:
-            to_add_reactions.append(self._gem.reactions.get_by_id(reaction_id))
-        for metabolite_id in to_add_metabolites_id:
-            to_add_metabolites.append(self._gem.metabolites.get_by_id(metabolite_id))
-
-        self._redgem.add_reactions(to_add_reactions)
-    """
 
     def run(self):
         """
@@ -517,3 +457,5 @@ class NetworkExpansion:
         self.run_between_all_subsystems()
         self.run_extracellular_system()
         self.extract_sub_network()
+
+        return self._redgem

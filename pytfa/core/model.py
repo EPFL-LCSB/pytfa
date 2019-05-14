@@ -14,13 +14,15 @@ from collections import defaultdict
 
 import pandas as pd
 from numpy import empty
+import optlang
 from optlang.exceptions import SolverError
 from cobra import DictList, Model
 from cobra.core.solution import Solution
 
 from ..utils.str import camel2underscores
-from ..optim.variables import GenericVariable
-from ..optim.utils import get_primal
+from ..optim.variables import GenericVariable, ReactionVariable, MetaboliteVariable
+from ..optim.constraints import ReactionConstraint, MetaboliteConstraint
+from ..optim.utils import get_primal, get_all_subclasses
 
 import time
 
@@ -42,7 +44,7 @@ def timeit(method):
         message = '%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te-ts)
 
         try:
-            self.logger.info(message)
+            self.logger.debug(message)
         except AttributeError:
             print(message)
         return result
@@ -62,6 +64,10 @@ class LCSBModel(ABC):
 
         self._cons_queue = list()
         self._var_queue = list()
+
+        self._var_dict = dict()
+        self._cons_dict = dict()
+
         self.sloppy=sloppy
 
 
@@ -150,6 +156,50 @@ class LCSBModel(ABC):
 
         return cons
 
+    def remove_reactions(self, reactions, remove_orphans=False):
+        # Remove the constraints and variables associated to these reactions
+        all_cons_subclasses = get_all_subclasses(ReactionConstraint)
+        all_var_subclasses = get_all_subclasses(ReactionVariable)
+
+        self._remove_associated_consvar(all_cons_subclasses, all_var_subclasses,
+                                        reactions)
+
+        Model.remove_reactions(self,reactions,remove_orphans)
+
+    def remove_metabolites(self, metabolite_list, destructive=False):
+        # Remove the constraints and variables associated to these reactions
+        all_cons_subclasses = get_all_subclasses(MetaboliteConstraint)
+        all_var_subclasses = get_all_subclasses(MetaboliteVariable)
+
+        self._remove_associated_consvar(all_cons_subclasses, all_var_subclasses,
+                                        metabolite_list)
+
+        Model.remove_metabolites(self, metabolite_list, destructive)
+
+    def _remove_associated_consvar(self, all_cons_subclasses, all_var_subclasses,
+                                   collection):
+
+        if not hasattr(collection, '__iter__'):
+            collection = [collection]
+
+        strfy = lambda x:x if isinstance(x, str) else x.id
+
+        for cons_type in all_cons_subclasses:
+            for element in collection:
+                try:
+                    cons = self._cons_kinds[cons_type.__name__].get_by_id(strfy(element))
+                    self.remove_constraint(cons)
+                except KeyError as e:
+                    pass
+        for var_type in all_var_subclasses:
+            for element in collection:
+                try:
+                    var = self._var_kinds[var_type.__name__].get_by_id(strfy(element))
+                    self.remove_variable(var)
+                except KeyError as e:
+                    pass
+
+
     def remove_variable(self, var):
         """
         Removes a variable
@@ -157,9 +207,13 @@ class LCSBModel(ABC):
         :param var:
         :return:
         """
+        # Get the pytfa var object if an optlang variable is passed
+        if isinstance(var,optlang.Variable):
+            var = self._var_dict[var.name]
 
         self._var_dict.pop(var.name)
         self.remove_cons_vars(var.variable)
+        self.logger.debug('Removed variable {}'.format(var.name))
 
     def remove_constraint(self, cons):
         """
@@ -168,9 +222,13 @@ class LCSBModel(ABC):
         :param cons:
         :return:
         """
+        # Get the pytfa var object if an optlang variable is passed
+        if isinstance(cons,optlang.Constraint):
+            cons = self._cons_dict[cons.name]
 
         self._cons_dict.pop(cons.name)
         self.remove_cons_vars(cons.constraint)
+        self.logger.debug('Removed constraint {}'.format(cons.name))
 
     def _push_queue(self):
         """
@@ -223,7 +281,10 @@ class LCSBModel(ABC):
         if hasattr(self, '_cons_kinds'):
             for k in self._cons_kinds:
                 attrname = camel2underscores(k)
-                delattr(self, attrname)
+                try:
+                    delattr(self, attrname)
+                except AttributeError:
+                    pass # The attribute may not have been set up yet
 
         _cons_kinds = defaultdict(DictList)
 

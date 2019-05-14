@@ -1,0 +1,56 @@
+---
+core_subsystems:
+    - "Glycolysis"
+    - "Cofactor Regeneration"
+
+extracellular_system:
+    - EX_co2_e
+    - EX_glc__D_e
+    - EX_h_e
+    - EX_h2o_e
+    - EX_nh4_e
+    - EX_o2_e
+    - EX_pi_e
+
+biomass_rxns:
+    - Biomass_Ecoli_core
+
+# Define minimal growth to reach. If auto, sets to 95% of max TFA growth
+growth_rate: auto
+
+# Define the medium. Any other reaction will be kept as provided by the model
+medium:
+    EX_glc__D_e: -10
+
+small_metabolites:
+    - h_c
+    - h2o_c
+    - co2_c
+    - o2_c
+    - pi_c
+    - ppi_c
+    - nh4_c
+    - h2o2_c
+
+inorganics: auto
+
+cofactor_pairs:
+    - ['atp_c', 'adp_c']
+    - ['nad_c', 'nadh_c']
+    - ['nadp_c', 'nadph_c']
+    - ['accoa_c', 'coa_c']
+
+# Reduction parameters
+lump_method: Min+1 # OnePerBBB, Min, Min+p
+max_lumps_per_BBB: 2 # Only used if method = Min or Min+p
+remove_blocked_reactions: no  # Remove reactions that cannot carry flux
+                              # at the end of the reduction
+
+d: 2
+n: 2
+
+solver: auto
+force_solve: False
+timeout: 300
+feasibility: 1e-9
+constraint_method: flux # flux, integer, or both

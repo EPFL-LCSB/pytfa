@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 #     return reqs
 
 
-version_tag = '0.8.0-b0'
+version_tag = '0.9.0-b0'
 
 setup(name='pytfa',
       version=version_tag,
@@ -30,6 +30,7 @@ setup(name='pytfa',
       download_url='https://github.com/EPFL-LCSB/pytfa/archive/'+version_tag+'.tar.gz',
       install_requires=['cobra>0.13',
                         'bokeh>=0.12.1',
+                        'networkx',
                         'optlang',
                         'pytest',
                         'scipy',

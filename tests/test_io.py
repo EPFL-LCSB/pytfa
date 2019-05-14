@@ -49,3 +49,10 @@ def test_io():
 
     copy_solver_configuration(tmodel, new)
 
+    sol_orig = tmodel.slim_optimize()
+    sol_new = new.slim_optimize()
+
+    epsilon = new.solver.configuration.tolerances.optimality
+
+    assert(abs(sol_new - sol_orig) < epsilon)
+
