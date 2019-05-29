@@ -20,7 +20,3 @@ def test_apply_dir():
     with tmodel as m:
         apply_directionality(m,solution)
         m.optimize()
-
-
-
-

@@ -12,6 +12,10 @@ Initialization of globals for tests
 import os
 import pytfa.io
 
+from pytfa.io.enrichment import read_lexicon, annotate_from_lexicon, \
+    read_compartment_data, apply_compartment_data
+from cobra.test import create_test_model
+
 ############
 # SETTINGS #
 ############
@@ -39,3 +43,25 @@ tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
 tmodel.solver = 'optlang-glpk'
 tmodel.prepare()
 tmodel.convert()
+
+
+# Small model for simpler tests
+
+small_model = create_test_model('textbook')
+
+# Make your computations on it
+# tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
+
+lexicon = read_lexicon('../models/iJO1366/lexicon.csv')
+compartment_data = read_compartment_data('../models/iJO1366/compartment_data.json')
+
+# Initialize the cobra_model
+small_tmodel = pytfa.ThermoModel(thermo_data, small_model)
+
+# Annotate the cobra_model
+annotate_from_lexicon(small_tmodel, lexicon)
+apply_compartment_data(small_tmodel, compartment_data)
+
+small_tmodel.solver = 'optlang-glpk'
+small_tmodel.prepare()
+small_tmodel.convert()
