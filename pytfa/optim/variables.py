@@ -147,7 +147,7 @@ class GenericVariable:
     @property
     def value(self):
         try:
-            return self.model.solution.x_dict[self.name]
+            return self.model.solution.raw[self.name]
         except AttributeError:
             warn('Model need to be optimized to get a value for this variable')
 

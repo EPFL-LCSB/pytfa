@@ -71,7 +71,7 @@ def plot_thermo_displacement_histogram(tmodel,solution = None):
         thermo_displacements = tmodel.get_variables_of_type(ThermoDisplacement)
         varnames = [x.name for x in thermo_displacements]
 
-        values = solution.x_dict[varnames]
+        values = solution.raw[varnames]
 
     p1 = plot_histogram(values)
 
