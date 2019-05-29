@@ -52,8 +52,8 @@ small_model = create_test_model('textbook')
 # Make your computations on it
 # tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
 
-lexicon = read_lexicon('../models/iJO1366/lexicon.csv')
-compartment_data = read_compartment_data('../models/iJO1366/compartment_data.json')
+lexicon = read_lexicon(this_directory+'../models/iJO1366/lexicon.csv')
+compartment_data = read_compartment_data(this_directory+'../models/iJO1366/compartment_data.json')
 
 # Initialize the cobra_model
 small_tmodel = pytfa.ThermoModel(thermo_data, small_model)
