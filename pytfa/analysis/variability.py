@@ -75,13 +75,13 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
         except SolverError:
             break
 
-        profiles[iter_count] = solution.x_dict
+        profiles[iter_count] = solution.raw
         if iter_count > 0:
             sse = sum((profiles[iter_count-1] - profiles[iter_count])**2)
         else:
             sse =0
 
-        tmodel.logger.info(str(iter_count) + ' - ' + str(sse))
+        tmodel.logger.debug(str(iter_count) + ' - ' + str(sse))
 
         # active_use_variables = get_active_use_variables(this_tmodel,solution)
         active_use_variables = get_direction_use_variables(this_tmodel,solution)
@@ -89,7 +89,7 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
                                        if x.reaction in bidirectional_reactions]
         bool_id = ''.join('1' if isinstance(x,ForwardUseVariable) else '0' \
                 for x in bidirectional_use_variables)
-        Tracer()()
+
         # Make the expression to forbid this expression profile to happen again
         # FP_1101: FU_rxn1 + FU_rxn2 + BU_rxn3 + FU_rxn4 <= 4-1 = 3
         expr = sum(bidirectional_use_variables)
@@ -205,10 +205,10 @@ def calculate_dissipation(tmodel,solution=None):
         solution = tmodel.solution
 
     reaction_id  = [x.id for x in tmodel.reactions]
-    fluxes = solution.x_dict[reaction_id]
+    fluxes = solution.fluxes[reaction_id]
 
     deltag_var = tmodel.get_variables_of_type(DeltaG)
-    deltag = pd.Series({x.id:solution.x_dict[x.name]
+    deltag = pd.Series({x.id:solution.raw[x.name]
                                       for x in deltag_var})
     dissipation = fluxes*deltag
 
