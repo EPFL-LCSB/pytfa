@@ -384,8 +384,11 @@ class ThermoModel(LCSBModel, Model):
         # Is it a water transport reaction ?
         H2OtRxns = False
         if rxn.thermo['isTrans'] and len(rxn.reactants) == 1:
-            if rxn.reactants[0].annotation['seed_id'] == 'cpd00001':
-                H2OtRxns = True
+            try:
+                if rxn.reactants[0].annotation['seed_id'] == 'cpd00001':
+                    H2OtRxns = True
+            except KeyError:
+                pass
 
         # Is it a drain reaction ?
         NotDrain = len(rxn.metabolites) > 1
