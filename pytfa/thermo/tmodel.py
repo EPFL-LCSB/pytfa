@@ -154,7 +154,15 @@ class ThermoModel(LCSBModel, Model):
                                       self.Debye_Huckel_B,
                                       self.thermo_unit)
 
-    def _prepare_reaction(self,reaction):
+    def _prepare_reaction(self,reaction, null_error_override=2):
+        """
+
+        :param reaction:
+        :param null_error_override: overrides DeltaG when it is 0 to
+                                    allow flexibility. 2kcal/mol is standard in
+                                    estimation frameworks like GCM.
+        :return:
+        """
         DeltaGrxn = 0
         DeltaGRerr = 0
         proton_of = self._proton_of
@@ -231,17 +239,21 @@ class ThermoModel(LCSBModel, Model):
             (tmp1, DeltaGRerr, tmp2, tmp3) = calcDGR_cues(reaction,
                                                           self.reaction_cues_data)
 
-            if DeltaGRerr == 0:
-                DeltaGRerr = 2  # default value for DeltaGRerr
+            if DeltaGRerr == 0 and null_error_override:
+                DeltaGRerr = null_error_override  # default value for DeltaGRerr
 
             reaction.thermo['deltaGRerr'] = DeltaGRerr
 
-    def prepare(self):
+    def prepare(self, null_error_override = 2):
         """ Prepares a COBRA toolbox cobra_model for TFBA analysis by doing the following:
 
            1. checks if a reaction is a transport reaction
            2. checks the ReactionDB for Gibbs energies of formation of metabolites
            3. computes the Gibbs energies of reactions
+           
+        :param null_error_override: overrides DeltaG when it is 0 to
+                                    allow flexibility. 2kcal/mol is standard in
+                                    estimation frameworks like GCM.
 
         """
 
@@ -279,7 +291,7 @@ class ThermoModel(LCSBModel, Model):
         # Iterate over each reaction
         for i in range(num_rxns):
             reaction = self.reactions[i]
-            self._prepare_reaction(reaction)
+            self._prepare_reaction(reaction, null_error_override)
 
         self.logger.info('# Model preparation done.')
 
