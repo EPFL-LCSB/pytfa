@@ -291,7 +291,8 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
                                   id_=this_id,
                                   ub=ub,
                                   lb=lb,
-                                  queue=True)
+                                  queue=True,
+                                  scaling_factor=scaling_factor)
         elif classname in name2class:
             hook = name2hook[classname].get_by_id(this_id)
             this_class = name2class[classname]
@@ -299,7 +300,8 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
                                   hook=hook,
                                   ub = ub,
                                   lb = lb,
-                                  queue=True)
+                                  queue=True,
+                                  scaling_factor=scaling_factor)
         else:
             raise TypeError(
                 'Class {} serialization not handled yet' \
