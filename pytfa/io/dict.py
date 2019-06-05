@@ -16,6 +16,7 @@ from ..thermo.tmodel import ThermoModel
 
 from ..optim.variables import ReactionVariable, MetaboliteVariable, ModelVariable
 from ..optim.constraints import ReactionConstraint, MetaboliteConstraint, ModelConstraint
+from ..optim.utils import symbol_sum
 
 from optlang.util import expr_to_json, parse_expr
 
@@ -155,6 +156,10 @@ def get_solver_string(model):
     return SOLVER_DICT[model.solver.__class__.__module__]
 
 
+def obj_to_dict(model):
+    return {x.name: v
+            for x,v in model.objective.expression.as_coefficients_dict().items()}
+
 def model_to_dict(model):
     """
 
@@ -167,6 +172,7 @@ def model_to_dict(model):
     obj = cbd.model_to_dict(model)
 
     obj['solver'] = get_solver_string(model)
+    obj['objective'] = obj_to_dict(model)
 
     # Copy variables, constraints
     # obj['var_dict'] = archive_variables(model._var_kinds)
@@ -343,6 +349,11 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
 
     new.repair()
 
+    try:
+        rebuild_obj_from_dict(new, obj['objective'])
+    except KeyError:
+        pass
+
     # Relaxation info
     try:
         new.relaxation = obj['relaxation']
@@ -350,6 +361,10 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
         pass
 
     return new
+
+def rebuild_obj_from_dict(new, objective_dict):
+    obj_expr = symbol_sum([v*new.variables.get(x) for x,v in objective_dict.items()])
+    new.objective = obj_expr
 
 def add_custom_classes(model, custom_hooks):
     """
