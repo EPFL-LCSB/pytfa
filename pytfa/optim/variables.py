@@ -9,10 +9,13 @@
 Variable declarations
 
 """
+from abc import ABCMeta
+
 from distutils.version import LooseVersion
 from optlang import __version__ as OPTLANG_VER
 
 from ..utils.str import camel2underscores
+from .meta import ABCRequirePrefixMeta
 
 from warnings import warn
 
@@ -28,8 +31,7 @@ op_replace_dict = {
 ###                  VARIABLES                  ###
 ###################################################
 
-
-class GenericVariable:
+class GenericVariable(metaclass=ABCRequirePrefixMeta):
     """
     Class to represent a generic variable. The purpose is that the interface
     is instantiated on initialization, to follow the type of interface used
@@ -46,7 +48,7 @@ class GenericVariable:
         :cobra_model: the cobra_model hook.
         :variable: links directly to the cobra_model representation of tbe variable
     """
-    prefix = ''
+    prefix = NotImplemented
 
     @property
     def __attrname__(self):
@@ -345,6 +347,7 @@ class ModelVariable(GenericVariable):
                                  model=model,
                                  hook=model,
                                  **kwargs)
+    prefix = 'MODV_'
 
 class GeneVariable(GenericVariable):
     """
@@ -422,6 +425,8 @@ class ReactionVariable(GenericVariable):
     def model(self):
         return self.reaction.model
 
+    prefix = 'RV_'
+
 class MetaboliteVariable(GenericVariable):
     """
     Class to represent a variable attached to a enzyme
@@ -446,6 +451,8 @@ class MetaboliteVariable(GenericVariable):
     @property
     def model(self):
         return self.metabolite.model
+
+    prefix = 'MV_'
 
 
 class ForwardUseVariable(ReactionVariable, BinaryVariable):
