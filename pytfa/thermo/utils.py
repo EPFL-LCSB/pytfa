@@ -15,7 +15,8 @@ Formula_regex = re.compile("([A-Z][a-z]*)([0-9]*)")
 
 
 def check_reaction_balance(reaction, proton = None):
-    """ Check the balance of a reaction, and eventually add protons to balance
+    """
+    Check the balance of a reaction, and eventually add protons to balance
     it
 
     :param cobra.thermo.reaction.Reaction reaction: The reaction to check the
@@ -102,7 +103,8 @@ def check_reaction_balance(reaction, proton = None):
 
 
 def find_transported_mets(reaction):
-    """ Get a list of the transported metabolites of the reaction.
+    """
+    Get a list of the transported metabolites of the reaction.
 
     :param cobra.thermo.reaction.Reaction reaction: The reaction to get the
         transported metabolites of
@@ -156,7 +158,9 @@ def find_transported_mets(reaction):
 
 
 def check_transport_reaction(reaction):
-    """ Check if a reaction is a transport reaction
+    """
+
+    Check if a reaction is a transport reaction
 
     :param cobra.thermo.reaction.Reaction reaction: The reaction to check
 

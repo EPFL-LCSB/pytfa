@@ -11,13 +11,14 @@ Constraints declarations
 """
 
 from ..utils.str import camel2underscores
+from .meta import ABCRequirePrefixMeta
 
 ###################################################
 ###                 CONSTRAINTS                 ###
 ###################################################
 
 
-class GenericConstraint:
+class GenericConstraint(metaclass=ABCRequirePrefixMeta):
     """
     Class to represent a generic constraint. The purpose is that the interface
      is instantiated on initialization, to follow the type of interface used
@@ -35,7 +36,7 @@ class GenericConstraint:
         :cobra_model: the cobra_model hook.
         :constraint: links directly to the cobra_model representation of tbe constraint
     """
-    prefix = ''
+    prefix = NotImplemented
 
 
     @property
@@ -159,6 +160,8 @@ class ModelConstraint(GenericConstraint):
                                    hook=model,
                                    **kwargs)
 
+    prefix = 'MODC_'
+
 
 class GeneConstraint(GenericConstraint):
     """
@@ -185,6 +188,8 @@ class GeneConstraint(GenericConstraint):
     @property
     def model(self):
         return self.gene.model
+
+    prefix = 'GC_'
 
 class ReactionConstraint(GenericConstraint):
     """
@@ -213,6 +218,8 @@ class ReactionConstraint(GenericConstraint):
     def model(self):
         return self.reaction.model
 
+    prefix = 'RC_'
+
 class MetaboliteConstraint(GenericConstraint):
     """
     Class to represent a variable attached to a enzyme
@@ -238,6 +245,8 @@ class MetaboliteConstraint(GenericConstraint):
     @property
     def model(self):
         return self.metabolite.model
+
+    prefix = 'MC_'
 
 class NegativeDeltaG(ReactionConstraint):
     """
