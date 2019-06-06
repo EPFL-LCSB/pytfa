@@ -157,8 +157,11 @@ def get_solver_string(model):
 
 
 def obj_to_dict(model):
-    return {x.name: v
-            for x,v in model.objective.expression.as_coefficients_dict().items()}
+    if model.objective.expression:
+        return {x.name: float(v)
+                for x,v in model.objective.expression.as_coefficients_dict().items()}
+    else:
+        return 0
 
 def model_to_dict(model):
     """
