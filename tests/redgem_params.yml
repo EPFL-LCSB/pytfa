@@ -1,0 +1,64 @@
+---
+core_subsystems:
+    # - "Citric Acid Cycle"
+    # - "Pentose Phoshate Pathway"
+    - "Glycolysis/Gluconeogenesis"
+    # - "Pyruvate Metabolism"
+    # - "Glyoxylate Metabolism"
+    - 'Oxidative Phosphorylation'
+
+extracellular_system:
+    - DM_ac_e
+    - DM_etoh_e
+    - DM_glyc_e
+    - DM_lac-D_e
+    - DM_akg_e
+    - DM_for_e
+    - DM_pyr_e
+    - DM_fum_e
+    - DM_co2_e
+    - DM_mal-L_e
+
+biomass_rxns:
+    - Ec_biomass_iJO1366_WT_53p95M
+
+# Define minimal growth to reach. If auto, sets to 95% of max TFA growth
+growth_rate: auto
+
+# Define the medium. Any other reaction will be kept as provided by the model
+medium:
+    DM_cbl1_e: -0.01
+    DM_glc_e: -8.16
+    DM_glycogenn1_c: -10.0
+
+small_metabolites:
+    - h_c
+    - h2o_c
+    - co2_c
+    - o2_c
+    - pi_c
+    - ppi_c
+    - nh4_c
+    - h2o2_c
+
+inorganics: auto
+
+cofactor_pairs:
+    - ['atp_c', 'adp_c']
+    - ['nad_c', 'nadh_c']
+    - ['nadp_c', 'nadph_c']
+
+# Reduction parameters
+lump_method: Min+1 # OnePerBBB, Min, Min+p
+max_lumps_per_BBB: 2 # Only used if method = Min or Min+p
+remove_blocked_reactions: no  # Remove reactions that cannot carry flux
+                              # at the end of the reduction
+
+d: 2
+n: 2
+
+solver: auto
+force_solve: False
+timeout: 300
+feasibility: 1e-9
+constraint_method: integer # flux, integer, or both

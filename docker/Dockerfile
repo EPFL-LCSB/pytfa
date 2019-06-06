@@ -33,6 +33,8 @@ RUN pip install -r requirements.txt
 COPY ./solvers /solvers
 COPY ./utils /utils
 
+RUN chmod u+x /utils/*.sh
+
 # Install CPLEX
 RUN /utils/install_cplex.sh
 # Install gurobi
@@ -53,6 +55,8 @@ COPY .bashrc $HOME
 RUN chown "$USER" "$HOME/.bashrc"
 
 #Finalizing installation
+
+RUN chmod +x /utils/activate_gurobi.sh 
 
 USER $USER
 RUN mkdir ./work

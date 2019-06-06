@@ -13,18 +13,49 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 
 import pandas as pd
+from numpy import empty
+import optlang
 from optlang.exceptions import SolverError
 from cobra import DictList, Model
 from cobra.core.solution import Solution
 
 from ..utils.str import camel2underscores
-from ..optim.variables import GenericVariable
-from ..optim.utils import get_primal
+from ..optim.variables import GenericVariable, ReactionVariable, MetaboliteVariable
+from ..optim.constraints import ReactionConstraint, MetaboliteConstraint
+from ..optim.utils import get_primal, get_all_subclasses
+
+import time
+
+def timeit(method):
+    """
+    Adapted from Andreas Jung's blog:
+    https://www.zopyx.com/andreas-jung/contents/a-python-decorator-for-measuring-the-execution-time-of-methods
+
+    :param method:
+    :return:
+    """
+
+
+    def timed(self, *args, **kw):
+        ts = time.time()
+        result = method(self, *args, **kw)
+        te = time.time()
+
+        message = '%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te-ts)
+
+        try:
+            self.logger.debug(message)
+        except AttributeError:
+            print(message)
+        return result
+
+    return timed
 
 class LCSBModel(ABC):
 
     # @abstractmethod
-    def __init__(self, model, name):
+    def __init__(self, model, name, sloppy=False):
+
         """
         Very much model specific
         """
@@ -33,6 +64,12 @@ class LCSBModel(ABC):
 
         self._cons_queue = list()
         self._var_queue = list()
+
+        self._var_dict = dict()
+        self._cons_dict = dict()
+
+        self.sloppy=sloppy
+
 
     @abstractmethod
     def copy(self):
@@ -84,6 +121,7 @@ class LCSBModel(ABC):
                    **kwargs)
 
         self._var_dict[var.name] = var
+        self.logger.debug('Added variable: {}'.format(var.name))
         # self.add_cons_vars(var.variable)
 
         return var
@@ -113,9 +151,54 @@ class LCSBModel(ABC):
                     queue=queue,
                     **kwargs)
         self._cons_dict[cons.name] = cons
+        self.logger.debug('Added constraint: {}'.format(cons.name))
         # self.add_cons_vars(cons.constraint)
 
         return cons
+
+    def remove_reactions(self, reactions, remove_orphans=False):
+        # Remove the constraints and variables associated to these reactions
+        all_cons_subclasses = get_all_subclasses(ReactionConstraint)
+        all_var_subclasses = get_all_subclasses(ReactionVariable)
+
+        self._remove_associated_consvar(all_cons_subclasses, all_var_subclasses,
+                                        reactions)
+
+        Model.remove_reactions(self,reactions,remove_orphans)
+
+    def remove_metabolites(self, metabolite_list, destructive=False):
+        # Remove the constraints and variables associated to these reactions
+        all_cons_subclasses = get_all_subclasses(MetaboliteConstraint)
+        all_var_subclasses = get_all_subclasses(MetaboliteVariable)
+
+        self._remove_associated_consvar(all_cons_subclasses, all_var_subclasses,
+                                        metabolite_list)
+
+        Model.remove_metabolites(self, metabolite_list, destructive)
+
+    def _remove_associated_consvar(self, all_cons_subclasses, all_var_subclasses,
+                                   collection):
+
+        if not hasattr(collection, '__iter__'):
+            collection = [collection]
+
+        strfy = lambda x:x if isinstance(x, str) else x.id
+
+        for cons_type in all_cons_subclasses:
+            for element in collection:
+                try:
+                    cons = self._cons_kinds[cons_type.__name__].get_by_id(strfy(element))
+                    self.remove_constraint(cons)
+                except KeyError as e:
+                    pass
+        for var_type in all_var_subclasses:
+            for element in collection:
+                try:
+                    var = self._var_kinds[var_type.__name__].get_by_id(strfy(element))
+                    self.remove_variable(var)
+                except KeyError as e:
+                    pass
+
 
     def remove_variable(self, var):
         """
@@ -124,9 +207,13 @@ class LCSBModel(ABC):
         :param var:
         :return:
         """
+        # Get the pytfa var object if an optlang variable is passed
+        if isinstance(var,optlang.Variable):
+            var = self._var_dict[var.name]
 
         self._var_dict.pop(var.name)
         self.remove_cons_vars(var.variable)
+        self.logger.debug('Removed variable {}'.format(var.name))
 
     def remove_constraint(self, cons):
         """
@@ -135,21 +222,26 @@ class LCSBModel(ABC):
         :param cons:
         :return:
         """
+        # Get the pytfa var object if an optlang variable is passed
+        if isinstance(cons,optlang.Constraint):
+            cons = self._cons_dict[cons.name]
 
         self._cons_dict.pop(cons.name)
         self.remove_cons_vars(cons.constraint)
+        self.logger.debug('Removed constraint {}'.format(cons.name))
 
-    def _update(self):
+    def _push_queue(self):
         """
         updates the constraints and variables of the model with what's in the
         queue
         :return:
         """
 
-        self.add_cons_vars(self._cons_queue)
-        self.add_cons_vars(self._var_queue)
-        self._cons_queue = list()
+        self.add_cons_vars(self._var_queue, sloppy=self.sloppy)
+        self.add_cons_vars(self._cons_queue, sloppy = self.sloppy)
+
         self._var_queue = list()
+        self._cons_queue = list()
 
 
     def regenerate_variables(self):
@@ -163,7 +255,10 @@ class LCSBModel(ABC):
         if hasattr(self, '_var_kinds'):
             for k in self._var_kinds:
                 attrname = camel2underscores(k)
-                delattr(self, attrname)
+                try:
+                    delattr(self, attrname)
+                except AttributeError:
+                    pass # The attribute may not have been set up yet
 
         _var_kinds = defaultdict(DictList)
         for k, v in self._var_dict.items():
@@ -186,7 +281,10 @@ class LCSBModel(ABC):
         if hasattr(self, '_cons_kinds'):
             for k in self._cons_kinds:
                 attrname = camel2underscores(k)
-                delattr(self, attrname)
+                try:
+                    delattr(self, attrname)
+                except AttributeError:
+                    pass # The attribute may not have been set up yet
 
         _cons_kinds = defaultdict(DictList)
 
@@ -206,6 +304,7 @@ class LCSBModel(ABC):
         """
         # self.add_cons_vars([x.constraint for x in self._cons_dict.values()])
         # self.add_cons_vars([x.variable for x in self._var_dict.values()])
+        self._push_queue()
         Model.repair(self)
         self.regenerate_constraints()
         self.regenerate_variables()
@@ -229,8 +328,29 @@ class LCSBModel(ABC):
         objective_value = self.solver.objective.value
         status = self.solver.status
         variables = pd.Series(data=self.solver.primal_values)
+
+        fluxes = empty(len(self.reactions))
+        rxn_index = list()
+        var_primals = self.solver.primal_values
+
+        for (i, rxn) in enumerate(self.reactions):
+            rxn_index.append(rxn.id)
+            fluxes[i] = var_primals[rxn.id] - var_primals[rxn.reverse_id]
+
+        fluxes = pd.Series(index=rxn_index, data=fluxes, name="fluxes")
+
         solution = Solution(objective_value=objective_value, status=status,
-                            fluxes=variables)
+                            fluxes=fluxes)
+
+        self.solution = solution
+
+        self.solution.raw = variables
+
+        self.\
+            solution.values = pd.DataFrame.from_dict({k:v.unscaled
+                                                 for k,v in self._var_dict.items()},
+                                                 orient = 'index')
+
         return solution
 
     def optimize(self, objective_sense=None, **kwargs):
@@ -245,6 +365,7 @@ class LCSBModel(ABC):
             self.objective.direction = objective_sense
 
         try:
+            # self._hidden_optimize_call(kwargs)
             Model.optimize(self, **kwargs)
             solution = self.get_solution()
             self.solution = solution
@@ -254,6 +375,14 @@ class LCSBModel(ABC):
             self.logger.error(SE)
             self.logger.warning('Solver status: {}'.format(status))
             raise (SE)
+
+    # @timeit
+    # def _hidden_optimize_call(self, kwargs):
+    #     return Model.optimize(self, **kwargs)
+
+    @timeit
+    def slim_optimize(self, *args, **kwargs):
+        return Model.slim_optimize(self, *args, **kwargs)
 
     def get_constraints_of_type(self, constraint_type):
         """
@@ -278,4 +407,3 @@ class LCSBModel(ABC):
 
         variable_key = variable_type.__name__
         return self._var_kinds[variable_key]
-

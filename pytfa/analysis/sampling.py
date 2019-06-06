@@ -13,7 +13,7 @@ Sampling wrappers for pytfa models
 import numpy as np
 from sympy.core.singleton import S
 from time import  time
-from  cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler, HRSampler,\
+from  cobra.sampling import OptGPSampler, ACHRSampler, HRSampler,\
                                             shared_np_array
 from optlang.interface import OPTIMAL
 
@@ -29,6 +29,8 @@ class GeneralizedHRSampler(HRSampler):
         # This currently has to be done to reset the solver basis which is
         # required to get deterministic warmup point generation
         # (in turn required for a working `seed` arg)
+        HRSampler.__init__(self, model, thinning, seed=seed)
+        
         if model.solver.is_integer:
             raise TypeError("sampling does not work with integer problems :(")
         self.model = model.copy()

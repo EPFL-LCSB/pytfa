@@ -1,5 +1,6 @@
 bokeh>=0.12.1
-cobra>=0.11.3
+# Cobrapy has been making many changes lately
+cobra==0.11.3
 ipdb
 lxml
 openpyxl
@@ -9,5 +10,6 @@ python-libsbml
 scipy
 sqlalchemy
 tabulate
+tqdm
 sphinx
 sphinx-rtd-theme

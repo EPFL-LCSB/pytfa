@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import errno
 import pytfa
 
 from pytfa.io import import_matlab_model, load_thermoDB
@@ -68,6 +69,13 @@ tva_fluxes_lc = variability_analysis(tmodel, kind='reactions')
 from pytfa.io.plotting import plot_fva_tva_comparison
 from bokeh.plotting import show, output_file
 from bokeh.layouts import column
+
+try:
+    os.mkdir('outputs')
+except OSError as exc:
+    if exc.errno != errno.EEXIST:
+        raise
+    pass
 
 output_file('outputs/va_comparison.html')
 p1 = plot_fva_tva_comparison(fva_fluxes, tva_fluxes)

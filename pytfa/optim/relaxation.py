@@ -13,11 +13,13 @@ Relaxation of models with constraint too tight
 from collections import OrderedDict
 from copy import deepcopy
 
+from tqdm import tqdm
 import pandas as pd
 from cobra.util.solver import set_objective
 from optlang.exceptions import SolverError
 
 from .constraints import NegativeDeltaG
+from .config import dg_relax_config
 from .utils import get_solution_value_for_variables, chunk_sum, symbol_sum
 from .variables import PosSlackVariable, NegSlackVariable, DeltaGstd, \
     LogConcentration, NegSlackLC, PosSlackLC
@@ -51,7 +53,7 @@ def relax_dgo_gurobi(model, relax_obj_type = 0):
 
     return grm
 
-def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
+def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
     """
     :param t_tmodel:
     :type t_tmodel: pytfa.thermo.ThermoModel:
@@ -70,15 +72,22 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
     slack_model.name = 'SlackModel '+tmodel.name
     slack_model.id = 'SlackModel_'+tmodel.id
 
-    # Create a copy that will receive the relaxation
-    relaxed_model = deepcopy(tmodel)
-    relaxed_model.solver = solver
-    relaxed_model.name = 'RelaxedModel '+tmodel.name
-    relaxed_model.id = 'RelaxedModel_'+tmodel.id
-
     # Ensure the lazy updates are all done
     slack_model.repair()
-    relaxed_model.repair()
+
+    if not in_place:
+        # Create a copy that will receive the relaxation
+        relaxed_model = deepcopy(tmodel)
+        relaxed_model.solver = solver
+        relaxed_model.name = 'RelaxedModel '+tmodel.name
+        relaxed_model.id = 'RelaxedModel_'+tmodel.id
+        relaxed_model.repair()
+    else:
+        relaxed_model = slack_model
+
+    dg_relax_config(slack_model)
+
+    original_objective = relaxed_model.objective
 
 
     # Do not relax if cobra_model is already optimal
@@ -101,41 +110,45 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
     objective_symbols = []
 
     slack_model.logger.info('Adding slack constraints')
-    hooks = dict()
 
-    for this_neg_dg in my_neg_dg:
+    slack_model.solver.update()
 
-        # If there is no thermo, or relaxation forbidden, pass
-        if this_neg_dg.id in reactions_to_ignore or this_neg_dg.id not in my_dgo:
-            continue
+    for this_neg_dg in tqdm(my_neg_dg, desc='adding slacks'):
 
         # If there is no thermo, or relaxation forbidden, pass
         if this_neg_dg.id in reactions_to_ignore or this_neg_dg.id not in my_dgo:
             continue
 
         # Create the negative and positive slack variables
+        # We can't queue them because they will be in an expression to declare
+        # the constraint
         neg_slack = slack_model.add_variable(NegSlackVariable,
                                              this_neg_dg.reaction, lb=0,
-                                             ub=BIGM_DG)
+                                             ub=BIGM_DG,
+                                             queue=False)
         pos_slack = slack_model.add_variable(PosSlackVariable,
                                              this_neg_dg.reaction, lb=0,
-                                             ub=BIGM_DG)
-
-        subs_dict = {k: slack_model.variables.get(k.name) for k in
-                     this_neg_dg.constraint.variables}
+                                             ub=BIGM_DG,
+                                             queue=False)
 
         # Create the new constraint by adding the slack variables to the
         # negative delta G constraint (from the initial cobra_model)
-        new_expr = this_neg_dg.constraint.expression.subs(subs_dict)
+        new_expr = this_neg_dg.constraint.expression
         new_expr += (pos_slack - neg_slack)
 
         this_reaction = this_neg_dg.reaction
-        # Remove former constraint to override it
-        slack_model.remove_constraint(slack_model._cons_dict[this_neg_dg.name])
+        # # Remove former constraint to override it
+        # slack_model.remove_constraint(slack_model._cons_dict[this_neg_dg.name])
+        #
+        # # Add the new variant
+        # slack_model.add_constraint(NegativeDeltaG,
+        #                            this_reaction,
+        #                            expr=new_expr,
+        #                            lb=0,
+        #                            ub=0,
+        #                            queue=True)
 
-        # Add the new variant
-        slack_model.add_constraint(NegativeDeltaG, this_reaction,
-                                   expr=new_expr, lb=0, ub=0)
+        this_neg_dg.change_expr(new_expr)
 
         # Update the objective with the new variables
         objective_symbols += [neg_slack,  pos_slack]
@@ -165,8 +178,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
                                                         my_pos_slacks)
 
     epsilon = relaxed_model.solver.configuration.tolerances.feasibility
-
-    for this_reaction in relaxed_model.reactions:
+    relaxed_model.repair()
+    relaxed_model.solver.update()
+    # Apply reaction delta G standard bound change
+    for this_reaction in tqdm(relaxed_model.reactions, desc = 'applying slack'):
         # No thermo, or relaxation forbidden
         if this_reaction.id in reactions_to_ignore or this_reaction.id not in my_dgo:
             continue
@@ -182,6 +197,17 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
             pos_slack_values[my_pos_slacks \
                 .get_by_id(this_reaction.id).name]
 
+        if in_place:
+            the_neg_slack = my_neg_slacks.get_by_id(this_reaction.id)
+            the_neg_slack_value = slack_model.solution.raw[the_neg_slack.name]
+            the_neg_slack.variable.lb = the_neg_slack_value - epsilon
+            the_neg_slack.variable.ub = the_neg_slack_value + epsilon
+
+            the_pos_slack = my_pos_slacks.get_by_id(this_reaction.id)
+            the_pos_slack_value = slack_model.solution.raw[the_pos_slack.name]
+            the_pos_slack.variable.lb = the_pos_slack_value - epsilon
+            the_pos_slack.variable.ub = the_pos_slack_value + epsilon
+
         # Apply reaction delta G standard bound change
         if dgo_delta_lb > 0 or dgo_delta_ub > 0:
 
@@ -189,9 +215,10 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
             previous_dgo_lb = the_dgo.variable.lb
             previous_dgo_ub = the_dgo.variable.ub
 
-            # Apply change
-            the_dgo.variable.lb -= (dgo_delta_lb + epsilon)
-            the_dgo.variable.ub += (dgo_delta_ub + epsilon)
+            if not in_place:
+                # Apply change
+                the_dgo.variable.lb -= (dgo_delta_lb + epsilon)
+                the_dgo.variable.ub += (dgo_delta_ub + epsilon)
 
             # If needed, store that in a report table
             changes[this_reaction.id] = [
@@ -202,9 +229,20 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
                 the_dgo.variable.lb,
                 the_dgo.variable.ub]
 
+
+    relaxed_model.repair()
     relaxed_model.logger.info('Testing relaxation')
 
+    relaxed_model.objective = original_objective
+    relaxed_model.objective.direction = 'max'
+
     relaxed_model.optimize()
+
+    if len(changes) == 0:
+        # The model is infeasible or something went wrong
+        tmodel.logger.error('Relaxation could not complete '
+                            '(no DeltaG relaxation found)')
+        return relaxed_model, slack_model, None
 
     # Format relaxation
     relax_table = pd.DataFrame.from_dict(changes,
@@ -216,9 +254,9 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None):
                             'lb_out',
                             'ub_out']
 
-    relaxed_model.logger.info('\n' + relax_table.__str__())
-
     return relaxed_model, slack_model, relax_table
+
+
 
 def relax_lc(tmodel, metabolites_to_ignore = (), solver = None):
     """

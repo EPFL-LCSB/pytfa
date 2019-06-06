@@ -57,7 +57,8 @@ def check_reaction_balance(reaction, proton = None):
     Atoms_sum = [0] * 26
 
     for metabolite in reaction.metabolites:
-        if metabolite.formula == 'NA':
+        if metabolite.formula == 'NA' or \
+           metabolite.formula is None:
             return 'missing structures'
         metCharge = metabolite.thermo.charge_std
         metCoeff = reaction.metabolites[metabolite]
@@ -165,6 +166,7 @@ def check_transport_reaction(reaction):
     A transport reaction is defined as a reaction that has the same compound
     as a reactant and a product. We can distinguish them thanks to their seed_ids.
     If they have one
+    If not, use met_ids and check if they are the same, minus compartment
 
     """
     seed_ids = {}
@@ -176,7 +178,10 @@ def check_transport_reaction(reaction):
             if product.annotation['seed_id'] in seed_ids:
                 return True
     except KeyError:
-        return None
+        reactants_ids = [x.id.replace(x.compartment,'') for x in reaction.reactants]
+        product_ids = [x.id.replace(x.compartment,'') for x in reaction.products]
+
+        return set(reactants_ids) == set(product_ids)
 
     return False
 
@@ -185,3 +190,7 @@ def is_same_stoichiometry(this_reaction, that_reaction):
     this_met_dict = {k.id:v for k,v in this_reaction.metabolites.items()}
     that_met_dict = {k.id:v for k,v in that_reaction.metabolites.items()}
     return this_met_dict == that_met_dict
+
+
+def is_exchange(rxn):
+    return len(rxn.metabolites) == 1

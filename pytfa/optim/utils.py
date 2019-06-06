@@ -16,12 +16,30 @@ import pandas as pd
 import sympy
 from cobra.core.solution import Solution
 
+from numbers import Number
+
 from .constraints import GenericConstraint
 from .variables import ForwardUseVariable, BackwardUseVariable
 from .variables import GenericVariable
 
 SYMPY_ADD_CHUNKSIZE = 100
 INTEGER_VARIABLE_TYPES = ('binary','integer')
+
+def get_all_subclasses(cls):
+    """
+    Given a variable or constraint class, get all the subclassses
+    that inherit from it
+
+    :param cls:
+    :return:
+    """
+    all_subclasses = []
+
+    for subclass in cls.__subclasses__():
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+
+    return all_subclasses
 
 def chunk_sum(variables):
     """
@@ -91,6 +109,9 @@ def symbol_sum(variables):
     # If we encounter a zero, which is a special type, increase k
     while isinstance(variables[k], sympy.numbers.Zero) and k<len(variables):
         k+=1
+        if k == len(variables):
+            # everything is 0
+            return 0
 
     if k>len(variables): #it's only zeroes
         return 0
@@ -99,8 +120,12 @@ def symbol_sum(variables):
         return Add(*[x.variable for x in variables])
     elif isinstance(variables[k], optlang.interface.Variable) or    \
          isinstance(variables[k], sympy.Mul) or \
-         isinstance(variables[k], sympy.Add):
+         isinstance(variables[k], sympy.Add) or \
+         isinstance(variables[k], Number):
         return Add(*variables)
+    else:
+        raise ValueError('Arguments should be of type Number, sympy.Add, or sympy.Mul, '
+                         'or optlang.Variable, or GenericVariable')
 
 
 def get_solution_value_for_variables(solution, these_vars, index_by_reaction = False):
@@ -117,11 +142,11 @@ def get_solution_value_for_variables(solution, these_vars, index_by_reaction = F
 
     if index_by_reaction:
         var2rxn = {v.name:v.id for v in these_vars}
-        ret = solution.x_dict[var_ids]
+        ret = solution.raw[var_ids]
         ret = ret.index.replace(var2rxn)
         return ret
     else:
-        return solution.x_dict[var_ids]
+        return solution.raw[var_ids]
 
 def compare_solutions(models):
     """
@@ -129,7 +154,7 @@ def compare_solutions(models):
     :param (iterable (pytfa.thermo.ThermoModel)) models:
     :return:
     """
-    return pd.concat([x.solution.x_dict for x in models], axis=1)
+    return pd.concat([x.solution.raw for x in models], axis=1)
 
 def evaluate_constraint_at_solution(constraint, solution):
     """
@@ -140,12 +165,18 @@ def evaluate_constraint_at_solution(constraint, solution):
     """
 
     if isinstance(solution,Solution):
-        solution = solution.x_dict
+        solution = solution.raw
     if isinstance(constraint, GenericConstraint):
         constraint = constraint.constraint
 
-    subs_dict = {x:solution.loc[x.name] for x in constraint.variables}
-    return constraint.expression.subs(subs_dict)
+    # subs_dict = {x:solution.loc[x.name] for x in constraint.variables}
+    # return constraint.expression.subs(subs_dict)
+
+    coefs = constraint.get_linear_coefficients(constraint.expression.free_symbols)
+    values = {x:solution.loc[x.name] for x in constraint.expression.free_symbols}
+
+    return symbol_sum([coefs[x]*values[x] for x in coefs])
+
 
 def get_active_use_variables(tmodel,solution):
     """
@@ -165,7 +196,7 @@ def get_active_use_variables(tmodel,solution):
 
     epsilon = tmodel.solver.configuration.tolerances.integrality
 
-    return [x for x in use_variables if abs(solution.x_dict[x.name]-1)<epsilon]
+    return [x for x in use_variables if abs(solution.raw[x.name]-1)<epsilon]
 
 
 def get_direction_use_variables(tmodel,solution):
@@ -189,7 +220,7 @@ def get_direction_use_variables(tmodel,solution):
 
     epsilon = tmodel.solver.configuration.tolerances.feasibility
 
-    return [fwd_use_variables.get_by_id(x.id) if solution.x_dict[x.id] > epsilon
+    return [fwd_use_variables.get_by_id(x.id) if solution.raw[x.id] > epsilon
             else bwd_use_variables.get_by_id(x.id)
             for x in tmodel.reactions ]
 
@@ -274,6 +305,21 @@ def copy_solver_configuration(source, target):
     for tol_name in dir(source.solver.configuration.tolerances):
         tol = getattr(source.solver.configuration.tolerances, tol_name)
         setattr(target.solver.configuration.tolerances, tol_name, tol)
+
+    # Additionnal solver-specific settings
+    try:
+        # Gurobi
+        if source.solver.interface.__name__ == 'optlang.gurobi_interface':
+            from gurobipy import GurobiError
+            for k in dir(source.solver.problem.Params):
+                if not k.startswith('_'):
+                    try:
+                        v = getattr(source.solver.problem.Params, k)
+                        setattr(target.solver.problem.Params, k, v)
+                    except GurobiError:
+                        pass
+    except ModuleNotFoundError:
+        pass
 
     # Verbosity
     target.solver.configuration.verbosity = source.solver.configuration.verbosity

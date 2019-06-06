@@ -73,9 +73,6 @@ class ThermoModel(LCSBModel, Model):
         self.MAX_pH = max_ph
         self.MIN_pH = min_ph
 
-        self._var_dict = dict()
-        self._cons_dict = dict()
-
         self._init_thermo()
 
         self.logger.info('# Model initialized with units {} and temperature {} K'  \
@@ -136,11 +133,11 @@ class ThermoModel(LCSBModel, Model):
         # Which index of the reaction DB do you correspond to ?
         if not 'seed_id' in met.annotation:
             # raise Exception("seed_id missing for " + met.name)
-            self.logger.warning("Metabolite {} ({}) has no seed_id".\
+            self.logger.debug("Metabolite {} ({}) has no seed_id".\
                                 format(met.id, met.name))
             metData = None
         elif not met.annotation['seed_id'] in self.compounds_data:
-            self.logger.warning("Metabolite {} ({}) not present in thermoDB"
+            self.logger.debug("Metabolite {} ({}) not present in thermoDB"
                   .format(met.annotation['seed_id'], met.name))
             metData = None
         else:
@@ -201,7 +198,7 @@ class ThermoModel(LCSBModel, Model):
             or len(reaction.metabolites) >= 100
             or balanceResult in ['missing atoms', 'drain flux']):
 
-            self.logger.info('{} : thermo constraint NOT created'.format(reaction.id))
+            self.logger.debug('{} : thermo constraint NOT created'.format(reaction.id))
             reaction.thermo['computed'] = False
             reaction.thermo['deltaGR'] = BIGM_DG
             reaction.thermo['deltaGRerr'] = BIGM_DG
@@ -346,7 +343,7 @@ class ThermoModel(LCSBModel, Model):
                                metDeltaGF)
 
         else:
-            self.logger.info('NOT generating thermo variables for {}'.format(met.id))
+            self.logger.debug('NOT generating thermo variables for {}'.format(met.id))
 
         if LC != None:
             # Register the variable to find it more easily
@@ -566,8 +563,13 @@ class ThermoModel(LCSBModel, Model):
         bigM = BIGM
         # Check each reactions' bounds
         for reaction in self.reactions:
-            if reaction.lower_bound < -bigM or reaction.upper_bound > bigM:
+            if reaction.lower_bound < -bigM - EPSILON\
+                    or reaction.upper_bound > bigM + EPSILON:
                 raise Exception('flux bounds too wide or big M not big enough')
+            if reaction.lower_bound < -bigM:
+                reaction.lower_bound = -bigM
+            if reaction.upper_bound > bigM:
+                reaction.upper_bound = bigM
 
 
         ###################
@@ -630,6 +632,7 @@ class ThermoModel(LCSBModel, Model):
         n_metabolites_thermo = len([x for x in self.metabolites \
                                     if hasattr(x, 'thermo') and x.thermo['id']])
         n_reactions_thermo   = len([x for x in self.reactions if
+                                    x.id is not None and
                                     hasattr(x, 'thermo') and x.thermo['computed']])
 
         info = pd.DataFrame(columns = ['value'])
@@ -654,7 +657,7 @@ class ThermoModel(LCSBModel, Model):
  
         from ..io.dict import model_from_dict, model_to_dict
         from ..optim.utils import copy_solver_configuration
-        
+
         dictmodel = model_to_dict(self)
         new = model_from_dict(dictmodel)
 

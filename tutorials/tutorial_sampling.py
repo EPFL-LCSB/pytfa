@@ -15,17 +15,37 @@ from pytfa.analysis import  variability_analysis,           \
                             apply_generic_variability,       \
                             apply_directionality
 
+from cobra.io import load_matlab_model, load_json_model
+
+
+from pytfa.io import import_matlab_model, load_thermoDB,                    \
+                            read_lexicon, annotate_from_lexicon,            \
+                            read_compartment_data, apply_compartment_data
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
-# Load the cobra_model
-cobra_model = load_matlab_model('../models/small_ecoli.mat')
+# # Load the cobra_model
+# cobra_model = load_matlab_model('../models/small_ecoli.mat')
 
-# Load reaction DB
+# # Load reaction DB
+# thermo_data = load_thermoDB('../data/thermo_data.thermodb')
+# lexicon = read_lexicon('../models/small_ecoli/lexicon.csv')
+# compartment_data = read_compartment_data('../models/small_ecoli/compartment_data.json')
+
+cobra_model = load_json_model('../models/iJO1366.json')
+
 thermo_data = load_thermoDB('../data/thermo_data.thermodb')
-lexicon = read_lexicon('../models/small_ecoli/lexicon.csv')
-compartment_data = read_compartment_data('../models/small_ecoli/compartment_data.json')
+lexicon = read_lexicon('../models/iJO1366/lexicon.csv')
+compartment_data = read_compartment_data('../models/iJO1366/compartment_data.json')
+
+# Initialize the cobra_model
+mytfa = pytfa.ThermoModel(thermo_data, cobra_model)
+
+# Annotate the cobra_model
+annotate_from_lexicon(mytfa, lexicon)
+apply_compartment_data(mytfa, compartment_data)
 
 # Initialize the cobra_model
 tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
@@ -36,7 +56,7 @@ annotate_from_lexicon(tmodel, lexicon)
 apply_compartment_data(tmodel, compartment_data)
 
 # Set the solver
-tmodel.solver = GLPK
+tmodel.solver = GUROBI
 
 ## TFA conversion
 tmodel.prepare()
