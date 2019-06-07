@@ -37,9 +37,12 @@ def make_subclasses_dict(cls):
     the_dict[cls.__name__] = cls
     return the_dict
 
+def get_model_variable_subclasses():
+   return make_subclasses_dict(ModelVariable)
 
-MODEL_VARIABLE_SUBCLASSES  = make_subclasses_dict(ModelVariable)
-MODEL_CONSTRAINT_SUBCLASSES= make_subclasses_dict(ModelConstraint)
+def get_model_constraint_subclasses():
+   return make_subclasses_dict(ModelConstraint)
+
 
 BASE_NAME2HOOK = {
                     ReactionVariable    :'reactions',
@@ -286,9 +289,9 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
         ub = the_var_dict['ub']
         scaling_factor = the_var_dict['scaling_factor']
 
-        if classname in MODEL_VARIABLE_SUBCLASSES:
+        if classname in get_model_variable_subclasses():
             hook = new
-            this_class = MODEL_VARIABLE_SUBCLASSES[classname]
+            this_class = get_model_variable_subclasses()[classname]
             nv = new.add_variable(kind=this_class,
                                   hook=hook,
                                   id_=this_id,
@@ -332,9 +335,9 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
 
         # Look for the corresponding class:
 
-        if classname in MODEL_CONSTRAINT_SUBCLASSES:
+        if classname in get_model_constraint_subclasses():
             hook=new
-            this_class = MODEL_CONSTRAINT_SUBCLASSES[classname]
+            this_class = get_model_constraint_subclasses()[classname]
             nc = new.add_constraint(kind=this_class, hook=hook,
                                     expr=new_expr, id_ = this_id,
                                     ub = ub,
