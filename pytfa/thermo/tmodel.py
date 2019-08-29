@@ -250,7 +250,7 @@ class ThermoModel(LCSBModel, Model):
            1. checks if a reaction is a transport reaction
            2. checks the ReactionDB for Gibbs energies of formation of metabolites
            3. computes the Gibbs energies of reactions
-           
+
         :param null_error_override: overrides DeltaG when it is 0 to
                                     allow flexibility. 2kcal/mol is standard in
                                     estimation frameworks like GCM.

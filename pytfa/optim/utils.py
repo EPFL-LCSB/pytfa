@@ -266,7 +266,8 @@ def strip_from_integer_variables(tmodel):
                 has_integer_variable += True
                 this_var_descriptor = continuous_model._var_dict[this_var.name]
                 integer_variables.add(this_var_descriptor)
-        constraints_with_integer_variables.append(this_cons)
+        if has_integer_variable:
+            constraints_with_integer_variables.append(this_cons)
 
     for this_cons in constraints_with_integer_variables:
         continuous_model.remove_constraint(this_cons)

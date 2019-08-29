@@ -240,6 +240,11 @@ class LCSBModel(ABC):
         self.add_cons_vars(self._var_queue, sloppy=self.sloppy)
         self.add_cons_vars(self._cons_queue, sloppy = self.sloppy)
 
+        if len(self._var_queue) > 0:
+            self.regenerate_variables()
+        if len(self._cons_queue) > 0:
+            self.regenerate_constraints()
+
         self._var_queue = list()
         self._cons_queue = list()
 
