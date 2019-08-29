@@ -63,7 +63,7 @@ def test_constraint_addition():
     assert the_name not in tmodel.constraints
     assert cons1 not in getattr(tmodel, cons1.__attrname__)
 
-@pytest.mark.xfail(sys.version_info <= (3, 5),
+@pytest.mark.xfail(sys.version_info < (3, 6),
                    reason="Container updates behave differently")
 def test_relax_dgo():
     global tmodel
@@ -73,7 +73,7 @@ def test_relax_dgo():
     tmodel.optimize()
     relax_dgo(tmodel)
 
-@pytest.mark.xfail(sys.version_info <= (3, 5),
+@pytest.mark.xfail(sys.version_info < (3, 6),
                    reason="Container updates behave differently")
 def test_change_expression():
     global tmodel
