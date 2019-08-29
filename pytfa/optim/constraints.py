@@ -101,6 +101,7 @@ class GenericConstraint(metaclass=ABCRequirePrefixMeta):
 
         # Remove former constraint to override it
         self.model.solver.remove(name)
+        self.model.update()
         new_cons = self.model.solver.interface.Constraint(name = name,
                                                    expression = new_expr,
                                                    ub = ub,
