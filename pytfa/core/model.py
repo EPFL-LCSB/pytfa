@@ -28,10 +28,10 @@ import time
 
 def timeit(method):
     """
-    Adapted from Andreas Jung's blog:
-    https://www.zopyx.com/andreas-jung/contents/a-python-decorator-for-measuring-the-execution-time-of-methods
+    Adapted from Andreas Jung's `blog
+    <https://www.zopyx.com/andreas-jung/contents/a-python-decorator-for-measuring-the-execution-time-of-methods>`_
 
-    :param method:
+    :param method: The method to time
     :return:
     """
 
@@ -240,6 +240,11 @@ class LCSBModel(ABC):
         self.add_cons_vars(self._var_queue, sloppy=self.sloppy)
         self.add_cons_vars(self._cons_queue, sloppy = self.sloppy)
 
+        if len(self._var_queue) > 0:
+            self.regenerate_variables()
+        if len(self._cons_queue) > 0:
+            self.regenerate_constraints()
+
         self._var_queue = list()
         self._cons_queue = list()
 
@@ -323,6 +328,21 @@ class LCSBModel(ABC):
         """
         Overrides the cobra.thermo.solution method, to also get the supplementary
         variables we added to the cobra_model
+
+        *   :code:`solution.fluxes` in `cobrapy` is a transformed version of the solver
+            output, as it actually calculates the _net_ flux of each reaction by
+            substracting the reverse variable value to the forward variable value.
+            This should be used anytime one needs the actual flux value
+
+        *   :code:`solution.raw` is a clear copy of the solver output. From there one
+            can access the value at solution for all the variables of the problem.
+            However, looking for a reaction ID in there will only give the
+            _forward_ flux. This should be used for any other variable than fluxes.
+
+        *   :code:`solution.values` yields variables multiplied by their scaling factor
+            (1 by default). Useful if you operated scaling on your equations for
+            numerical reasons. This does _not_ include fluxes
+
         :return:
         """
         objective_value = self.solver.objective.value

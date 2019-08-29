@@ -16,6 +16,7 @@ from ..thermo.tmodel import ThermoModel
 
 from ..optim.variables import ReactionVariable, MetaboliteVariable, ModelVariable
 from ..optim.constraints import ReactionConstraint, MetaboliteConstraint, ModelConstraint
+from ..optim.utils import symbol_sum
 
 from optlang.util import expr_to_json, parse_expr
 
@@ -36,9 +37,12 @@ def make_subclasses_dict(cls):
     the_dict[cls.__name__] = cls
     return the_dict
 
+def get_model_variable_subclasses():
+   return make_subclasses_dict(ModelVariable)
 
-MODEL_VARIABLE_SUBCLASSES  = make_subclasses_dict(ModelVariable)
-MODEL_CONSTRAINT_SUBCLASSES= make_subclasses_dict(ModelConstraint)
+def get_model_constraint_subclasses():
+   return make_subclasses_dict(ModelConstraint)
+
 
 BASE_NAME2HOOK = {
                     ReactionVariable    :'reactions',
@@ -155,6 +159,13 @@ def get_solver_string(model):
     return SOLVER_DICT[model.solver.__class__.__module__]
 
 
+def obj_to_dict(model):
+    if model.objective.expression:
+        return {x.name: float(v)
+                for x,v in model.objective.expression.as_coefficients_dict().items()}
+    else:
+        return 0
+
 def model_to_dict(model):
     """
 
@@ -167,6 +178,7 @@ def model_to_dict(model):
     obj = cbd.model_to_dict(model)
 
     obj['solver'] = get_solver_string(model)
+    obj['objective'] = obj_to_dict(model)
 
     # Copy variables, constraints
     # obj['var_dict'] = archive_variables(model._var_kinds)
@@ -277,15 +289,16 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
         ub = the_var_dict['ub']
         scaling_factor = the_var_dict['scaling_factor']
 
-        if classname in MODEL_VARIABLE_SUBCLASSES:
+        if classname in get_model_variable_subclasses():
             hook = new
-            this_class = MODEL_VARIABLE_SUBCLASSES[classname]
+            this_class = get_model_variable_subclasses()[classname]
             nv = new.add_variable(kind=this_class,
                                   hook=hook,
                                   id_=this_id,
                                   ub=ub,
                                   lb=lb,
-                                  queue=True)
+                                  queue=True,
+                                  scaling_factor=scaling_factor)
         elif classname in name2class:
             hook = name2hook[classname].get_by_id(this_id)
             this_class = name2class[classname]
@@ -293,7 +306,8 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
                                   hook=hook,
                                   ub = ub,
                                   lb = lb,
-                                  queue=True)
+                                  queue=True,
+                                  scaling_factor=scaling_factor)
         else:
             raise TypeError(
                 'Class {} serialization not handled yet' \
@@ -321,9 +335,9 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
 
         # Look for the corresponding class:
 
-        if classname in MODEL_CONSTRAINT_SUBCLASSES:
+        if classname in get_model_constraint_subclasses():
             hook=new
-            this_class = MODEL_CONSTRAINT_SUBCLASSES[classname]
+            this_class = get_model_constraint_subclasses()[classname]
             nc = new.add_constraint(kind=this_class, hook=hook,
                                     expr=new_expr, id_ = this_id,
                                     ub = ub,
@@ -343,6 +357,11 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
 
     new.repair()
 
+    try:
+        rebuild_obj_from_dict(new, obj['objective'])
+    except KeyError:
+        pass
+
     # Relaxation info
     try:
         new.relaxation = obj['relaxation']
@@ -350,6 +369,10 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
         pass
 
     return new
+
+def rebuild_obj_from_dict(new, objective_dict):
+    obj_expr = symbol_sum([v*new.variables.get(x) for x,v in objective_dict.items()])
+    new.objective = obj_expr
 
 def add_custom_classes(model, custom_hooks):
     """
