@@ -12,11 +12,12 @@ Tests of the optimization routines of pytfa
 
 from cobra.test import create_test_model
 import os
+import sys
 import pytfa
 import pytfa.io
 
 from settings import tmodel
-
+import pytest
 
 
 def test_variable_addition():
@@ -62,6 +63,8 @@ def test_constraint_addition():
     assert the_name not in tmodel.constraints
     assert cons1 not in getattr(tmodel, cons1.__attrname__)
 
+@pytest.mark.xfail(sys.version_info < (3, 6),
+                   reason="Container updates behave differently")
 def test_relax_dgo():
     global tmodel
     from pytfa.optim.relaxation import relax_dgo
@@ -70,6 +73,8 @@ def test_relax_dgo():
     tmodel.optimize()
     relax_dgo(tmodel)
 
+@pytest.mark.xfail(sys.version_info < (3, 6),
+                   reason="Container updates behave differently")
 def test_change_expression():
     global tmodel
     cons = list(tmodel._cons_dict.values())[0]
