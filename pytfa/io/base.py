@@ -174,6 +174,7 @@ def import_matlab_model(path, variable_name=None):
         comp['pH'] = CompartmentDB['pH'][0][0][i]
         comp['ionicStr'] = CompartmentDB['ionicStr'][0][0][i]
         comp['symbol'] = CompartmentDB['compSymbolList'][0][0, i][0]
+        1/0
         comp['name'] = CompartmentDB['compNameList'][0][0, i][0]
         comp['c_max'] = CompartmentDB['compMaxConc'][0][0][i]
         comp['c_min'] = CompartmentDB['compMinConc'][0][0][i]
