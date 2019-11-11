@@ -166,7 +166,7 @@ def obj_to_dict(model):
         return {x.name: float(v)
                 for x,v in model.objective.expression.as_coefficients_dict().items()}
     else:
-        return sympy.S.Zero
+        return 0
 
 def model_to_dict(model):
     """
@@ -377,7 +377,7 @@ def rebuild_obj_from_dict(new, objective_dict):
         obj_expr = symbol_sum([v*new.variables.get(x) for x,v in objective_dict.items()])
         new.objective = obj_expr
     else:
-        new.objective = sympy.Symbol('0')
+        new.objective = sympy.S.Zero
 
 def add_custom_classes(model, custom_hooks):
     """
