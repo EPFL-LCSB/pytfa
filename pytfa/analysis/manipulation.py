@@ -67,10 +67,10 @@ def apply_directionality(tmodel,solution, inplace = True):
         backward_use = _tmodel.backward_use_variable.get_by_id(this_reaction.id)
         forward_use = _tmodel.forward_use_variable.get_by_id(this_reaction.id)
 
-        backward_use.variable.lb = round(solution.raw[backward_use.name])
-        backward_use.variable.ub = round(solution.raw[backward_use.name])
+        backward_use.variable.lb = round(solution[backward_use.name])
+        backward_use.variable.ub = round(solution[backward_use.name])
 
-        forward_use.variable.lb  = round(solution.raw[forward_use.name])
-        forward_use.variable.ub  = round(solution.raw[forward_use.name])
+        forward_use.variable.lb  = round(solution[forward_use.name])
+        forward_use.variable.ub  = round(solution[forward_use.name])
 
     return _tmodel
