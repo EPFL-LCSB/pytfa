@@ -1,3 +1,4 @@
+from ..core.model import Solution
 import pandas as pd
 
 def apply_reaction_variability(tmodel, va, inplace = True):
@@ -64,10 +65,12 @@ def apply_directionality(tmodel, solution, inplace = True):
     else:
         _tmodel = tmodel.copy()
 
-    if isinstance(solution, pd.Series):
+    if isinstance(solution, Solution):
+        sol = solution.raw
+    elif isinstance(solution, pd.Series) or isinstance(solution, pd.DataFrame):
         sol = solution
     else:
-        sol = solution.raw
+        raise ArgumentError('solution object should be of class Solution or pandas.Series')
 
     for this_reaction in _tmodel.reactions:
 
