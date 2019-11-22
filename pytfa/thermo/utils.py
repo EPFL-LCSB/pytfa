@@ -12,6 +12,8 @@ Some tools around COBRApy models used by pyTFA
 import re
 
 Formula_regex = re.compile("([A-Z][a-z]*)([0-9]*)")
+# TODO (J. Carrasco); still not the perfect regex
+Metabolite_regex = re.compile(r"\b([A-Za-z\-\d_\[]+\b\]?)")
 
 
 def check_reaction_balance(reaction, proton = None):
@@ -75,6 +77,7 @@ def check_reaction_balance(reaction, proton = None):
                 'Ca', 'Mn', 'Fe', 'Ni', 'Co', 'Cu', 'Zn', 'As', 'Se', 'Ag',
                 'Cd', 'W', 'Hg', 'R', 'Mo', 'X'].index(atom[0])
             except ValueError:
+                # Jorge Carrasco: Can we use warnings here?
                 print('Warning : ' + metabolite.formula + '/' + atom[0])
                 continue
 
@@ -198,3 +201,68 @@ def is_same_stoichiometry(this_reaction, that_reaction):
 
 def is_exchange(rxn):
     return len(rxn.metabolites) == 1
+
+
+def get_reaction_compartment(reaction):
+    """Get the compartment of a reaction to then prepare it for conversion."""
+    comp = None
+    for met in reaction.metabolites:
+        if comp is None:
+            comp = met.compartment
+        elif met.compartment != comp:
+            comp = 'c'
+    return comp
+
+
+def get_annotated_met(metabolite, pref):
+    """Extract metabolite's ID from annotation.
+
+    :param cobra.Metabolite metabolite: metabolite of interest
+    :param set(str) pref: if there are various annotated IDs, prioritize
+        those which contains `pref`.
+
+    :returns str: id of the metabolite formatted with database; i.e., "db:id"
+
+    """
+    # standardize input
+    pref_set = set(pref)
+
+    db = pref_set & set(metabolite.annotation)
+    if not db:
+        # Take the first annotation
+        db = list(metabolite.annotation.keys())[0]
+    else:
+        # Take the first annotation that matches
+        db = list(db)[0]
+    id = metabolite.annotation[db]
+    id = id[0] if type(id) is list else id
+    return f"{db}:{id}"
+
+
+def get_annotated_reaction(reaction, pref="seed_id"):
+    """Build a reaction string from the annotation IDs found in metabolites.
+
+    Useful to then parse the reaction with eQuilibrator-API. `ReactionMatcher`
+    is currently not working so this operation is required for the API to work.
+
+    :param cobra.thermo.reaction.Reaction reaction: The reaction to check
+    :param set(str) pref: if there are various annotated IDs, prioritize
+        those which contains `pref`. Default: seed_id
+
+    :returns str: string representing `reaction` with annotated IDs.
+
+    """
+    return re.sub(
+        Metabolite_regex,
+        lambda x: get_annotated_met(
+            reaction.model.metabolites.get_by_id(x.group(1)), pref
+        ),
+        reaction.reaction,
+    )
+
+
+def get_equilibrator_reaction(reaction):
+    """Handy function to get reaction strings for eQuilibrator-API."""
+    return get_annotated_reaction(reaction, {"kegg", "kegg.compound"}).replace(
+        ".compound", ""  # standardize database name
+    )

@@ -24,7 +24,7 @@ from .metabolite import MetaboliteThermo
 from .reaction import calcDGtpt_rhs, calcDGR_cues, \
     get_debye_huckel_b
 from .utils import check_reaction_balance, check_transport_reaction, \
-    find_transported_mets
+    find_transported_mets, get_equilibrator_reaction, get_reaction_compartment
 from ..optim.constraints import SimultaneousUse, NegativeDeltaG, \
     BackwardDeltaGCoupling, ForwardDeltaGCoupling, BackwardDirectionCoupling, \
     ForwardDirectionCoupling, ReactionConstraint, MetaboliteConstraint, \
@@ -35,6 +35,7 @@ from ..optim.variables import ThermoDisplacement, DeltaGstd, DeltaG, \
 from ..utils import numerics
 from ..utils.logger import get_bistream_logger
 
+equilibrator_api = None  # just load it in case is needed
 BIGM = numerics.BIGM
 BIGM_THERMO = numerics.BIGM_THERMO
 BIGM_DG = numerics.BIGM_DG
@@ -80,12 +81,14 @@ class ThermoModel(LCSBModel, Model):
 
     def _init_thermo(self):
 
-        self.thermo_unit = self.thermo_data['units']
-        self.reaction_cues_data = self.thermo_data['cues']
-        self.compounds_data = self.thermo_data['metabolites']
-        self.Debye_Huckel_B = get_debye_huckel_b(self.TEMPERATURE)
-
         self.logger = get_bistream_logger('thermomodel_' + str(self.name))
+        self.thermo_unit = self.thermo_data['units']
+        try:
+            self.reaction_cues_data = self.thermo_data['cues']
+            self.compounds_data = self.thermo_data['metabolites']
+        except KeyError:
+            self.logger.defug("Metabolic information not in self.thermo_data")
+        self.Debye_Huckel_B = get_debye_huckel_b(self.TEMPERATURE)
 
         # Compute internal values to adapt the the thermo_unit provided
         if self.thermo_unit == "kJ/mol":
@@ -177,12 +180,7 @@ class ThermoModel(LCSBModel, Model):
         reaction.thermo = {'isTrans': False}
 
         # also check if rxn and enzyme compartments match
-        reaction.compartment = None
-        for met in reaction.metabolites:
-            if reaction.compartment == None:
-                reaction.compartment = met.compartment
-            elif met.compartment != reaction.compartment:
-                reaction.compartment = 'c'
+        reaction.compartment = get_reaction_compartment(reaction)
 
         # Make sure the reaction is balanced...
 
@@ -295,6 +293,88 @@ class ThermoModel(LCSBModel, Model):
 
         self.logger.info('# Model preparation done.')
 
+    def _prepare_equi_metabolite(self, metabolite):
+        """Simplified version when using equilibrator_api."""
+        pH, ionicStr = None, None
+        if type(metabolite.compartment) is not str:
+            if "pH" in metabolite.compartment:
+                pH = metabolite.compartment["pH"]
+            if "ionicStr" in metabolite.compartment:
+                ionicStr = metabolite.compartment["ionicStr"]
+        metabolite.thermo = MetaboliteThermo(None, pH, ionicStr)
+
+    def _prepare_equi_reaction(self, reaction, null_error_override=2):
+        """Parse and compute thermodynamic information with eQuilibrator.
+
+        :param cobra.Reaction: reaction of interest
+        :cc equilibrator_api.ComponentContribution: API to equilibrator
+
+        """
+        # TODO:check if adding pH and ionicStr here changes the final solution
+        Q_ = equilibrator_api.Q_
+        equi = equilibrator_api.CompoundMatcher
+        # try to include pH and ionic strenght if possible
+        reaction.compartment = get_reaction_compartment(reaction)
+        if type(reaction.compartment) is str or reaction.compartment is None:
+            cc = equi()
+        elif ("pH" in reaction.compartment
+                and "ionicStr" in reaction.Compartment):
+            cc = equi(pH=Q_(reaction.compartment["pH"]),
+                      ionic_strength=Q_(reaction.compartment["ionicStr"]))
+        elif "ionicStr" in reaction.Compartment:
+            cc = equi(ionic_strength=Q_(reaction.compartment["ionicStr"]))
+        parsed = get_equilibrator_reaction(reaction)
+        # initialize the dictionary that stores the thermodynamic information
+        reaction.thermo = {'isTrans': False}
+
+        try:
+            parsed = equilibrator_api.reaction_matcher.match(parsed)
+            if parsed.isbalanced():
+                raise ValueError("Reaction not balanced")
+            dG0_prime, dG0_uncertainty = cc.dG0_prime(reaction)
+            self.logger.debug(
+                '{} : thermo constraint created'.format(reaction.id)
+            )
+        except Exception as e:
+            # KeyError for regex
+            # What to expect from parse_equilibrator_formula
+            self.logger.debug(
+                '{} : thermo constraint NOT created, parsed : {}, e : {}'.
+                format(reaction.id, parsed, e)
+            )
+            reaction.thermo["computed"] = False
+            reaction.thermo['deltaGR'] = BIGM_DG
+            reaction.thermo['deltaGRerr'] = BIGM_DG
+        else:
+            if dG0_uncertainty == 0 and null_error_override:
+                dG0_uncertainty = null_error_override  # default value
+            reaction.thermo["deltaGR"] = dG0_prime
+            reaction.thermo["deltaGRerr"] = dG0_uncertainty
+            reaction.thermo["computed"] = True
+
+        reaction.thermo['isTrans'] = check_transport_reaction(reaction)
+
+    def prepare_equilibrator(self):
+        """Prepare a cobra.Model for TFBA analysis with equilibrator_API.
+
+        1. Load eQuilibrator database.
+        2. For every metabolite: initialize with MetaboliteThermo
+        2. For every reaction: parse it to an annotated reaction string.
+        4. Calculate delta G and delta G err using equilibrator API.
+
+        """
+        # eQuilibrator should be loaded just if needed;
+        # i.e., when this function is called
+        global equilibrator_api
+        if not equilibrator_api:
+            import equilibrator_api
+            cc = equilibrator_api.ComponentContribution()
+            self.logger.debug('Loaded eQuilibrator')
+        # Prepare metabolites
+        map(self._prepare_equi_metabolite, self.metabolites)
+        # Prepare reactions
+        map(self._prepare_equi_reaction, self.reactions, cc)
+        return
 
     def _convert_metabolite(self, met, add_potentials, verbose):
         """
