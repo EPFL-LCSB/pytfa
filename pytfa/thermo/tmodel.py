@@ -24,7 +24,7 @@ from .metabolite import MetaboliteThermo
 from .reaction import calcDGtpt_rhs, calcDGR_cues, \
     get_debye_huckel_b
 from .utils import check_reaction_balance, check_transport_reaction, \
-    find_transported_mets, get_equilibrator_reaction, get_reaction_compartment
+    find_transported_mets, get_reaction_compartment
 from ..optim.constraints import SimultaneousUse, NegativeDeltaG, \
     BackwardDeltaGCoupling, ForwardDeltaGCoupling, BackwardDirectionCoupling, \
     ForwardDirectionCoupling, ReactionConstraint, MetaboliteConstraint, \
@@ -294,44 +294,56 @@ class ThermoModel(LCSBModel, Model):
         self.logger.info('# Model preparation done.')
 
     def _prepare_equi_metabolite(self, metabolite):
-        """Simplified version when using equilibrator_api."""
+        """Simplified version when using `equilibrator_api`."""
         pH, ionicStr = None, None
         if type(metabolite.compartment) is not str:
+            # compartment information is used but not required
             if "pH" in metabolite.compartment:
                 pH = metabolite.compartment["pH"]
             if "ionicStr" in metabolite.compartment:
                 ionicStr = metabolite.compartment["ionicStr"]
         metabolite.thermo = MetaboliteThermo(None, pH, ionicStr)
 
-    def _prepare_equi_reaction(self, reaction, null_error_override=2):
+    def _prepare_equi_reaction(self, reaction, cc, map_equilibrator,
+                               null_error_override=2):
         """Parse and compute thermodynamic information with eQuilibrator.
 
-        :param cobra.Reaction: reaction of interest
-        :cc equilibrator_api.ComponentContribution: API to equilibrator
+        :param reaction: cobra.Reaction
+            reaction of interest
+        :parama cc: equilibrator_api.ComponentContribution
+            it will be mutated based on pH and ionicStr of each comparment when
+            available.
+        :param map_equilibrator: dict{compartment: list[PhasedReactions]}
+            reactions with thermodynamics information, whose ids are equal to
+            those in the `cobra.Model`.
+        :param null_error_override: overrides DeltaG when it is 0 to
+                                    allow flexibility. 2kcal/mol is standard in
+                                    estimation frameworks like GCM.
 
         """
-        # TODO:check if adding pH and ionicStr here changes the final solution
         Q_ = equilibrator_api.Q_
-        equi = equilibrator_api.CompoundMatcher
+
+        # TODO: Are these changes in CompoundMatcher conceptually correct?
         # try to include pH and ionic strenght if possible
-        reaction.compartment = get_reaction_compartment(reaction)
-        if type(reaction.compartment) is str or reaction.compartment is None:
-            cc = equi()
-        elif ("pH" in reaction.compartment
-                and "ionicStr" in reaction.Compartment):
-            cc = equi(pH=Q_(reaction.compartment["pH"]),
-                      ionic_strength=Q_(reaction.compartment["ionicStr"]))
-        elif "ionicStr" in reaction.Compartment:
-            cc = equi(ionic_strength=Q_(reaction.compartment["ionicStr"]))
-        parsed = get_equilibrator_reaction(reaction)
+        comp = reaction.compartment = get_reaction_compartment(reaction)
+        if type(comp) is not str and comp is not None:
+            if "pH" in comp and comp["p_h"] != cc.p_h:
+                cc.p_h = Q_(comp["pH"])
+            if "ionicStr" in comp and comp["p_h"] != cc.ionic_strength:
+                # NOTE: always numeric to Molar
+                ionic_str = comp["ionicStr"]
+                if type(ionic_str) is not str:
+                    ionic_str = str(ionic_str+"M")
+                cc.ionic_strength = Q_(ionic_str)
+
         # initialize the dictionary that stores the thermodynamic information
         reaction.thermo = {'isTrans': False}
 
         try:
-            parsed = equilibrator_api.reaction_matcher.match(parsed)
-            if parsed.isbalanced():
+            phase_reac = map_equilibrator[reaction.id]
+            if phase_reac.isbalanced():
                 raise ValueError("Reaction not balanced")
-            dG0_prime, dG0_uncertainty = cc.dG0_prime(reaction)
+            dG0_prime, dG0_uncertainty = cc.dG0_prime(phase_reac)
             self.logger.debug(
                 '{} : thermo constraint created'.format(reaction.id)
             )
@@ -339,8 +351,8 @@ class ThermoModel(LCSBModel, Model):
             # KeyError for regex
             # What to expect from parse_equilibrator_formula
             self.logger.debug(
-                '{} : thermo constraint NOT created, parsed : {}, e : {}'.
-                format(reaction.id, parsed, e)
+                '{} : thermo constraint NOT created, phase_reac : {}, e : {}'.
+                format(reaction.id, phase_reac, e)
             )
             reaction.thermo["computed"] = False
             reaction.thermo['deltaGR'] = BIGM_DG
@@ -354,27 +366,39 @@ class ThermoModel(LCSBModel, Model):
 
         reaction.thermo['isTrans'] = check_transport_reaction(reaction)
 
-    def prepare_equilibrator(self):
+    def prepare_equilibrator(self, null_error_override=2):
         """Prepare a cobra.Model for TFBA analysis with equilibrator_API.
 
         1. Load eQuilibrator database.
         2. For every metabolite: initialize with MetaboliteThermo
-        2. For every reaction: parse it to an annotated reaction string.
+        3. For every reaction: parse it to an annotated reaction string.
         4. Calculate delta G and delta G err using equilibrator API.
 
+        :param null_error_override: overrides DeltaG when it is 0 to
+                            allow flexibility. 2kcal/mol is standard in
+                            estimation frameworks like GCM.
         """
-        # eQuilibrator should be loaded just if needed;
+        # 1. eQuilibrator should be loaded just if needed;
         # i.e., when this function is called
         global equilibrator_api
         if not equilibrator_api:
             import equilibrator_api
-            cc = equilibrator_api.ComponentContribution()
+            from equilibrator_api import Q_
             self.logger.debug('Loaded eQuilibrator')
-        # Prepare metabolites
-        map(self._prepare_equi_metabolite, self.metabolites)
-        # Prepare reactions
-        map(self._prepare_equi_reaction, self.reactions, cc)
-        return
+        cc = equilibrator_api.ComponentContribution(
+            temperature=Q_(self.TEMPERATURE)
+        )
+        map_equilibrator = {
+            reaction.id: reaction for reaction in
+            equilibrator_api.translate_cobra_reactions(self.reactions)
+        }
+        # 2. Prepare metabolites
+        for met in self.metabolites:
+            self._prepare_equi_metabolite(met)
+        # 3 & 4. Prepare reactions
+        for reac in self.reactions:
+            self._prepare_equi_reaction(reac, cc, map_equilibrator,
+                                        null_error_override)
 
     def _convert_metabolite(self, met, add_potentials, verbose):
         """
