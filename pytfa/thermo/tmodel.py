@@ -82,12 +82,15 @@ class ThermoModel(LCSBModel, Model):
     def _init_thermo(self):
 
         self.logger = get_bistream_logger('thermomodel_' + str(self.name))
-        self.thermo_unit = self.thermo_data['units']
         try:
+            self.thermo_unit = self.thermo_data['units']
             self.reaction_cues_data = self.thermo_data['cues']
             self.compounds_data = self.thermo_data['metabolites']
-        except KeyError:
-            self.logger.defug("Metabolic information not in self.thermo_data")
+        except TypeError:
+            # As user hasn't provided a (valid) `thermo_data`, just use the
+            # units in equilibrator_api
+            self.thermo_unit = "kJ/mol"
+            self.logger.debug("Metabolic information not in self.thermo_data")
         self.Debye_Huckel_B = get_debye_huckel_b(self.TEMPERATURE)
 
         # Compute internal values to adapt the the thermo_unit provided
@@ -386,7 +389,7 @@ class ThermoModel(LCSBModel, Model):
             from equilibrator_api import Q_
             self.logger.debug('Loaded eQuilibrator')
         cc = equilibrator_api.ComponentContribution(
-            temperature=Q_(self.TEMPERATURE)
+            temperature=Q_(str(self.TEMPERATURE)+"K")
         )
         map_equilibrator = {
             reaction.id: reaction for reaction in
