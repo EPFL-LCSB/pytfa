@@ -63,7 +63,7 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
     include_list = get_cons_var_classes(new, include, type = 'cons')
     exclude_list = get_cons_var_classes(new, exclude, type = 'cons')
 
-    r = chebyshev_transform(new, vars, include_list, exclude_list, big_m)
+    r = chebyshev_transform(new, vars, include_list, exclude_list, big_m = big_m)
 
     new.objective.direction = 'max'
     new.objective = r.variable
@@ -169,7 +169,7 @@ def get_cons_var_classes(model, elements, type):
 
     if isinstance(elements[0], str):
         ret = [model_elements[elt][0].__class__ for elt in elements]
-    elif isinstance(elements[0], GenericClass):
+    elif issubclass(elements[0], GenericClass):
         ret = elements
 
     return ret
