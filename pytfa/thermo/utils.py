@@ -10,7 +10,6 @@ Some tools around COBRApy models used by pyTFA
 
 """
 import re
-from collections import defaultdict
 
 Formula_regex = re.compile("([A-Z][a-z]*)([0-9]*)")
 
