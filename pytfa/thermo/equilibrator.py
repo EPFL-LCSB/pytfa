@@ -10,15 +10,17 @@
 
 import equilibrator_cache.compatibility as compat
 
+# this file is not imported in the __init__.py. The explicit import of the file
+# triggers the loading of eQuilbrator
+from equilibrator_api import ComponentContribution, Q_
+from equilibrator_api.phased_reaction import PhasedReaction
 from equilibrator_cache import create_compound_cache_from_quilt
 from .std import TEMPERATURE_0
 from ..utils.numerics import BIGM_DG
 from ..utils.logger import get_bistream_logger
 
-
+# load compound cache just one to aliviate resource usage
 ccache = None
-cc = None
-PhasedReaction = None
 logger = get_bistream_logger("eQuilibrator_formation")
 
 
@@ -34,16 +36,11 @@ def build_thermo_from_equilibrator(model, T=TEMPERATURE_0):
 
     """
     global ccache
-    global cc
-    global PhasedReaction
-    # lazy loading
     if ccache is None:
-        from equilibrator_api import ComponentContribution, Q_
-        from equilibrator_api.phased_reaction import PhasedReaction
-
         ccache = create_compound_cache_from_quilt()
-        cc = ComponentContribution(temperature=Q_(str(T) + "K"))
-        logger.debug("eQuilibrator loaded.")
+        logger.debug("eQuilibrator compound cache is loaded.")
+
+    cc = ComponentContribution(temperature=Q_(str(T) + "K"))
 
     thermo_data = {"name": "eQuilibrator", "units": "kJ/mol", "cues": {}}
     met_to_comps = compat.map_cobra_metabolites(ccache, model.metabolites)
@@ -82,7 +79,7 @@ def compound_to_entry(compound, cc):
     except Exception as e:
         err = 1
         logger.debug(
-            "{} : thermo data NOT created, compound : {}, e : {}".format(
+            "{} : thermo data NOT created, error : {}".format(
                 compound.id, e
             )
         )
