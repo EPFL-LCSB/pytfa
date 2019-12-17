@@ -1,14 +1,14 @@
 """Tests for the equilibrator integration."""
+equi = pytest.importorskip(  # noqa: F821
+    "pytfa.thermo.equilibrator"
+)
+
 
 import os
 import pytest
 import pytfa
 import pytfa.io
 import sys
-
-equi = pytest.importorskip(
-    "pytfa.thermo.equilibrator"
-)
 
 this_directory = os.path.dirname(os.path.realpath(__file__))
 
