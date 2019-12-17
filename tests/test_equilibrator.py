@@ -1,14 +1,11 @@
 """Tests for the equilibrator integration."""
-equi = pytest.importorskip(  # noqa: F821
-    "pytfa.thermo.equilibrator"
-)
-
-
 import os
 import pytest
 import pytfa
 import pytfa.io
 import sys
+
+from pytfa.thermo.equilibrator import build_thermo_from_equilibrator
 
 this_directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -20,9 +17,9 @@ cobra_model.optimizer = "glpk"
 tmodel = None
 
 
-# previous version aren't compatible with the equlibrator_cache version needed.
-# this annotation is not necessary since the importorskip statement should make
-# the tests fail before, but this way it is more explicit
+# previous version aren't compatible for the required equlibrator_cache version
+# this annotation is not necessary since this file shoud be ignored in the test
+# collection phase for previous versions, but it makes it more clear.
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="requires >= python3.6")
 def test_load_with_equi_thermo():
     """Build thermo data structure with equilibrator."""
@@ -31,7 +28,7 @@ def test_load_with_equi_thermo():
     for met in cobra_model.metabolites:
         # normalize but don't overwrite
         met.annotation["seed.compound"] = met.annotation["seed_id"]
-    thermo_data = equi.build_thermo_from_equilibrator(cobra_model)
+    thermo_data = build_thermo_from_equilibrator(cobra_model)
     tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
     tmodel.solver = 'optlang-glpk'
 
