@@ -76,7 +76,9 @@ def check_reaction_balance(reaction, proton = None):
                 'Cd', 'W', 'Hg', 'R', 'Mo', 'X'].index(atom[0])
             except ValueError:
                 # Jorge Carrasco: Can we use warnings here?
-                print('Warning : ' + metabolite.formula + '/' + atom[0])
+                reaction.model.logger.warn(
+                    'Warning : ' + metabolite.formula + '/' + atom[0]
+                )
                 continue
 
             Atoms_sum[id_] += metCoeff * (int(atom[1]) if atom[1] else 1)
