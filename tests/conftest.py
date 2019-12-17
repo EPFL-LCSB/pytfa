@@ -12,4 +12,4 @@ import sys
 
 
 if sys.version_info < (3, 6):
-    collect_ignore_glob = ["test_equilibrator.py"]
+    collect_ignore = ["test_equilibrator.py"]
