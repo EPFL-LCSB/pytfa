@@ -53,7 +53,7 @@ def build_thermo_from_equilibrator(model, T=TEMPERATURE_0):
 def compute_dGf(compound, cc):
     """Get ΔGf from equilibrator `compound`."""
     dG0_prime, dG0_uncertainty = cc.dG0_prime(
-        PhasedReaction(sparse={compound: 1}, rid=f"tmp_{compound.id}")
+        PhasedReaction(sparse={compound: 1}, rid="tmp_"+compound.id)
     )
     return dG0_prime, dG0_uncertainty
 
