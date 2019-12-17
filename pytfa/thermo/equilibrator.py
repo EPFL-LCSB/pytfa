@@ -78,7 +78,7 @@ def compound_to_entry(compound, cc):
     nH_std = compound.atom_bag["H"] if "H" in compound.atom_bag else 0
     try:
         deltaGf_std, deltaGf_err = compute_dGf(compound, cc)
-        err = "Nill"
+        err = "Nil"
     except Exception as e:
         err = 1
         logger.debug(
