@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Custom collection of test files.
 
 .. module:: pytfa
