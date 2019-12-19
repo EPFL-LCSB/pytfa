@@ -8,8 +8,9 @@
 
 """
 
+import pytest
 import sys
 
 
 if sys.version_info < (3, 6):
-    collect_ignore = ["test_equilibrator.py"]
+    pytest.xfail("equilibrator-cache requires Python version >= 3.6")

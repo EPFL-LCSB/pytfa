@@ -11,15 +11,15 @@ this_directory = os.path.dirname(os.path.realpath(__file__))
 
 # Load the cobra_model
 cobra_model = pytfa.io.import_matlab_model(
-    this_directory + "/../models/small_ecoli.mat"
+    this_directory + "/../../models/small_ecoli.mat"
 )
 cobra_model.optimizer = "glpk"
 tmodel = None
 
 
 # previous version aren't compatible for the required equlibrator_cache version
-# this annotation is not necessary since this file shoud be ignored in the test
-# collection phase for previous versions, but it makes it more clear.
+# this annotation is not necessary since this file shoud be marked as failed in
+# confest.py for previous versions, but it makes it more clear.
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="requires >= python3.6")
 def test_load_with_equi_thermo():
     """Build thermo data structure with equilibrator."""
@@ -30,7 +30,7 @@ def test_load_with_equi_thermo():
         met.annotation["seed.compound"] = met.annotation["seed_id"]
     thermo_data = build_thermo_from_equilibrator(cobra_model)
     tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
-    tmodel.solver = 'optlang-glpk'
+    tmodel.solver = "optlang-glpk"
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="requires >= python3.6")
