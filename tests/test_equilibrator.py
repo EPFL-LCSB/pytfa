@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for the equilibrator integration."""
-import os
-from pytfa import ThermoModel
 import pytest
 import sys
 
 from settings import cobra_model
 
-
-this_directory = os.path.dirname(os.path.realpath(__file__))
 
 # Load the cobra_model
 cobra_model.optimizer = "glpk"
@@ -23,6 +19,7 @@ tmodel = None
 def test_load_with_equi_thermo():
     """Build thermo data structure with equilibrator."""
     from pytfa.thermo.equilibrator import build_thermo_from_equilibrator
+    from pytfa import ThermoModel
 
     global tmodel
     global cobra_model
