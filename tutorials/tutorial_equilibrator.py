@@ -36,7 +36,7 @@ this_directory = os.path.dirname(os.path.realpath(__file__))
 cobra_model = pytfa.io.import_matlab_model(
     this_directory + "/../models/small_ecoli.mat"
 )
-cobra_model.optimizer = "glpk"
+# cobra_model.optimizer = "glpk"
 
 # 2. Normalize annotation ids (but don't overwrite them)
 for met in cobra_model.metabolites:

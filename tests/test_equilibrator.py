@@ -4,11 +4,7 @@
 import pytest
 import sys
 
-from settings import cobra_model
 
-
-# Load the cobra_model
-cobra_model.optimizer = "glpk"
 tmodel = None
 
 
@@ -20,14 +16,15 @@ def test_load_with_equi_thermo():
     """Build thermo data structure with equilibrator."""
     from pytfa.thermo.equilibrator import build_thermo_from_equilibrator
     from pytfa import ThermoModel
+    from settings import cobra_model
 
     global tmodel
-    global cobra_model
-    for met in cobra_model.metabolites:
+    cmodel = cobra_model.copy()
+    for met in cmodel.metabolites:
         # normalize but don't overwrite
         met.annotation["seed.compound"] = met.annotation["seed_id"]
-    thermo_data = build_thermo_from_equilibrator(cobra_model)
-    tmodel = ThermoModel(thermo_data, cobra_model)
+    thermo_data = build_thermo_from_equilibrator(cmodel)
+    tmodel = ThermoModel(thermo_data, cmodel)
     tmodel.solver = "optlang-glpk"
 
 
