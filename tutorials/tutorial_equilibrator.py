@@ -18,6 +18,9 @@ file or install them directly with pip from the project directory:
 
     pip install .[equilibrator]
 
+.. warning::
+    This dependency requires Python version >= 3.6.
+
 """
 
 import os
