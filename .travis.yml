@@ -1,18 +1,25 @@
 language: python
 dist: xenial
-python:
-  - "3.5"
-  - "3.6"
-  - "3.7"
+jobs:
+ include:
+ - python: 3.5
+   before_install:
+    - pip install pytest-cov
+ - python: 3.6
+   before_install:
+    - pip install pytest-cov
+    - pip install equilibrator>=0.2.6
+ - python: 3.7
+   before_install:
+    - pip install pytest-cov
+    - pip install equilibrator>=0.2.6
 branches:
  only:
  - master
  - dev
 
-before_install:
- - pip install pytest-cov
 install:
- - pip install .[equilibrator]
+ - pip install .
 
 script:
  - py.test --cov=./
