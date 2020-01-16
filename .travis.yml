@@ -8,11 +8,11 @@ jobs:
  - python: 3.6
    before_install:
     - pip install pytest-cov
-    - pip install equilibrator>=0.2.6
+    - pip install equilibrator_cache>=0.2.6
  - python: 3.7
    before_install:
     - pip install pytest-cov
-    - pip install equilibrator>=0.2.6
+    - pip install equilibrator_cache>=0.2.6
 branches:
  only:
  - master
