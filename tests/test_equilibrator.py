@@ -5,7 +5,7 @@ import pytest
 import sys
 
 
-tmodel = None
+t_model = None
 
 
 # previous version aren't compatible for the required equlibrator_cache version
@@ -18,33 +18,33 @@ def test_load_with_equi_thermo():
     from pytfa import ThermoModel
     from settings import cobra_model
 
-    global tmodel
+    global t_model
     cmodel = cobra_model.copy()
     for met in cmodel.metabolites:
         # normalize but don't overwrite
         met.annotation["seed.compound"] = met.annotation["seed_id"]
     thermo_data = build_thermo_from_equilibrator(cmodel)
-    tmodel = ThermoModel(thermo_data, cmodel)
-    tmodel.solver = "optlang-glpk"
+    t_model = ThermoModel(thermo_data, cmodel)
+    t_model.solver = "optlang-glpk"
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="requires >= python3.6")
 def test_equilibrator_preparation():
     """Prepare using equilibrator_api."""
-    global tmodel
-    tmodel.prepare()
+    global t_model
+    t_model.prepare()
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="requires >= python3.6")
 def test_equilibrator_conversion():
     """Convert by the usual method in `ThermoModel`."""
-    global tmodel
-    tmodel.convert()
+    global t_model
+    t_model.convert()
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="requires >= python3.6")
 def test_equilibrator_optim():
     """LP optimization by the usual method in `ThermoModel`."""
-    global tmodel
-    solution = tmodel.optimize()
+    global t_model
+    solution = t_model.optimize()
     return sum(solution.fluxes)
