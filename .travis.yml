@@ -3,15 +3,9 @@ dist: xenial
 jobs:
  include:
  - python: 3.5
-  before_install:
-    - pip install coverage
  - python: 3.6
-   before_install:
-    - pip install coverage
     - pip install equilibrator_cache>=0.2.6 equilibrator_api
  - python: 3.7
-   before_install:
-    - pip install coverage
     - pip install equilibrator_cache>=0.2.6 equilibrator_api
 
 branches:
@@ -23,8 +17,7 @@ install:
  - pip install .
 
 script:
- - coverage run --source pytfa -m py.test
- - coverage report
+ -  coverage run -m py.test tests
 
 after_success:
  - pip install codecov; codecov
