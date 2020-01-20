@@ -28,3 +28,4 @@ after_success:
  - pip install codecov
  - coverage xml 
  - coverage report -m
+ - codecov
