@@ -22,7 +22,9 @@ install:
  - pip install .
 
 script:
- - py.test --cov pytfa tests
+ - py.test tests
 
 after_success:
- - pip install codecov; codecov;
+ - pip install codecov
+ - coverage xml 
+ - coverage report -m
