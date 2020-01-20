@@ -3,11 +3,16 @@ dist: xenial
 jobs:
  include:
  - python: 3.5
+   before_install:
+    - pip install pytest-cov
  - python: 3.6
+   before_install:
+    - pip install pytest-cov
     - pip install equilibrator_cache>=0.2.6 equilibrator_api
  - python: 3.7
+   before_install:
+    - pip install pytest-cov
     - pip install equilibrator_cache>=0.2.6 equilibrator_api
-
 branches:
  only:
  - master
@@ -17,7 +22,10 @@ install:
  - pip install .
 
 script:
- -  coverage run -m py.test tests
+ - py.test tests
 
 after_success:
- - pip install codecov; codecov
+ - pip install codecov
+ - coverage xml 
+ - coverage report -m
+ - codecov
