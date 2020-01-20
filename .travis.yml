@@ -19,7 +19,7 @@ branches:
  - dev
 
 install:
- - pip install .
+ - pip install -e .
 
 script:
  - py.test --cov=./
