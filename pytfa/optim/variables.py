@@ -555,3 +555,10 @@ class NegSlackLC(MetaboliteVariable):
 
     prefix = 'NegSlackLC_'
 
+
+class LinearizationVariable(ModelVariable):
+    """
+    Class to represent a product A*B when performing linearization of the
+    model
+    """
+    prefix = 'LZ_'
