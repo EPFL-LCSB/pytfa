@@ -7,3 +7,5 @@ networkx
 pytest
 scipy
 tqdm
+equilibrator-cache==0.2.6
+equilibrator_api

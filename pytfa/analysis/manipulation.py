@@ -1,3 +1,6 @@
+from ..core.model import Solution
+import pandas as pd
+
 def apply_reaction_variability(tmodel, va, inplace = True):
     """
     Applies the VA results as bounds for the reactions of a cobra_model
@@ -46,7 +49,7 @@ def apply_generic_variability(tmodel,va, inplace = True):
     return _tmodel
 
 
-def apply_directionality(tmodel,solution, inplace = True):
+def apply_directionality(tmodel, solution, inplace = True):
     """
     Takes a flux solution and transfers its reaction directionality as
     constraints for the cobra_model
@@ -62,15 +65,22 @@ def apply_directionality(tmodel,solution, inplace = True):
     else:
         _tmodel = tmodel.copy()
 
+    if isinstance(solution, Solution):
+        sol = solution.raw
+    elif isinstance(solution, pd.Series) or isinstance(solution, pd.DataFrame):
+        sol = solution
+    else:
+        raise ArgumentError('solution object should be of class Solution or pandas.Series')
+
     for this_reaction in _tmodel.reactions:
 
         backward_use = _tmodel.backward_use_variable.get_by_id(this_reaction.id)
         forward_use = _tmodel.forward_use_variable.get_by_id(this_reaction.id)
 
-        backward_use.variable.lb = round(solution.raw[backward_use.name])
-        backward_use.variable.ub = round(solution.raw[backward_use.name])
+        backward_use.variable.lb = round(sol[backward_use.name])
+        backward_use.variable.ub = round(sol[backward_use.name])
 
-        forward_use.variable.lb  = round(solution.raw[forward_use.name])
-        forward_use.variable.ub  = round(solution.raw[forward_use.name])
+        forward_use.variable.lb  = round(sol[forward_use.name])
+        forward_use.variable.ub  = round(sol[forward_use.name])
 
     return _tmodel

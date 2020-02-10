@@ -174,7 +174,7 @@ def get_cons_var_classes(model, elements, type):
 
     if isinstance(elements[0], str):
         ret = [model_elements[elt][0].__class__ for elt in elements]
-    elif isinstance(elements[0], GenericClass):
+    elif issubclass(elements[0], GenericClass):
         ret = elements
 
     return ret

@@ -454,7 +454,6 @@ class MetaboliteVariable(GenericVariable):
 
     prefix = 'MV_'
 
-
 class ForwardUseVariable(ReactionVariable, BinaryVariable):
     """
     Class to represent a forward use variable, a type of binary variable used to
@@ -486,6 +485,24 @@ class BackwardUseVariable(ReactionVariable, BinaryVariable):
 
     prefix = 'BU_'
 
+class ForwardBackwardUseVariable(ReactionVariable, BinaryVariable):
+    """
+    Class to represent a type of binary variable used to tell whether the
+    reaction is active or not such that:
+        FU + BU + BFUSE = 1
+    """
+
+    def __init__(self, reaction, **kwargs):
+        if not 'lb' in kwargs:
+            kwargs['lb'] = 0
+        if not 'ub' in kwargs:
+            kwargs['ub'] = 1
+
+        ReactionVariable.__init__(self, reaction,
+                                  type=get_binary_type(),
+                                  **kwargs)
+
+    prefix = 'BFUSE_'
 
 class LogConcentration(MetaboliteVariable):
     """
@@ -494,7 +511,6 @@ class LogConcentration(MetaboliteVariable):
 
     prefix = 'LC_'
 
-
 class DeltaGErr(ReactionVariable):
     """
     Class to represent a DeltaGErr
@@ -502,14 +518,12 @@ class DeltaGErr(ReactionVariable):
 
     prefix = 'DGE_'
 
-
 class DeltaG(ReactionVariable):
     """
     Class to represent a DeltaG
     """
 
     prefix = 'DG_'
-
 
 class DeltaGstd(ReactionVariable):
     """
@@ -535,7 +549,6 @@ class PosSlackVariable(ReactionVariable):
         ReactionVariable.__init__(self, reaction, **kwargs)
 
     prefix = 'PosSlack_'
-
 
 class NegSlackVariable(ReactionVariable):
     """

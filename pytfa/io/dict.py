@@ -22,6 +22,8 @@ from optlang.util import expr_to_json, parse_expr
 
 from copy import copy
 
+import sympy
+
 
 def get_all_subclasses(cls):
     all_subclasses = []
@@ -371,8 +373,11 @@ def model_from_dict(obj, solver=None, custom_hooks = None):
     return new
 
 def rebuild_obj_from_dict(new, objective_dict):
-    obj_expr = symbol_sum([v*new.variables.get(x) for x,v in objective_dict.items()])
-    new.objective = obj_expr
+    if objective_dict.__class__ is dict:
+        obj_expr = symbol_sum([v*new.variables.get(x) for x,v in objective_dict.items()])
+        new.objective = obj_expr
+    else:
+        new.objective = sympy.S.Zero
 
 def add_custom_classes(model, custom_hooks):
     """
@@ -446,5 +451,3 @@ def _rebuild_stoichiometry(new, stoich):
     return defaultdict(int,
                        {new.metabolites.get_by_id(k):v
                         for k,v in stoich.items()})
-
-
