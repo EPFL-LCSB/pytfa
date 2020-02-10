@@ -16,6 +16,7 @@ from numpy.linalg import norm
 from optlang.interface import Constraint
 from pytfa.optim.variables import GenericVariable,ModelVariable
 from pytfa.optim.constraints import GenericConstraint
+from warnings import warn
 
 # from ..optim.variables import GenericVariable,ModelVariable
 
@@ -63,7 +64,11 @@ def chebyshev_center(model, variables, inplace = False, big_m=BIGM,
     include_list = get_cons_var_classes(new, include, type = 'cons')
     exclude_list = get_cons_var_classes(new, exclude, type = 'cons')
 
-    r = chebyshev_transform(new, vars, include_list, exclude_list, big_m)
+    r = chebyshev_transform(model=new,
+                            vars=vars,
+                            include_list=include_list,
+                            exclude_list=exclude_list,
+                            big_m=big_m)
 
     new.objective.direction = 'max'
     new.objective = r.variable
