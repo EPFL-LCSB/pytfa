@@ -189,8 +189,7 @@ def import_matlab_model(path, variable_name=None):
         comp = comps[i]
         comp['membranePot'] = {}
         for j in range(num_comp):
-            comp['membranePot'][comps[j]['symbol']] = \
-            CompartmentDB['membranePot'][0][i, j]
+            comp['membranePot'][comps[j]['symbol']] = int(CompartmentDB['membranePot'][0][i, j])
 
     cobra_model.compartments = Compartments
 
