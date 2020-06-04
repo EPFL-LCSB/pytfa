@@ -680,20 +680,22 @@ class ThermoModel(LCSBModel, Model):
         n_metabolites = len(self.metabolites)
         n_reactions = len(self.reactions)
         n_metabolites_thermo = len(
-            [
-                x
-                for x in self.metabolites
-                if hasattr(x, "thermo") and x.thermo["id"]
-            ]
+            # [
+            #     x
+            #     for x in self.metabolites
+            #     if hasattr(x, "thermo") and x.thermo["id"]
+            # ]
+            self._var_kinds[LogConcentration.__name__]
         )
         n_reactions_thermo = len(
-            [
-                x
-                for x in self.reactions
-                if x.id is not None
-                and hasattr(x, "thermo")
-                and x.thermo["computed"]
-            ]
+            # [
+            #     x
+            #     for x in self.reactions
+            #     if x.id is not None
+            #     and hasattr(x, "thermo")
+            #     and x.thermo["computed"]
+            # ]
+            self._cons_kinds[ForwardDeltaGCoupling.__name__]
         )
 
         info = pd.DataFrame(columns=["value"])
