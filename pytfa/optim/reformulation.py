@@ -12,6 +12,8 @@ MILP-fu to reformulate problems
 import sympy
 # import optlang
 from collections import namedtuple
+from .variables import LinearizationVariable
+from .constraints import LinearizationConstraint
 
 # Faster than optlang Constraint object
 ConstraintTuple = namedtuple('ConstraintTuple',['name','expression','ub','lb'])
@@ -161,5 +163,42 @@ def petersen_linearization(b, x, z = None, M=1000):
     return z, [cons1,cons2,cons3]
 
 
+def linearize_product(model, b, x, queue=False):
+    """
 
+    :param model:
+    :param b: the binary variable
+    :param x: the continuous variable
+    :param queue: whether to queue the variables and constraints made
+    :return:
+    """
+
+    # Linearization step for ga_i * [E]
+    z_name = '__MUL__'.join([b.name, x.name])
+    # Add the variables
+    model_z_u = model.add_variable(kind=LinearizationVariable,
+                                  hook=model,
+                                  id_=z_name,
+                                  lb=0,
+                                  ub=x.ub,
+                                  queue=False)
+
+    big_m = x.ub
+
+    z_u, new_constraints = petersen_linearization(b=b, x=x, M=big_m,
+                                                  z=model_z_u)
+
+    # Add the constraints:
+    for cons in new_constraints:
+        model.add_constraint(kind=LinearizationConstraint,
+                             hook=model,
+                             id_=cons.name,
+                             expr=cons.expression,
+                             # expr=new_expression,
+                             ub=cons.ub,
+                             lb=cons.lb,
+                             queue=queue)
+
+    model._push_queue()
+    return model_z_u
 

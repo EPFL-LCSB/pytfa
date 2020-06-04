@@ -194,7 +194,20 @@ def import_matlab_model(path, variable_name=None):
 
     cobra_model.compartments = Compartments
 
+    recover_compartments(cobra_model, list(Compartments.keys()))
+
     return cobra_model
+
+def recover_compartments(model, compartments_list):
+    for met in model.metabolites:
+        if met.compartment is None:
+            comp_candidate = met.id.split('_')[-1]
+            if comp_candidate in compartments_list:
+                met.compartment = comp_candidate
+            else:
+                model.logger.info('No compartment data found for metabolite {}'.format(met.id))
+        else:
+            continue
 
 
 def write_matlab_model(tmodel, path, varname='tmodel'):
