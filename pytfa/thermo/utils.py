@@ -76,7 +76,7 @@ def check_reaction_balance(reaction, proton = None):
                 'Cd', 'W', 'Hg', 'R', 'Mo', 'X'].index(atom[0])
             except ValueError:
                 # Jorge Carrasco: Can we use warnings here?
-                reaction.model.logger.warn(
+                reaction.model.logger.warning(
                     'Warning : ' + metabolite.formula + '/' + atom[0]
                 )
                 continue
