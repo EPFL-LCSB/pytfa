@@ -40,7 +40,8 @@ def build_thermo_from_equilibrator(model, T=TEMPERATURE_0):
         ccache = create_compound_cache_from_quilt()
         logger.debug("eQuilibrator compound cache is loaded.")
 
-    cc = ComponentContribution(temperature=Q_(str(T) + "K"))
+    cc = ComponentContribution()
+    cc.temperature=Q_(str(T) + "K")
 
     thermo_data = {"name": "eQuilibrator", "units": "kJ/mol", "cues": {}}
     met_to_comps = compat.map_cobra_metabolites(ccache, model.metabolites)

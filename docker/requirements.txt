@@ -1,5 +1,7 @@
 bokeh>=0.12.1
 cobra>0.13
+equilibrator-api
+equilibrator-cache
 ipdb
 lxml
 networkx
