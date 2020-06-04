@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 #     return reqs
 
 
-version_tag = '0.9.2'
+version_tag = '0.9.2b'
 
 setup(name='pytfa',
       version=version_tag,
