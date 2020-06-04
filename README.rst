@@ -183,8 +183,8 @@ Here is an example script :
    :target: http://pytfa.readthedocs.io/en/latest/?badge=latest
 .. |license| image:: http://img.shields.io/badge/license-APACHE2-blue.svg
    :target: https://github.com/EPFL-LCSB/pytfa/blob/master/LICENSE.txt
-.. |Build Status| image:: https://travis-ci.org/EPFL-LCSB/pytfa.svg?branch=master
-   :target: https://travis-ci.org/EPFL-LCSB/pytfa
+.. |Build Status| image:: https://travis-ci.com/EPFL-LCSB/pytfa.svg?branch=master
+   :target: https://travis-ci.com/EPFL-LCSB/pytfa
 .. |Codecov| image:: https://img.shields.io/codecov/c/github/EPFL-LCSB/pytfa.svg
    :target: https://codecov.io/gh/EPFL-LCSB/pytfa
 .. |Codacy branch grade| image:: https://img.shields.io/codacy/grade/d8fd67ee134d46a69115c9b39c19be26/master.svg
