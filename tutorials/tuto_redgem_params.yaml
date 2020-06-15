@@ -23,14 +23,14 @@ biomass_rxns:
     - Ec_biomass_iJO1366_WT_53p95M
 
 # Define minimal growth to reach. If auto, sets to 95% of max TFA growth
-growth_rate: auto
+growth_rate: 0.5
 
 # Define the medium. Any other reaction will be kept as provided by the model
 medium:
-#    DM_cbl1_e: -0.01
-#    DM_glc_e: -8.16
-#    DM_glycogenn1_c: -10.0
-#    DM_bglycogenn1_c: -10.0
+    DM_cbl1_e: -0.01
+    DM_glc_e: -8.16
+    DM_glycogenn1_c: -10.0
+    DM_bglycogenn1_c: -10.0
 
 small_metabolites:
     - h_c
@@ -45,14 +45,100 @@ small_metabolites:
 inorganics: auto
 
 cofactor_pairs:
-    - ['atp_c', 'adp_c']
-    - ['nad_c', 'nadh_c']
-    - ['nadp_c', 'nadph_c']
+#    - ['atp_c'    , 'adp_c'   ]
+#    - ['atp_c'    , 'amp_c'   ]
+#    - ['gtp_c'    , 'gdp_c'   ]
+#    - ['gtp_c'    , 'gmp_c'   ]
+#    - ['utp_c'    , 'udp_c'   ]
+#    - ['utp_c'    , 'ump_c'   ]
+#    - ['ctp_c'    , 'cdp_c'   ]
+#    - ['ctp_c'    , 'cmp_c'   ]
+#    - ['nadh_c'   , 'nad_c'   ]
+#    - ['nadph_c'  , 'nadp_c'  ]
+#    - ['fadh2_c'  , 'fad_c'   ]
+#    - ['accoa_c'  , 'coa_c'   ]
+#    - ['malcoa_c' , 'coa_c'   ]
+#    - ['q8h2_c'   , 'q8_c'    ]
+#    - ['trdrd_c'  , 'trdox_c' ]
+#    - ['10fthf_c' , 'thf_c'   ]
+    - ['hxcoa_c','coa_c']
+    - ['ppcoa_c','coa_c']
+    - ['10fthf_c','thf_c']
+    - ['2dmmql8_c','2dmmq8_c']
+    - ['adpglc_c','adp_c']
+    - ['akg_c','glu-L_c']
+    - ['amet_c','ahcys_c']
+    - ['amp_c','adp_c']
+    - ['amp_c','gdp_c']
+    - ['amp_c','idp_c']
+    - ['atp_c','adp_c']
+    - ['atp_c','adpglc_c']
+    - ['atp_c','amp_c']
+    - ['atp_c','camp_c']
+    - ['atp_c','cdp_c']
+    - ['atp_c','gdp_c']
+    - ['atp_c','gtp_c']
+    - ['atp_c','ppi_c']
+    - ['atp_c','udp_c']
+    - ['atp_c','utp_c']
+    - ['camp_c','amp_c']
+    - ['cdp_c','adp_c']
+    - ['cdp_c','ctp_c']
+    - ['cmp_c','adp_c']
+    - ['cmp_c','cdp_c']
+    - ['coa_c','accoa_c']
+    - ['coa_c','succoa_c']
+    - ['ctp_c','cmp_c']
+    - ['ctp_c','ppi_c']
+    - ['fad_c','fadh2_c']
+    - ['flxso_c','flxr_c']
+    - ['fmnh2_c','fmn_c']
+    - ['gdp_c','adp_c']
+    - ['gln-L_c','glu-L_c']
+    - ['grxox_c','grxrd_c']
+    - ['gthrd_c','gthox_c']
+    - ['gtp_c','adp_c']
+    - ['gtp_c','amp_c']
+    - ['gtp_c','cmp_c']
+    - ['gtp_c','gdp_c']
+    - ['gtp_c','gmp_c']
+    - ['gtp_c','ppi_c']
+    - ['gtp_c','ump_c']
+    - ['gtp_c','xtp_c']
+    - ['gtp_p','gdp_p']
+    - ['iscssh_c','iscs_c']
+    - ['itp_c','adp_c']
+    - ['itp_c','imp_c']
+    - ['malACP_c','ACP_c']
+    - ['malcoa_c','coa_c']
+    - ['mqn8_c','mql8_c']
+    - ['nadh_c','nad_c']
+    - ['nadph_c','nadp_c']
+    - ['no2_c','nh4_c']
+    - ['no2_e','nh4_e']
+    - ['no3_c','no2_c']
+    - ['no3_e','no2_e']
+    - ['o2_c','o2s_c']
+    - ['o2_e','o2s_e']
+    - ['pep_c','pyr_c']
+    - ['prpp_c','ppi_c']
+    - ['q8_c','q8h2_c']
+    - ['seramp_c','amp_c']
+    - ['thf_c','5mthf_c']
+    - ['trdrd_c','trdox_c']
+    - ['udp_c','adp_c']
+    - ['udp_c','utp_c']
+    - ['udpg_c','udp_c']
+    - ['ump_c','adp_c']
+    - ['ump_c','udp_c']
+    - ['utp_c','ump_c']
+    - ['xtp_c','xdp_c']
+    - ['xtp_c','xmp_c']
 
 # Reduction parameters
-lump_method: Min+1 # OnePerBBB, Min, Min+p
-max_lumps_per_BBB: 2 # Only used if method = Min or Min+p
-remove_blocked_reactions: yes  # Remove reactions that cannot carry flux
+lump_method: OnePerBBB #Min+1 # OnePerBBB, Min, Min+p
+max_lumps_per_BBB: 3 # Only used if method = Min or Min+p
+remove_blocked_reactions: no  # Remove reactions that cannot carry flux
                               # at the end of the reduction
 
 d: 2
@@ -60,7 +146,7 @@ n: 2
 
 solver: auto
 force_solve: False
-timeout: 300
+timeout: 900
 feasibility: 1e-9
 
 # Optimisation shenanigans

@@ -183,7 +183,16 @@ class RedGEM():
 
 def add_lump(model, lump_object, id_suffix=''):
     new = Reaction(id = lump_object.id_+id_suffix)
-    model.add_reaction(new)
+    model.add_reactions([new])
+
+    # Check that all metabolites in the lump are in the model
+    for the_met_id, stoich in list(lump_object.metabolites.items()):
+        if not the_met_id in model.metabolites:
+            model.logger.warning('Metabolite {} with stoichiometry {} '
+                              'is not in the model. If the stoichiometry is low,'
+                              'it is probably a simple numerical arror.'
+                                 .format(the_met_id, stoich))
+            lump_object.metabolites.pop(the_met_id)
     new.add_metabolites(lump_object.metabolites)
     new.gene_reaction_rule = lump_object.gene_reaction_rule
     new.subnetwork = lump_object.subnetwork

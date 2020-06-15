@@ -16,12 +16,15 @@ def remove_blocked_reactions(model):
     return df
 
 
+def round(value, epsilon):
+    n = int(-1*np.log10(epsilon))
+    return np.round(value,n)
+
 def trim_epsilon_mets(met_dict, epsilon):
 
-    n = int(-1*np.log10(epsilon))
-    round_dict = {x:np.round(v,n) for x,v in met_dict.items()}
-    met_dict.update(round_dict)
-
+    # round_dict = {x:round(v,epsilon) for x,v in met_dict.items()}
+    # met_dict.update(round_dict)
+    #
     rm_list = [x for x,v in met_dict.items() if abs(v) <= epsilon]
     [met_dict.pop(x) for x in rm_list]
 

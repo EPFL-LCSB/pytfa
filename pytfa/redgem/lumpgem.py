@@ -5,12 +5,10 @@ from cobra import Reaction
 
 from ..optim.utils import symbol_sum
 from ..thermo.utils import is_exchange, check_transport_reaction
-from .utils import trim_epsilon_mets
+from .utils import trim_epsilon_mets, round
 
 from ..optim.variables import ReactionVariable, BinaryVariable, get_binary_type
 from ..optim.constraints import ReactionConstraint, ForbiddenProfile
-
-from numpy import sum, round
 
 from optlang.interface import INFEASIBLE, TIME_LIMIT, OPTIMAL
 
@@ -114,12 +112,10 @@ class LumpGEM:
             else:
                 self._rncore.append(rxn)
 
+        self._for_lumps = self._rncore # + self._transports#+ self._rcore
+
         # Growth rate
         self._growth_rate = self.growth_rate
-
-        # TODO : solver choice
-        # TODO default : solver du modele
-        #self._solver = 'optlang-cplex'
 
         self._tfa_model.solver.configuration.timeout = self.timeout_limit
         print("Timeout limit is {}s".format(self.timeout_limit))
@@ -131,7 +127,8 @@ class LumpGEM:
                                                                    lb=0,
                                                                    ub=1,
                                                                    queue=False)
-                                 for rxn in self._rncore}
+                                 for rxn in self._for_lumps}
+                                 # for rxn in self._rncore}
 
         self._generate_usage_constraints()
         self._generate_objective()
@@ -170,7 +167,8 @@ class LumpGEM:
                                 'If you get strange lumps, go for both'
                                 .format(self.constraint_method))
 
-        for rxn in self._rncore:
+        # for rxn in self._rncore:
+        for rxn in self._for_lumps:
             activation_var = self._activation_vars[rxn]
             if self.constraint_method.lower() in flux_methods:
                 bigM = 100
@@ -208,17 +206,22 @@ class LumpGEM:
                 na = stoich_dict[a] # looks like -54 atp_c
                 nb = stoich_dict[b] # looks like +53 adp_c
 
-                n = na+nb # looks like -1
-
-                if n == 0:
+                if na == 0 or nb == 0:
+                    continue # no need to do anything
+                elif na == nb:
                     self._tfa_model.logger.warn(
                         'Cofactor pair {}/{} is equimolar in reaction {}'
-                        .format(a,b,rxn.id))
-                elif n > 0:
+                            .format(a,b,rxn.id))
+                    continue # no need to do anything
+                elif na*nb < 0:
+                    # One is a reactant, the other is a product
+                    n = na+nb # looks like -1
+
+                if n > 0:
                     n = -n
                     self._tfa_model.logger.warn(
                         'Cofactor pair {}/{} looks inverted in reaction {}'
-                        .format(a,b,rxn.id))
+                            .format(a,b,rxn.id))
 
                 stoich_dict[a] =  n # looks like 1
                 stoich_dict[b] = -n # looks like -1
@@ -248,7 +251,8 @@ class LumpGEM:
                     sink.subsystem = "Demand"
 
                     # A sink is simply a reaction which consumes the BBB
-                    sink.add_metabolites({met: -1})
+                    # sink.add_metabolites({met: -1})
+                    sink.add_metabolites({met: stoech_coeff}) # stoech_coeff is < 0
 
                     # The sinks will be activated later (cf compute_lumps), one at a time
                     # sink.knock_out()
@@ -265,9 +269,9 @@ class LumpGEM:
 
         # Must be called before changing the reaction.thermo['computed'] values
         self._tfa_model.prepare()
-        for ncrxn in self._rncore:
-            ncrxn.thermo['computed'] = False
-          
+        # for ncrxn in self._rncore:
+        #     ncrxn.thermo['computed'] = False
+
         return all_sinks
 
     def _generate_objective(self):
@@ -276,7 +280,7 @@ class LumpGEM:
         When an activation variable is set to 1, the corresponding non-core reaction is deactivated
         """
         # Sum of binary variables to be maximized
-        objective_sum = symbol_sum(list(self._activation_vars.values()))
+        objective_sum = symbol_sum([v for x,v in self._activation_vars.items() if x in self._for_lumps])
         # Set the sum as the objective function
         self._tfa_model.objective = self._tfa_model.problem.Objective(objective_sum, direction='max')
 
@@ -291,6 +295,10 @@ class LumpGEM:
         # Must be called before optimization
         self._tfa_model.convert()
         # self._tfa_model.objective_direction = 'min'
+
+        # Set the biomass reactions to 0
+        for r in self.biomass_rxns:
+            self._tfa_model.reactions.get_by_id(r).lower_bound = 0
 
         epsilon = self._tfa_model.solver.configuration.tolerances.feasibility
 
@@ -311,10 +319,12 @@ class LumpGEM:
             sink_iter.refresh()
 
             sink = self._tfa_model.reactions.get_by_id(sink_id)
+
             # Activate reaction by setting its lower bound
             prev_lb = sink.lower_bound
             min_prod = self._growth_rate * stoech_coeff
-            sink.lower_bound = min_prod - epsilon
+            # sink.lower_bound = min_prod - epsilon
+            sink.lower_bound = 1*self._growth_rate - epsilon
 
             if the_method == 'oneperbbb':
                 this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
@@ -402,6 +412,7 @@ class LumpGEM:
         lumps = list()
 
         with self._tfa_model as model:
+
             activation_vars = model.get_variables_of_type(FluxKO)
 
             # Solve a first time, obtain minimal subnet
@@ -449,15 +460,33 @@ class LumpGEM:
                 is_inactivated = [x for x in activation_vars
                                if abs(x.variable.primal-1) < 2*epsilon]
 
-                expr = symbol_sum(is_inactivated)
+                # expr = symbol_sum(is_inactivated)
+                # model.add_constraint(kind=ForbiddenProfile,
+                #                      hook = model,
+                #                      id_ = '{}_{}_{}'.format(met_BBB.id,
+                #                                              n_deactivated_reactions,
+                #                                              len(lumps)),
+                #                      expr = expr,
+                #                      lb = max_deactivated_rxns-p-1,
+                #                      ub = n_deactivated_reactions-1,
+                #                      )
+
+                # Add constraint forbidding the previous solution
+                is_activated = [x for x in activation_vars
+                               if abs(x.variable.primal) < 2*epsilon]
+
+                # print('Active reactions: ', len(is_activated))
+                # print('Inactive reactions: ', len(is_inactivated))
+
+                expr = symbol_sum(is_activated)
                 model.add_constraint(kind=ForbiddenProfile,
                                      hook = model,
                                      id_ = '{}_{}_{}'.format(met_BBB.id,
                                                              n_deactivated_reactions,
                                                              len(lumps)),
                                      expr = expr,
-                                     lb = max_deactivated_rxns-p-1,
-                                     ub = n_deactivated_reactions-1,
+                                     lb = 1,
+                                     ub = max_deactivated_rxns
                                      )
 
         # TODO: Update of dynamic properties not handled yet
@@ -478,11 +507,13 @@ class LumpGEM:
         epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
         epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
 
-        sigma = sink.flux
+        stoich = sink.metabolites[sink.model.metabolites.get_by_id(met_BBB.id)]
+        sigma = 1# sink.flux * -1 * stoich
         lump_dict = dict()
 
-        for rxn in self._rncore:
-            if self._activation_vars[rxn].variable.primal < epsilon_int:
+        # for rxn in self._rncore:
+        for rxn in self._for_lumps:
+            if self._activation_vars[rxn].variable.primal < 0.5:#epsilon_int:
                 lump_dict[rxn] = rxn.flux / sigma
         # lumped_reaction1 = sum([rxn * (flux / sigma)
         #                       for rxn, flux in lump_dict.items()])
@@ -507,14 +538,24 @@ def sum_reactions(rxn_dict, id_ = 'summed_reaction', epsilon = 1e-9):
     stoich = defaultdict(int)
 
     for rxn,flux in rxn_dict.items():
+        if abs(flux) < epsilon:
+            continue
         for x, coeff in rxn.metabolites.items():
-            stoich[x.id] += coeff * flux
+            stoich[x.id] += coeff * round(flux, epsilon)
 
     gpr = ') and ('.join(x.gene_reaction_rule for x in rxn_dict if x.gene_reaction_rule)
 
     gpr = ('(' + gpr + ')') if gpr else ''
 
-    stoich = trim_epsilon_mets(stoich, epsilon=epsilon)
+    stoich = trim_epsilon_mets(stoich, epsilon=1e-6)#epsilon)
+
+    # new_rxns = {x.copy():v for x,v in rxn_dict.items()}
+    # for x in new_rxns:
+    #     x.gene_reaction_rule = ''
+    #
+    # the_lump = sum([x*v for x,v in new_rxns.items() if not v<epsilon])
+    # stoich = trim_epsilon_mets(the_lump.metabolites, epsilon=epsilon)
+    # gpr = ''
 
     new = Lump(id_ = id_,
                metabolites = stoich,
