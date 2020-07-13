@@ -4,13 +4,13 @@ core_subsystems:
     - "Cofactor Regeneration"
 
 extracellular_system:
-    - EX_co2_e
-    - EX_glc__D_e
-    - EX_h_e
-    - EX_h2o_e
-    - EX_nh4_e
-    - EX_o2_e
-    - EX_pi_e
+    - co2_e
+    - glc__D_e
+    - h_e
+    - h2o_e
+    - nh4_e
+    - o2_e
+    - pi_e
 
 biomass_rxns:
     - Biomass_Ecoli_core

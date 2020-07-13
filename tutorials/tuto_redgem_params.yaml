@@ -8,16 +8,16 @@ core_subsystems:
     - 'Oxidative Phosphorylation'
 
 extracellular_system:
-    - DM_ac_e
-    - DM_etoh_e
-    - DM_glyc_e
-    - DM_lac-D_e
-    - DM_akg_e
-    - DM_for_e
-    - DM_pyr_e
-    - DM_fum_e
-    - DM_co2_e
-    - DM_mal-L_e
+    - ac_e
+    - etoh_e
+    - glyc_e
+    - lac-D_e
+    - akg_e
+    - for_e
+    - pyr_e
+    - fum_e
+    - co2_e
+    - mal-L_e
 
 biomass_rxns:
     - Ec_biomass_iJO1366_WT_53p95M
