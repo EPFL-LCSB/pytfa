@@ -59,7 +59,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, additional_core_reactions, params):
+    def __init__(self, tfa_model, core_reactions, params):
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
         :type tfa_model: pytfa model
@@ -105,10 +105,10 @@ class LumpGEM:
             elif check_transport_reaction(rxn):
                 self._transports.append(rxn)
             # If it's a core reaction
-            elif rxn.subsystem in self.core_subsystems:
-                self._rcore.append(rxn)
+            # elif rxn.subsystem in self.core_subsystems:
+            #     self._rcore.append(rxn)
             # If it is part of the intrasubsystem expansion
-            elif rxn.id in additional_core_reactions:
+            elif rxn.id in core_reactions:
                 self._rcore.append(rxn)
             # If it's neither BBB nor core, then it's non-core
             else:
@@ -183,7 +183,7 @@ class LumpGEM:
                                                lb=0,
                                                queue=True)
             if self.constraint_method.lower() in int_methods:
-                fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+                fu = self._tfa_model.forward_use_variable.get_by_id(rxn.id)
                 bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
                 reac_var = fu + bu + activation_var
                 # adding the constraint to the model
