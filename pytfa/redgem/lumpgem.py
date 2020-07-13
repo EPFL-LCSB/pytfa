@@ -516,7 +516,7 @@ def sum_reactions(rxn_dict, id_ = 'summed_reaction', epsilon = 1e-9):
 
     for rxn,flux in rxn_dict.items():
         for x, coeff in rxn.metabolites.items():
-            stoich[x.id] += coeff * flux
+            stoich[x] += coeff * flux
 
     gpr = ') and ('.join(x.gene_reaction_rule for x in rxn_dict if x.gene_reaction_rule)
 
