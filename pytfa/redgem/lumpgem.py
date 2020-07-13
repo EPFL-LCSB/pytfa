@@ -18,6 +18,8 @@ from tqdm import tqdm
 
 from collections import defaultdict, namedtuple
 
+import sympy
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
@@ -161,6 +163,8 @@ class LumpGEM:
         """
         flux_methods = ['flux', 'fluxes', 'both']
         int_methods = ['int', 'integer', 'both']
+
+        epsilon = self._tfa_model.solver.configuration.tolerances.feasibility
 
         if self.constraint_method.lower() not in flux_methods + int_methods:
             raise ArgumentError('{} is not a correct constraint method. '
@@ -403,13 +407,14 @@ class LumpGEM:
 
         with self._tfa_model as model:
             activation_vars = model.get_variables_of_type(FluxKO)
+            expr = symbol_sum(activation_vars)
 
             # Solve a first time, obtain minimal subnet
+            model.objective = expr
             model.slim_optimize()
             max_deactivated_rxns = model.objective.value
 
             # Add constraint forbidding subnets bigger than p
-            expr = symbol_sum(activation_vars)
 
             # The lower bound is the max number of deactivated, minus p
             # Which allows activating the minimal number of reactions, plus p
@@ -423,6 +428,9 @@ class LumpGEM:
                                  )
 
             n_deactivated_reactions = max_deactivated_rxns
+
+            # Use Zero objective function to enumerate the alternatives
+            model.objective = sympy.S.Zero
 
             # While loop, break on infeasibility
             while len(lumps)<max_lumps:
