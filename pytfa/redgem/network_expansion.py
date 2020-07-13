@@ -336,8 +336,8 @@ class NetworkExpansion:
             # Retrieve and save metabolites, reactions and paths
             for node in frontier:
                 paths = self.retrieve_all_paths(node, metabolite_id, ancestors)
-                self._intermediate_extracellular_paths[subsystem][n] = \
-                    self._intermediate_extracellular_paths[subsystem][n].union(set(paths))
+                self._intermediate_extracellular_paths[subsystem][n-1] = \
+                    self._intermediate_extracellular_paths[subsystem][n-1].union(set(paths))
                 self.retrieve_intermediate_extracellular_metabolites_and_reactions(paths, subsystem,
                                                                                    n)
 
@@ -380,9 +380,9 @@ class NetworkExpansion:
         for path in paths:
             for i in range(len(path) - 1):
                 reaction = self._graph[path[i]][path[i + 1]]['rxn_id']
-                self._intermediate_extracellular_reactions_id[subsystem][n].add(reaction)
+                self._intermediate_extracellular_reactions_id[subsystem][n-1].add(reaction)
                 if i > 0:
-                    self._intermediate_extracellular_metabolites_id[subsystem][n].add(path[i])
+                    self._intermediate_extracellular_metabolites_id[subsystem][n-1].add(path[i])
 
     def run_between_all_subsystems(self):
         """
