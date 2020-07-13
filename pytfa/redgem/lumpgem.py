@@ -113,7 +113,8 @@ class LumpGEM:
             else:
                 self._rncore.append(rxn)
 
-        self._for_lumps = self._rncore # + self._transports#+ self._rcore
+        self._for_lumps = self._rncore + self._transports + self._exchanges # + self._rcore #Debug last one
+        self._lumping_solutions = dict() # Keep track of solutions
 
         # Growth rate
         self._growth_rate = self.growth_rate
@@ -216,6 +217,9 @@ class LumpGEM:
                 elif na*nb < 0:
                     # One is a reactant, the other is a product
                     n = na+nb # looks like -1
+                else: #na*nb > 0
+                    # both are reactant, or product, so they are not cofactoring together
+                    continue
 
                 if n > 0:
                     n = -n
@@ -366,7 +370,7 @@ class LumpGEM:
         :return:
         """
 
-        n_da = self._tfa_model.slim_optimize()
+        solution = self._tfa_model.optimize()
 
         try:
             # Timeout reached
@@ -388,7 +392,7 @@ class LumpGEM:
         # print('Produced {}'.format(sink.flux),
         #       'with {0:.0f} reactions deactivated'.format(n_da))
 
-        lumped_reaction = self._build_lump(met_BBB, sink)
+        lumped_reaction = self._build_lump(met_BBB, sink, solution)
 
         return lumped_reaction
 
@@ -417,7 +421,7 @@ class LumpGEM:
             activation_vars = model.get_variables_of_type(FluxKO)
 
             # Solve a first time, obtain minimal subnet
-            model.slim_optimize()
+            model.optimize()
             max_deactivated_rxns = model.objective.value
 
             # Add constraint forbidding subnets bigger than p
@@ -496,7 +500,7 @@ class LumpGEM:
         return lumps
 
 
-    def _build_lump(self, met_BBB, sink):
+    def _build_lump(self, met_BBB, sink, solution):
         """
         This function uses the current solution of self._tfa_model
 
@@ -509,13 +513,15 @@ class LumpGEM:
         epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
 
         stoich = sink.metabolites[sink.model.metabolites.get_by_id(met_BBB.id)]
-        sigma = 1# sink.flux * -1 * stoich
+        sigma =  sink.flux * -1 * stoich #1
         lump_dict = dict()
 
         # for rxn in self._rncore:
         for rxn in self._for_lumps:
-            if self._activation_vars[rxn].variable.primal < 0.5:#epsilon_int:
-                lump_dict[rxn] = rxn.flux / sigma
+            # if self._activation_vars[rxn].variable.primal < 0.5:\
+            if abs(solution.fluxes[rxn.id]) > epsilon_flux:\
+                    # and abs(rxn.flux) > epsilon_flux:#epsilon_int:
+                lump_dict[rxn] = solution.fluxes[rxn.id] / sigma
         # lumped_reaction1 = sum([rxn * (flux / sigma)
         #                       for rxn, flux in lump_dict.items()])
 
@@ -527,7 +533,9 @@ class LumpGEM:
 
         lumped_reaction = sum_reactions(lump_dict,
                                         id_=sink.id.replace('Sink_', 'LUMP_'),
-                                        epsilon = epsilon_flux)
+                                        epsilon = epsilon_flux,
+                                        )
+        self._lumping_solutions[lumped_reaction.id_] = solution
         return lumped_reaction
 
 
@@ -542,13 +550,15 @@ def sum_reactions(rxn_dict, id_ = 'summed_reaction', epsilon = 1e-9):
         if abs(flux) < epsilon:
             continue
         for x, coeff in rxn.metabolites.items():
-            stoich[x.id] += coeff * round(flux, epsilon)
+            # stoich[x.id] += coeff * round(flux, epsilon)
+            # stoich[x.id] += round(coeff * flux, epsilon)
+            stoich[x.id] += coeff * flux
 
     gpr = ') and ('.join(x.gene_reaction_rule for x in rxn_dict if x.gene_reaction_rule)
 
     gpr = ('(' + gpr + ')') if gpr else ''
 
-    stoich = trim_epsilon_mets(stoich, epsilon=1e-6)#epsilon)
+    stoich = trim_epsilon_mets(stoich, epsilon=5*epsilon) # ballpark when you sum errors
 
     # new_rxns = {x.copy():v for x,v in rxn_dict.items()}
     # for x in new_rxns:

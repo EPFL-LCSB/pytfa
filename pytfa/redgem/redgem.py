@@ -17,6 +17,7 @@ from pytfa.redgem.lumpgem import LumpGEM
 from cobra import Reaction
 from .utils import remove_blocked_reactions, set_medium
 import yaml
+from collections import defaultdict
 
 class RedGEM():
     def __init__(self, gem, parameters_path, inplace=False):
@@ -35,6 +36,9 @@ class RedGEM():
         self.fill_default_params()
 
         self.set_solver()
+
+        self.expander = None
+        self.lumper = None
 
     def read_parameters(self, parameters_path):
         with open(parameters_path, 'r') as stream:
@@ -110,24 +114,30 @@ class RedGEM():
         lump_method = self.params["lump_method"]
 
         force_solve = self.params["force_solve"]
-        timeout = self.params["timeout"]
-        self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
-        self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
-        self._source_gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
-        self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        timeout = self.params['solver_config']["timeout"]
+        self._gem.solver.configuration.tolerances.feasibility = float(self.params['solver_config']["feasibility"])
+        # self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"] *100
+        self._source_gem.solver.configuration.tolerances.feasibility = float(self.params['solver_config']["feasibility"])
+        # self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"] *100
+        self._solver_params = self.params['solver_config']
 
         self.logger.info("Computing network expansion...")
-        expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
+        self.expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
                                     cofactors, small_metabolites, inorganics,
                                     d, n)
-        reduced_gem = expander.run()
+        self._expanded_gem = self.expander.run()
+        reduced_gem = self._expanded_gem
         self.logger.info("Done.")
 
         # Add the expansion to core reactions
         core_reactions = reduced_gem.reactions
 
         self.logger.info("Computing lumps...")
-        lumper = LumpGEM(self._source_gem, core_reactions, self.params)
+        lumper = LumpGEM(self._source_gem, core_reactions, self.params, bigM=self.params['bigM'])
+
+        # For debugging purposes
+        self.lumper = lumper
+
         lumps = lumper.compute_lumps(force_solve, method = lump_method)
         self.logger.info("Done.")
 
@@ -161,8 +171,6 @@ class RedGEM():
             raise RuntimeError('Main Biomass reaction appears blocked')
 
 
-        # For debugging purposes
-        self.lumper = lumper
         main_bio_rxn.lower_bound = 0
 
         return reduced_gem
