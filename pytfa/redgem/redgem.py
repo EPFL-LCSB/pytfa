@@ -54,6 +54,8 @@ class RedGEM():
             obj_val = self._source_gem.slim_optimize()
             self.logger.info("Setting minimal growth rate to {}".format(obj_val))
             self.params["growth_rate"] = 0.95*obj_val
+        if "bigM" not in self.params:
+            self.params["bigM"] = 100
         if "force_solve" not in self.params:
             self.params["force_solve"] = False
         if "timeout" not in self.params:

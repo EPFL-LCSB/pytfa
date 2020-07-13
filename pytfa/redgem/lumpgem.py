@@ -57,7 +57,7 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, additional_core_reactions, params):
+    def __init__(self, tfa_model, additional_core_reactions, params, bigM=100):
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
         :type tfa_model: pytfa model
@@ -76,6 +76,7 @@ class LumpGEM:
         """
 
         self._tfa_model = tfa_model
+        self.bigM = bigM
 
         self._param_dict = params
         self.init_params()
@@ -93,7 +94,7 @@ class LumpGEM:
 
         # For each reaction
         for rxn in self._tfa_model.reactions:
-            # If it's a BBB reaction
+            # If it's a biomass reaction
             if rxn.id in self.biomass_rxns:
                 self._rBBB.append(rxn)
             # If it is an exchange reaction
@@ -171,13 +172,12 @@ class LumpGEM:
         for rxn in self._for_lumps:
             activation_var = self._activation_vars[rxn]
             if self.constraint_method.lower() in flux_methods:
-                bigM = 100
-                reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * bigM
+                reac_var = rxn.forward_variable + rxn.reverse_variable + activation_var * self.bigM
                 # adding the constraint to the model
                 self._tfa_model.add_constraint(kind=UseOrKOFlux,
                                                hook=rxn,
                                                expr=reac_var,
-                                               ub=bigM,
+                                               ub=self.bigM,
                                                lb=0,
                                                queue=True)
             if self.constraint_method.lower() in int_methods:
@@ -232,7 +232,7 @@ class LumpGEM:
 
     def _prepare_sinks(self):
         """
-        For each BBB (reactant of the biomass reactions), generate a sink, i.e an unbalanced reaction BBB ->
+        For each BBB (reactant of the biomass reactions), generate a sink, i.e an unbalanced reaction BBB -> {}
         of which purpose is to enable the BBB to be output of the GEM
         :return: the dict {BBB: sink} containing every BBB (keys) and their associated sinks
         """
@@ -246,6 +246,7 @@ class LumpGEM:
                 # stoech_coeff < 0 indicates that the metabolite is a reactant
                 if (stoech_coeff < 0) and (met not in all_sinks.keys()):
                     sink = Reaction("Sink_" + bio_rxn.id + "_" + met.id)
+                    sink.bounds = (0,self.bigM)
                     sink.name = "Sink_" + bio_rxn.name + "_" + met.name
                     # Subsystem specific to BBB sinks
                     sink.subsystem = "Demand"
