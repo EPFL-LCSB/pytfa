@@ -52,6 +52,26 @@ class UseOrKOInt(ReactionConstraint):
 class UseOrKOFlux(ReactionConstraint):
     prefix = 'UKF_'
 
+def rescale_reactions(rxn_list, factor):
+    """
+    Rescales the reactions by multiplying stoichiometric coefficients by the factor, and dividing the bounds by the same factore.
+    useful with mets that have a low stoichiometry in the biomass reaction, causing low fluxes that might not be detected with the
+    integer formulation
+    :param rxn_list:
+    :param factor:
+    :return:
+    """
+
+    model = rxn_list[0].model
+    model.logger.info('Rescaling {} reactions in the model with a factor of {}'.format(len(rxn_list),factor))
+
+    for this_reaction in rxn_list:
+        metabolites = this_reaction.metabolites
+        new_metabolites = {k: v * factor \
+                           for k, v in metabolites.items()}
+        this_reaction.add_metabolites(new_metabolites, combine = False)
+        this_reaction.lower_bound /= factor
+        this_reaction.upper_bound /= factor
 
 class LumpGEM:
     """
@@ -301,6 +321,8 @@ class LumpGEM:
         self._tfa_model.convert()
         # self._tfa_model.objective_direction = 'min'
 
+        scaling_threshold = 1e-2
+
         # Set the biomass reactions to 0
         for r in self.biomass_rxns:
             self._tfa_model.reactions.get_by_id(r).lower_bound = 0
@@ -327,9 +349,19 @@ class LumpGEM:
 
             # Activate reaction by setting its lower bound
             prev_lb = sink.lower_bound
-            min_prod = self._growth_rate * stoech_coeff
-            # sink.lower_bound = min_prod - epsilon
-            sink.lower_bound = 1*self._growth_rate - epsilon
+            # prev_ub = sink.upper_bound
+
+            # d[A]/dt = 0 = ... - n_sink * v_sink = ... - n_bio*v_bio
+            # v_sink = n_bio/n_sink * v_bio (/!\ here stoech is >0 but n_sink is <0)
+            min_prod = self._growth_rate * -1 * stoech_coeff/sink.metabolites[met_BBB] # this is so that, if the Sink stoich changes, the value stays the same.
+            sink.lower_bound = min_prod - epsilon
+            # sink.upper_bound = 100
+            # sink.lower_bound = 1*self._growth_rate - epsilon
+
+            # Model rescale if min prod is low
+            # if min_prod < scaling_threshold:
+            #     print('Production requirements of {} are low. scaling the model'.format(met_BBB.id))
+            #     rescale_reactions(self._tfa_model.reactions,1e-1/min_prod)
 
             if the_method == 'oneperbbb':
                 this_lump = self._lump_one_per_bbb(met_BBB, sink, force_solve)
@@ -348,6 +380,12 @@ class LumpGEM:
                                  'OnePerBBB, Min, Min+p, p natural integer'
                                  .format(the_method))
 
+            sink.lower_bound = prev_lb
+            # sink.upper_bound = prev_ub
+
+            # De-scale the model
+            # if min_prod < scaling_threshold:
+            #     rescale_reactions(self._tfa_model.reactions,1e1*min_prod)
 
             if not lumped_reactions:
                 continue
@@ -355,7 +393,6 @@ class LumpGEM:
             lumps[met_BBB] = lumped_reactions
 
             # Deactivating reaction by setting both bounds to 0
-            sink.lower_bound = prev_lb
             # sink.knock_out()
 
         self.lumps = lumps
