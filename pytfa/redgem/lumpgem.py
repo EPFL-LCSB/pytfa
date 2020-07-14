@@ -16,6 +16,8 @@ from tqdm import tqdm
 
 from collections import defaultdict, namedtuple
 
+import sympy
+
 CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
@@ -78,6 +80,7 @@ class LumpGEM:
     A class encapsulating the LumpGEM algorithm
     """
     def __init__(self, tfa_model, additional_core_reactions, params, bigM=100):
+
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
         :type tfa_model: pytfa model
@@ -117,6 +120,9 @@ class LumpGEM:
             # If it's a biomass reaction
             if rxn.id in self.biomass_rxns:
                 self._rBBB.append(rxn)
+            # Priority to additional core reactions
+            elif rxn.id in additional_core_reactions:
+                self._rcore.append(rxn)
             # If it is an exchange reaction
             elif is_exchange(rxn):
                 self._exchanges.append(rxn)
@@ -127,8 +133,8 @@ class LumpGEM:
             elif rxn.subsystem in self.core_subsystems:
                 self._rcore.append(rxn)
             # If it is part of the intrasubsystem expansion
-            elif rxn.id in additional_core_reactions:
-                self._rcore.append(rxn)
+            # elif rxn.id in core_reactions:
+            #     self._rcore.append(rxn)
             # If it's neither BBB nor core, then it's non-core
             else:
                 self._rncore.append(rxn)
@@ -192,6 +198,8 @@ class LumpGEM:
         flux_methods = ['flux', 'fluxes', 'both']
         int_methods = ['int', 'integer', 'both']
 
+        epsilon = self._tfa_model.solver.configuration.tolerances.feasibility
+
         if self.constraint_method.lower() not in flux_methods + int_methods:
             raise ArgumentError('{} is not a correct constraint method. '
                                 'Choose among [Flux, Integer, Both]. '
@@ -213,7 +221,7 @@ class LumpGEM:
                                                lb=0,
                                                queue=True)
             if self.constraint_method.lower() in int_methods:
-                fu = self._tfa_model.forward_use_variable .get_by_id(rxn.id)
+                fu = self._tfa_model.forward_use_variable.get_by_id(rxn.id)
                 bu = self._tfa_model.backward_use_variable.get_by_id(rxn.id)
                 reac_var = fu + bu + activation_var
                 # adding the constraint to the model
@@ -467,13 +475,14 @@ class LumpGEM:
         with self._tfa_model as model:
 
             activation_vars = model.get_variables_of_type(FluxKO)
+            expr = symbol_sum(activation_vars)
 
             # Solve a first time, obtain minimal subnet
+            model.objective = expr
             model.optimize()
             max_deactivated_rxns = model.objective.value
 
             # Add constraint forbidding subnets bigger than p
-            expr = symbol_sum(activation_vars)
 
             # The lower bound is the max number of deactivated, minus p
             # Which allows activating the minimal number of reactions, plus p
@@ -486,7 +495,10 @@ class LumpGEM:
                                  ub = max_deactivated_rxns,
                                  )
 
-            n_deactivated_reactions = max_deactivated_rxns
+            # n_deactivated_reactions = max_deactivated_rxns
+
+            # Use Zero objective function to enumerate the alternatives
+            model.objective = sympy.S.Zero
 
             # While loop, break on infeasibility
             while len(lumps)<max_lumps:
@@ -535,12 +547,15 @@ class LumpGEM:
                 model.add_constraint(kind=ForbiddenProfile,
                                      hook = model,
                                      id_ = '{}_{}_{}'.format(met_BBB.id,
-                                                             n_deactivated_reactions,
+                                                             max_deactivated_rxns,
                                                              len(lumps)),
                                      expr = expr,
                                      lb = 1,
                                      ub = max_deactivated_rxns
                                      )
+            for c in self._tfa_model.get_condtraints_of_type(ForbiddenProfile):
+                self._tfa_model.remove_constraint(c)
+            self._tfa_model.repair()
 
         # TODO: Update of dynamic properties not handled yet
         # upon exiting context manager
@@ -564,8 +579,8 @@ class LumpGEM:
         sigma =  sink.flux * -1 * stoich #1
         lump_dict = dict()
 
-        # for rxn in self._rncore:
-        for rxn in self._for_lumps:
+        for rxn in self._rncore:
+        # for rxn in self._for_lumps:
             # if self._activation_vars[rxn].variable.primal < 0.5:\
             if abs(solution.fluxes[rxn.id]) > epsilon_flux:\
                     # and abs(rxn.flux) > epsilon_flux:#epsilon_int:
@@ -606,7 +621,7 @@ def sum_reactions(rxn_dict, id_ = 'summed_reaction', epsilon = 1e-9):
 
     gpr = ('(' + gpr + ')') if gpr else ''
 
-    stoich = trim_epsilon_mets(stoich, epsilon=5*epsilon) # ballpark when you sum errors
+    # stoich = trim_epsilon_mets(stoich, epsilon=5*epsilon) # ballpark when you sum errors
 
     # new_rxns = {x.copy():v for x,v in rxn_dict.items()}
     # for x in new_rxns:
@@ -622,3 +637,7 @@ def sum_reactions(rxn_dict, id_ = 'summed_reaction', epsilon = 1e-9):
                gene_reaction_rule=gpr)
 
     return new
+
+def print_subnet(model, subnet):
+    for r, v in subnet.items():
+        print(r, '{:.5g}'.format(v), model.reactions.get_by_id(r).reaction)

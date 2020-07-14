@@ -494,10 +494,13 @@ class ThermoModel(LCSBModel, Model):
 
             # Create the use variables constraints and connect them to the
             # deltaG if the reaction has thermo constraints
+
+            # Note DW: implementing suggestions of maria
             # FU_rxn: 1000 FU_rxn + DGR_rxn < 1000 - epsilon
             FU_rxn = self.add_variable(ForwardUseVariable, rxn)
 
             CLHS = DGR + FU_rxn * BIGM_THERMO
+
             self.add_constraint(ForwardDeltaGCoupling,
                                 rxn,
                                 CLHS,
@@ -507,11 +510,11 @@ class ThermoModel(LCSBModel, Model):
             BU_rxn = self.add_variable(BackwardUseVariable, rxn)
 
             CLHS = BU_rxn * BIGM_THERMO - DGR
+
             self.add_constraint(BackwardDeltaGCoupling,
                                 rxn,
                                 CLHS,
                                 ub=BIGM_THERMO - epsilon*1e3)
-
 
         else:
             if not NotDrain:
