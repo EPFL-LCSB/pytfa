@@ -142,6 +142,17 @@ class LumpGEM:
         self._tfa_model.solver.configuration.timeout = self.timeout_limit
         print("Timeout limit is {}s".format(self.timeout_limit))
 
+        try: # Gurobi
+            # self._tfa_model.solver.problem.Params.MIPFocus = 3 # for integer emphasis
+            # self._tfa_model.solver.problem.Params.Presolve = 2 # for integer emphasis
+            if 'mip_gap_abs' in self._param_dict['solver_config'] and self._param_dict['solver_config']['mip_gap_abs']>0:
+                self._tfa_model.solver.problem.Params.MIPGapAbs = self._param_dict['solver_config']['mip_gap_abs'] # MIP Gap, absolute
+            if 'mip_gap_rel' in self._param_dict['solver_config'] and self._param_dict['solver_config']['mip_gap_rel']>0:
+                self._tfa_model.solver.problem.Params.MIPGapRel = self._param_dict['solver_config']['mip_gap_rel'] # MIP Gap, relative
+
+        except AttributeError:
+            pass
+
         # lumpgem binary variables to deactivate non-core reactions. The reaction is deactivated when the value of
         # the variable is 1
         self._activation_vars = {rxn: self._tfa_model.add_variable(kind=FluxKO,
