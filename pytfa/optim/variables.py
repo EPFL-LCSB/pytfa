@@ -583,7 +583,7 @@ class PosSlackVariableInt(ReactionVariable, IntegerVariable):
 
     def __init__(self, reaction, **kwargs):
         ReactionVariable.__init__(self, reaction,
-                                  type=get_binary_type(),
+                                  type='integer',
                                   **kwargs)
     prefix = 'PosSlackInt_'
 
@@ -595,7 +595,7 @@ class NegSlackVariableInt(ReactionVariable, IntegerVariable):
 
     def __init__(self, reaction, **kwargs):
         ReactionVariable.__init__(self, reaction,
-                                  type=get_binary_type(),
+                                  type='integer',
                                   **kwargs)
     prefix = 'NegSlackInt_'
 

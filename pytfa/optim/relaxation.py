@@ -259,7 +259,7 @@ def relax_dgo(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
     return relaxed_model, slack_model, relax_table
 
 
-def relax_dgo_err(tmodel, reactions_to_ignore=(), solver=None, in_place = False):
+def relax_dgo_err(tmodel, reactions_to_ignore=(), max_sigma = 3, solver=None, in_place = False):
     """
     :param t_tmodel:
     :type t_tmodel: pytfa.thermo.ThermoModel:
@@ -319,11 +319,11 @@ def relax_dgo_err(tmodel, reactions_to_ignore=(), solver=None, in_place = False)
         # the constraint
         neg_slack = slack_model.add_variable(NegSlackVariableInt,
                                              this_neg_dg.reaction, lb=0,
-                                             ub=BIGM_DG,
+                                             ub=max_sigma,
                                              queue=False)
         pos_slack = slack_model.add_variable(PosSlackVariableInt,
                                              this_neg_dg.reaction, lb=0,
-                                             ub=BIGM_DG,
+                                             ub=max_sigma,
                                              queue=False)
 
         # Get the GCM ERROR of the reaction
@@ -332,7 +332,7 @@ def relax_dgo_err(tmodel, reactions_to_ignore=(), solver=None, in_place = False)
         # Create the new constraint by adding the slack variables to the
         # negative delta G constraint (from the initial cobra_model)
         new_expr = this_neg_dg.constraint.expression
-        new_expr += dgo_error*(pos_slack - neg_slack)
+        new_expr += dgo_error*pos_slack - dgo_error*neg_slack
 
         this_neg_dg.change_expr(new_expr)
 
@@ -355,8 +355,8 @@ def relax_dgo_err(tmodel, reactions_to_ignore=(), solver=None, in_place = False)
 
     # Extract the relaxation values from the solution, by type
     relaxed_model.logger.info('Extracting relaxation')
-    my_neg_slacks = slack_model.get_variables_of_type(NegSlackVariable)
-    my_pos_slacks = slack_model.get_variables_of_type(PosSlackVariable)
+    my_neg_slacks = slack_model.get_variables_of_type(NegSlackVariableInt)
+    my_pos_slacks = slack_model.get_variables_of_type(PosSlackVariableInt)
 
     neg_slack_values = get_solution_value_for_variables(relaxation,
                                                         my_neg_slacks)
@@ -376,7 +376,7 @@ def relax_dgo_err(tmodel, reactions_to_ignore=(), solver=None, in_place = False)
         the_dgo = my_dgo.get_by_id(this_reaction.id)
 
         # Get the GCM ERROR of the reaction
-        dgo_error = this_neg_dg.reaction.thermo['deltaGRerr']
+        dgo_error = this_reaction.thermo['deltaGRerr']
 
         # Get the relaxation
         dgo_delta_lb = \
