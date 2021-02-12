@@ -114,3 +114,6 @@ ENV/
 
 # Sphinx doc build
 _build/
+
+# Pierre Thesis 
+bite
