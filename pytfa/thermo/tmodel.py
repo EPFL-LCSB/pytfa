@@ -28,10 +28,10 @@ from .utils import check_reaction_balance, check_transport_reaction, \
 from ..optim.constraints import SimultaneousUse, NegativeDeltaG, \
     BackwardDeltaGCoupling, ForwardDeltaGCoupling, BackwardDirectionCoupling, \
     ForwardDirectionCoupling, ReactionConstraint, MetaboliteConstraint, \
-    DisplacementCoupling
+    DisplacementCoupling, PotentialConstraint, PotentialCoupling
 from ..optim.variables import ThermoDisplacement, DeltaGstd, DeltaG, \
     ForwardUseVariable, BackwardUseVariable, LogConcentration, \
-    ReactionVariable, MetaboliteVariable
+    ReactionVariable, MetaboliteVariable, ThermoPotential, DeltaGFormstd
 from ..utils import numerics
 from ..utils.logger import get_bistream_logger
 
@@ -216,6 +216,8 @@ class ThermoModel(LCSBModel, Model):
                 reaction.thermo['deltaGR'] = rhs
 
                 reaction.thermo['deltaGrxn'] = breakdown['sum_deltaGFis']
+                # Add for potential formulation
+                reaction.thermo['breakdown'] = breakdown
             else:
                 for met in reaction.metabolites:
                     if (met.formula != 'H'
@@ -302,6 +304,7 @@ class ThermoModel(LCSBModel, Model):
         # P_met: P_met - RT*LC_met = DGF_met
         metformula = met.formula
         metDeltaGF = met.thermo.deltaGf_tr
+        metDEltaGFerr = met.thermo.deltaGf_err
         metComp = met.compartment
         metLConc_lb = log(self.compartments[metComp]['c_min'])
         metLConc_ub = log(self.compartments[metComp]['c_max'])
@@ -331,17 +334,28 @@ class ThermoModel(LCSBModel, Model):
                                     lb=metLConc_lb,
                                     ub=metLConc_ub)
 
+
             if add_potentials:
-                P = self.add_variable( 'P_' + met.id, P_lb, P_ub)
-                self.P_vars[met] = P
-                # Formulate the constraint
-                expr = P - self.RT * LC
-                self.add_constraint(
-                               LogConcentration,
-                               'P_' + met.id,
-                               expr,
-                               metDeltaGF,
-                               metDeltaGF)
+                DGOF = self.add_variable(DeltaGFormstd,
+                                      met,
+                                      lb=-1e6,
+                                      ub=1e3, )
+
+                self.DGoF_vars[met] = DGOF
+
+                # P = self.add_variable(ThermoPotential,
+                #                       met,
+                #                       lb=P_lb,
+                #                       ub=P_ub)
+                #
+                # self.P_vars[met] = P
+                # # Formulate the constraint
+                # expr = self.RT * LC + DGOF - P
+                # self.add_constraint(
+                #                PotentialConstraint,
+                #                met,
+                #                expr,
+                #                lb=0, ub=0)
 
         else:
             self.logger.debug('NOT generating thermo variables for {}'.format(met.id))
@@ -401,6 +415,7 @@ class ThermoModel(LCSBModel, Model):
             LC_TransMet = 0
             LC_ChemMet = 0
             P_expr = 0
+            DGoF_expr = 0
 
             if rxn.thermo['isTrans']:
                 # calculate the DG component associated to transport of the
@@ -423,6 +438,9 @@ class ThermoModel(LCSBModel, Model):
                                             * trans['coeff']
                                             * (
                                                 -1 if type_ == 'reactant' else 1))
+                            if add_potentials:
+                                DGoF_expr += (self.DGoF_vars[trans[type_]] * trans['coeff']
+                                           * (-1 if type_ == 'reactant' else 1))
 
                         chem_stoich[trans[type_]] += (trans['coeff']
                                                      * (
@@ -437,31 +455,22 @@ class ThermoModel(LCSBModel, Model):
                     if metFormula not in ['H', 'H2O']:
                         LC_ChemMet += self.LC_vars[met] * RT * chem_stoich[met]
 
+                        if add_potentials:
+                            DGoF_expr += self.DGoF_vars[met] * rxn.metabolites[met]
+
             else:
                 # if it is just a regular chemical reaction
-                if add_potentials:
-                    RHS_DG = 0
+                for met in rxn.metabolites:
+                    metformula = met.formula
+                    if metformula not in ['H', 'H2O']:
+                        # we use the LC here as we already accounted for the
+                        # changes in deltaGFs in the RHS term
+                        LC_ChemMet += (self.LC_vars[met]
+                                       * RT
+                                       * rxn.metabolites[met])
 
-                    for met in rxn.metabolites:
-                        metformula = met.formula
-                        metDeltaGFtr = met.thermo.deltaGf_tr
-                        if metformula == 'H2O':
-                            RHS_DG = (RHS_DG
-                                      + rxn.metabolites[met] * metDeltaGFtr)
-                        elif metformula != 'H':
-                            P_expr += self.P_vars[met] * rxn.metabolites[met]
-                else:
-                    # RxnDGnaught on the right hand side
-                    RHS_DG = rxn.thermo['deltaGR']
-
-                    for met in rxn.metabolites:
-                        metformula = met.formula
-                        if metformula not in ['H', 'H2O']:
-                            # we use the LC here as we already accounted for the
-                            # changes in deltaGFs in the RHS term
-                            LC_ChemMet += (self.LC_vars[met]
-                                           * RT
-                                           * rxn.metabolites[met])
+                        if add_potentials:
+                            DGoF_expr += self.DGoF_vars[met] * rxn.metabolites[met]
 
 
 
@@ -490,6 +499,31 @@ class ThermoModel(LCSBModel, Model):
                                     expr,
                                     lb=0,
                                     ub=0)
+
+            # TODO: we need an exeption for transport reactions that also add the
+            # Tansport potetnial
+            if add_potentials:
+                expr = DGoR - DGoF_expr
+
+                if rxn.thermo['isTrans']:
+                    RT_sum_H_LC_tpt = rxn.thermo['breakdown']['RT_sum_H_LC_tpt']
+                    sum_F_memP_charge = rxn.thermo['breakdown']['sum_F_memP_charge']
+                    sum_stoich_NH = rxn.thermo['breakdown']['sum_stoich_NH']
+
+                    RHS = sum_F_memP_charge + RT_sum_H_LC_tpt + sum_stoich_NH
+
+                    self.add_constraint(PotentialCoupling,
+                                        rxn,
+                                        expr,
+                                        lb=RHS,
+                                        ub=RHS,)
+
+                else:
+                    self.add_constraint(PotentialCoupling,
+                                        rxn,
+                                        expr,
+                                        lb=0,
+                                        ub=0)
 
 
             # Create the use variables constraints and connect them to the
@@ -603,6 +637,7 @@ class ThermoModel(LCSBModel, Model):
 
         self.LC_vars = {}
         self.P_vars = {}
+        self.DGoF_vars = {}
 
         for met in self.metabolites:
             self._convert_metabolite(met, add_potentials, verbose)

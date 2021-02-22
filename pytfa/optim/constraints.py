@@ -231,7 +231,7 @@ class MetaboliteConstraint(GenericConstraint):
         GenericConstraint.__init__(self,
                                    expr=expr,
                                    model=model,
-                                   hook=metabolite
+                                   hook=metabolite,
                                    **kwargs)
 
     @property
@@ -261,6 +261,20 @@ class NegativeDeltaG(ReactionConstraint):
     """
 
     prefix = 'G_'
+
+class NegativeDeltaGIneq(ReactionConstraint):
+    """
+    Class to represent thermodynamics constraints.
+
+    G: DGoRerr_Rxn + RT * StoichCoefProd1 * LC_prod1
+       + RT * StoichCoefProd2 * LC_prod2
+       + RT * StoichCoefSub1 * LC_subs1
+       + RT * StoichCoefSub2 * LC_subs2
+       - ...
+     < or > 0
+    """
+
+    prefix = 'GI_'
 
 class ForwardDeltaGCoupling(ReactionConstraint):
     """
@@ -366,3 +380,56 @@ class LinearizationConstraint(ModelConstraint):
         )
 
     prefix = 'LC_'
+
+class LowerBoundLogConcentration(MetaboliteConstraint):
+    """
+    Class to represent a forbidden net flux directionality profile
+    Looks like:
+    DG_rxn_1 + DG_rxn_2 + ... + DG_rxn_n == 0
+    """
+    def __init__(self, metabolite, expr, **kwargs):
+        MetaboliteConstraint.__init__(self, metabolite, expr, **kwargs)
+
+    prefix = 'LB_'
+
+class UpperBoundLogConcentration(MetaboliteConstraint):
+    """
+    Class to represent a forbidden net flux directionality profile
+    Looks like:
+    DG_rxn_1 + DG_rxn_2 + ... + DG_rxn_n == 0
+    """
+    def __init__(self, metabolite, expr, **kwargs):
+        MetaboliteConstraint.__init__(self, metabolite, expr, **kwargs)
+
+    prefix = 'UB_'
+
+class NullspaceConstraint(MetaboliteConstraint):
+    """
+    Class to represent a forbidden net flux directionality profile
+    Looks like:
+    DG_rxn_1 + DG_rxn_2 + ... + DG_rxn_n == 0
+    """
+    def __init__(self, metabolite, expr, **kwargs):
+        MetaboliteConstraint.__init__(self, metabolite, expr, **kwargs)
+
+    prefix = 'NS_'
+
+class PotentialConstraint(MetaboliteConstraint):
+    """
+    Class to represent a forbidden net flux directionality profile
+    Looks like:
+    DG_rxn_1 + DG_rxn_2 + ... + DG_rxn_n == 0
+    """
+    def __init__(self, metabolite, expr, **kwargs):
+        MetaboliteConstraint.__init__(self, metabolite, expr, **kwargs)
+
+    prefix = 'PC_'
+
+class PotentialCoupling(ReactionConstraint):
+    """
+    Class to rep couple DG to potential variable
+    """
+    def __init__(self, reaction, expr, **kwargs):
+        ReactionConstraint.__init__(self, reaction, expr, **kwargs)
+
+    prefix = 'PPC_'

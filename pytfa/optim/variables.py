@@ -539,6 +539,20 @@ class DeltaG(ReactionVariable):
 
     prefix = 'DG_'
 
+class ThermoPotential(MetaboliteVariable):
+    """
+    Class to represent a DeltaG
+    """
+
+    prefix = 'P_'
+
+class DeltaGFormstd(MetaboliteVariable):
+    """
+    Class to represent a DeltaGstf of formation
+    """
+
+    prefix = 'DGoF_'
+
 class DeltaGstd(ReactionVariable):
     """
     Class to represent a DeltaG^o (naught) - standard conditions
