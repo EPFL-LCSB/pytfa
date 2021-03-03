@@ -107,7 +107,7 @@ def symbol_sum(variables):
     
     k=0
     # If we encounter a zero, which is a special type, increase k
-    while isinstance(variables[k], sympy.numbers.Zero) and k<len(variables):
+    while isinstance(variables[k], sympy.core.numbers.Zero) and k<len(variables):
         k+=1
         if k == len(variables):
             # everything is 0
