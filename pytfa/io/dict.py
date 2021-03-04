@@ -18,6 +18,8 @@ from ..optim.variables import ReactionVariable, MetaboliteVariable, ModelVariabl
 from ..optim.constraints import ReactionConstraint, MetaboliteConstraint, ModelConstraint
 from ..optim.utils import symbol_sum
 
+from ..thermo.metabolite import MetaboliteThermo
+
 from optlang.util import expr_to_json, parse_expr
 
 from copy import copy
@@ -215,7 +217,7 @@ def model_to_dict(model):
 
         if is_thermo and not is_peptide: # peptides have no thermo
             the_met = model.metabolites.get_by_id(the_met_id)
-            _add_thermo_metabolite_info(the_met, rxn_dict)
+            _add_thermo_metabolite_info(the_met, met_dict)
             met_dict['kind'] = 'Metabolite'
 
     # Relaxation info
@@ -425,6 +427,9 @@ def init_thermo_model_from_dict(new, obj):
 
         if 'thermo' in met_dict:
             new._prepare_metabolite(met)
+            met.thermo = MetaboliteThermo(metData=None, pH=7,ionicStr=0)
+            for k,v in met_dict['thermo'].items():
+                setattr(met.thermo,k,v)
     return new
 
 def rebuild_compositions(new, compositions_dict):

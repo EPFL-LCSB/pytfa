@@ -46,12 +46,12 @@ Publications
 
 Some models have been published:
 
-+-----------------+-------------------------------------------------------------------------+
-| small_ecoli.mat | Ataman, M., Gardiol, D. F. H., Fengos, G., & Hatzimanikatis, V. (2017). |
-|                 | redGEM: Systematic reduction and analysis of genome-scale metabolic     |
-|                 | reconstructions for development of consistent core metabolic models.    |
-|                 | PLoS computational biology, 13(7), e1005444.                            |
-+-----------------+-------------------------------------------------------------------------+
++-----------------+--------------------------------------------------------------------------------+
+| small_ecoli.mat | Ataman, M., Hernandez Gardiol, D. F., Fengos, G., & Hatzimanikatis, V. (2017). |
+|                 | redGEM: Systematic reduction and analysis of genome-scale metabolic            |
+|                 | reconstructions for development of consistent core metabolic models.           |
+|                 | PLoS computational biology, 13(7), e1005444.                                   |
++-----------------+--------------------------------------------------------------------------------+
 
 
 
