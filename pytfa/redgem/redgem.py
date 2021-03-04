@@ -109,10 +109,16 @@ class RedGEM():
 
         force_solve = self.params["force_solve"]
         timeout = self.params["timeout"]
-        self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
-        self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
-        self._source_gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
-        self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        try:
+            self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
+            self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        except AttributeError as e:
+            self.logger.error('Solver {} is not compatible with tolerance parameters'.format(self._gem.solver))
+        try:
+            self._source_gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
+            self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        except AttributeError as e:
+            self.logger.error('Solver {} is not compatible with tolerance parameters'.format(self._source_gem.solver))
 
         self.logger.info("Computing network expansion...")
         expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
