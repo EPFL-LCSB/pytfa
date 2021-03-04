@@ -22,6 +22,7 @@ CPLEX = 'optlang-cplex'
 GUROBI = 'optlang-gurobi'
 GLPK = 'optlang-glpk'
 
+DEFAULT_EPS = 1e-5
 
 # Transforms (OnePerBBB --> oneperbbb), (one_per_bbb --> oneperbbb), etc ...
 disambiguate = lambda s:s.lower().replace('_','')
@@ -292,7 +293,11 @@ class LumpGEM:
         self._tfa_model.convert()
         # self._tfa_model.objective_direction = 'min'
 
-        epsilon = self._tfa_model.solver.configuration.tolerances.feasibility
+        try:
+            epsilon = self._tfa_model.solver.configuration.tolerances.feasibility
+        except AttributeError as e:
+            self._tfa_model.logger.error('{} does not support tolerance settings.'.format(self._tfa_model.solver))
+            epsilon = DEFAULT_EPS
 
         the_method = disambiguate(method)
         print('Lumping method detected: {}'.format(the_method))
@@ -391,7 +396,11 @@ class LumpGEM:
         :return:
         """
 
-        epsilon = self._tfa_model.solver.configuration.tolerances.integrality
+        try:
+            epsilon = self._tfa_model.solver.configuration.tolerances.integrality
+        except AttributeError as e:
+            self._tfa_model.logger.error('{} does not support tolerance settings.'.format(self._tfa_model.solver))
+            epsilon = DEFAULT_EPS
 
         try:
             max_lumps =self._param_dict['max_lumps_per_BBB']
@@ -475,8 +484,13 @@ class LumpGEM:
         :return:
         """
 
-        epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
-        epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
+        try:
+            epsilon_int = self._tfa_model.solver.configuration.tolerances.integrality
+            epsilon_flux = self._tfa_model.solver.configuration.tolerances.feasibility
+        except AttributeError:
+            self._tfa_model.logger.error('{} does not support tolerance settings.'.format(self._tfa_model.solver))
+            epsilon_int = DEFAULT_EPS
+            epsilon_flux = DEFAULT_EPS
 
         sigma = sink.flux
         lump_dict = dict()
