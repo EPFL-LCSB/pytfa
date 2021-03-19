@@ -248,9 +248,9 @@ class ThermoModel(LCSBModel, Model):
             reaction.thermo["deltaGRerr"] = BIGM_DG
 
         else:
-            # self.logger.debug(
-            #     "{} : thermo constraint created".format(reaction.id)
-            # )
+            self.logger.debug(
+                "{} : thermo constraint created".format(reaction.id)
+            )
             reaction.thermo["computed"] = True
 
             if reaction.thermo["isTrans"]:
@@ -571,10 +571,10 @@ class ThermoModel(LCSBModel, Model):
 
         else:
             if not NotDrain:
-                # self.logger.debug(
-                #     "generating only use constraints for drain reaction"
-                #     + rxn.id
-                # )
+                self.logger.debug(
+                    "generating only use constraints for drain reaction"
+                    + rxn.id
+                )
                 pass
             else:
                 self.logger.debug(
