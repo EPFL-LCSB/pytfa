@@ -18,8 +18,11 @@ import lpdiff
 import pytest
 import os
 from pytfa.utils import numerics
-from settings import tmodel, this_directory, objective_value
-
+from settings import (
+    tmodel, this_directory, objective_value, thermo_data, small_tmodel,
+    small_model, lexicon, compartment_data, annotate_from_lexicon,
+    apply_compartment_data
+)
 # Minimal relative difference between two values to make a test fail
 test_precision = 1 * 10 ** -5
 
@@ -133,6 +136,33 @@ def test_reactions_values(reaction):
             pass
         else:
             assert(relative_error(model_rxn.thermo[thermoval], refval) < test_precision)
+
+
+def test_alternative_annotation():
+    """Check that an alternative annotation key can be used."""
+    alt_small_model = small_model.copy()
+    other_small_tmodel = pytfa.ThermoModel(
+        thermo_data, alt_small_model, annotation_key="alt_annot"
+    )
+    annotate_from_lexicon(other_small_tmodel, lexicon)
+    apply_compartment_data(other_small_tmodel, compartment_data)
+
+    other_small_tmodel.solver = 'optlang-glpk'
+    for met in other_small_tmodel.metabolites:
+        if "seed_id" in met.annotation:
+            annot = met.annotation["seed_id"]
+            met.annotation["alt_annot"] = annot
+            del met.annotation["seed_id"]
+    other_small_tmodel.prepare()
+    other_small_tmodel.convert()
+    sol = other_small_tmodel.optimize()
+    expected_sol = small_tmodel.optimize()
+    assert pytest.approx(sol.objective_value) == pytest.approx(
+        expected_sol.objective_value
+    )
+    assert pytest.approx(sol.fluxes.sum()) == pytest.approx(
+        expected_sol.fluxes.sum()
+    )
 
 ############
 # LP FILES #
