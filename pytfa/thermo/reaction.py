@@ -14,8 +14,7 @@ from functools import reduce
 from math import log, sqrt
 
 from . import std
-from .utils import find_transported_mets
-from .metabolite import CPD_PROTON
+from .utils import find_transported_mets, PROTON, WATER
 
 ###################
 # REACTIONS TOOLS #
@@ -23,7 +22,8 @@ from .metabolite import CPD_PROTON
 
 
 
-def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
+def calcDGtpt_rhs(
+        reaction, compartmentsData, thermo_units, annotation_key="seed_id"):
     """ Calculates the RHS of the deltaG constraint, i.e. the sum of the
     non-concentration terms
 
@@ -69,13 +69,13 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
     RT_sum_H_LC_tpt = 0  # to include the differential proton concentration
     # effects if protons are transported
 
-    transportedMets = find_transported_mets(reaction)
+    transportedMets = find_transported_mets(reaction, annotation_key)
     compartments = {'reactant': [], 'product': []}
 
-    for seed_id in transportedMets:
+    for met_id in transportedMets:
         for metType in ['reactant', 'product']:
-            if seed_id != 'cpd00001':
-                met = transportedMets[seed_id][metType]
+            if met_id not in WATER:
+                met = transportedMets[met_id][metType]
                 pH_comp = met.thermo.pH
                 ionicStr_comp = met.thermo.ionicStr
 
@@ -83,22 +83,22 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
 
                 compartments[metType].append(met.compartment)
                 sum_stoich_NH += ((1 if metType == 'product' else -1)
-                                  * transportedMets[seed_id]['coeff']
+                                  * transportedMets[met_id]['coeff']
                                   * met.thermo.nH_std
                                   * RT
                                   * log(10 ** -pH_comp))
                 sum_deltaGFis_trans += ((1 if metType == 'product' else -1)
-                                        * transportedMets[seed_id]['coeff']
+                                        * transportedMets[met_id]['coeff']
                                         * deltaGfsp)
             else:
                 compartments[metType].append('')
 
-            if seed_id == CPD_PROTON:
-                met = transportedMets[seed_id][metType]
+            if met_id in PROTON:
+                met = transportedMets[met_id][metType]
                 pH_comp = met.thermo.pH
                 RT_sum_H_LC_tpt += ((1 if metType == 'product' else -1)
                                     * RT
-                                    * transportedMets[seed_id]['coeff']
+                                    * transportedMets[met_id]['coeff']
                                     * log(10 ** -pH_comp))
 
     # calculate the transport of any ions
@@ -106,22 +106,22 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
     # we should take the larger stoich of the transported compound
     sum_F_memP_charge = 0
 
-    for seed_id in transportedMets:
-        if seed_id != 'cpd00001':
-            out_comp = transportedMets[seed_id]['reactant'].compartment
-            in_comp = transportedMets[seed_id]['product'].compartment
+    for met_id in transportedMets:
+        if met_id not in WATER:
+            out_comp = transportedMets[met_id]['reactant'].compartment
+            in_comp = transportedMets[met_id]['product'].compartment
             mem_pot = compartmentsData[out_comp]['membranePot'][in_comp]
-            charge = transportedMets[seed_id]['reactant'].thermo.charge_std
+            charge = transportedMets[met_id]['reactant'].thermo.charge_std
             # Equal to the product's one
             sum_F_memP_charge += (faraday_const
                                   * (mem_pot / 1000.)
-                                  * transportedMets[seed_id]['coeff']
+                                  * transportedMets[met_id]['coeff']
                                   * charge)
 
     deltaG = 0
 
     for met in reaction.metabolites:
-        if CPD_PROTON != met.annotation['seed_id']:
+        if met.annotation[annotation_key] not in PROTON:
             deltaG += reaction.metabolites[met] * met.thermo.deltaGf_tr
 
     sum_deltaGFis = 0
@@ -133,14 +133,15 @@ def calcDGtpt_rhs(reaction, compartmentsData, thermo_units):
 
     final_coeffs = reaction.metabolites.copy()
 
-    for seed_id in transportedMets:
+    for met_id in transportedMets:
         for metType in ['reactant', 'product']:
-            final_coeffs[transportedMets[seed_id][metType]] -= (
+            final_coeffs[transportedMets[met_id][metType]] -= (
                 (1 if metType == 'product' else -1)
-                * transportedMets[seed_id]['coeff'])
+                * transportedMets[met_id]['coeff'])
 
     for met in final_coeffs:
-        if final_coeffs[met] != 0 and met.annotation['seed_id'] != CPD_PROTON:
+        if (final_coeffs[met] != 0 and
+                met.annotation[annotation_key] not in PROTON):
 
             met_deltaGis = met.thermo.deltaGf_tr
             sum_deltaGFis += final_coeffs[met] * met_deltaGis

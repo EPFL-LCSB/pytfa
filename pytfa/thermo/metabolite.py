@@ -16,8 +16,7 @@ from math import log, sqrt
 
 from . import std
 from ..utils.numerics import BIGM_THERMO
-
-CPD_PROTON = 'cpd00067'
+from .utils import PROTON
 
 DEFAULT_VAL = BIGM_THERMO
 
@@ -212,7 +211,7 @@ class MetaboliteThermo:
             print("Computing DGis...")
 
         # Special case for protons...
-        if self.id == CPD_PROTON:
+        if self.id in PROTON:
             if self.debug:
                 print("Found proton")
             return -self.RT * log(10 ** -self.pH)
@@ -363,7 +362,7 @@ class MetaboliteThermo:
             print('Computing DGspA()...')
 
         # Case of the proton
-        if self.id == CPD_PROTON:
+        if self.id in PROTON:
             if self.debug:
                 print('Proton found, returning standard values')
             # we do not adjust for proton so just return the values
