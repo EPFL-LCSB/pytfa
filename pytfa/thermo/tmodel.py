@@ -27,6 +27,7 @@ from .utils import (
     check_transport_reaction,
     find_transported_mets,
     get_reaction_compartment,
+    PROTON
 )
 from ..optim.constraints import (
     SimultaneousUse,
@@ -69,7 +70,8 @@ class ThermoModel(LCSBModel, Model):
     def __init__(self, thermo_data=None, model=Model(), name=None,
                  temperature=std.TEMPERATURE_0,
                  min_ph=std.MIN_PH,
-                 max_ph=std.MAX_PH):
+                 max_ph=std.MAX_PH,
+                 annotation_key="seed_id"):
 
         """
         :param float temperature: the temperature (K) at which to perform the calculations
@@ -84,6 +86,7 @@ class ThermoModel(LCSBModel, Model):
         self.TEMPERATURE = temperature
         self.thermo_data = thermo_data
         self.parent = model
+        self.annotation_key = annotation_key
 
         # CONSTANTS
         self.MAX_pH = max_ph
@@ -150,21 +153,23 @@ class ThermoModel(LCSBModel, Model):
         CompartmentionicStr = self.compartments[met.compartment]["ionicStr"]
 
         # Which index of the reaction DB do you correspond to ?
-        if not "seed_id" in met.annotation:
+        if not self.annotation_key in met.annotation:
             # raise Exception("seed_id missing for " + met.name)
             self.logger.debug(
-                "Metabolite {} ({}) has no seed_id".format(met.id, met.name)
+                "Metabolite {} ({}) has no {}".format(
+                    met.id, met.name, self.annotation_key
+                )
             )
             metData = None
-        elif not met.annotation["seed_id"] in self.compounds_data:
+        elif not met.annotation[self.annotation_key] in self.compounds_data:
             self.logger.debug(
                 "Metabolite {} ({}) not present in thermoDB".format(
-                    met.annotation["seed_id"], met.name
+                    met.annotation[self.annotation_key], met.name
                 )
             )
             metData = None
         else:
-            metData = self.compounds_data[met.annotation["seed_id"]]
+            metData = self.compounds_data[met.annotation[self.annotation_key]]
             # Override the formula
             met.formula = metData["formula"]
 
@@ -216,7 +221,10 @@ class ThermoModel(LCSBModel, Model):
         )
 
         # Also test if this is a transport reaction
-        reaction.thermo["isTrans"] = check_transport_reaction(reaction)
+        reaction.thermo["isTrans"] = check_transport_reaction(
+            reaction,
+            self.annotation_key
+        )
         # Make sure we have correct thermo values for each metabolites
         correctThermoValues = True
 
@@ -247,7 +255,10 @@ class ThermoModel(LCSBModel, Model):
 
             if reaction.thermo["isTrans"]:
                 (rhs, breakdown) = calcDGtpt_rhs(
-                    reaction, self.compartments, self.thermo_unit
+                    reaction,
+                    self.compartments,
+                    self.thermo_unit,
+                    self.annotation_key
                 )
 
                 reaction.thermo["deltaGR"] = rhs
@@ -256,9 +267,9 @@ class ThermoModel(LCSBModel, Model):
             else:
                 for met in reaction.metabolites:
                     if met.formula != "H" or (
-                        "seed_id" in met.annotation
+                        self.annotation_key in met.annotation
                         # That's H+
-                        and met.annotation["seed_id"] != "cpd00067"
+                        and met.annotation[self.annotation_key] != "cpd00067"
                     ):
                         DeltaGrxn += (
                             reaction.metabolites[met] * met.thermo.deltaGf_tr
@@ -311,8 +322,8 @@ class ThermoModel(LCSBModel, Model):
         proton = {}
         for i in range(num_mets):
             if self.metabolites[i].formula == "H" or (
-                "seed_id" in self.metabolites[i].annotation
-                and self.metabolites[i].annotation["seed_id"] == "cpd00067"
+                self.annotation_key in self.metabolites[i].annotation
+                and self.metabolites[i].annotation[self.annotation_key] in PROTON
             ):
                 proton[self.metabolites[i].compartment] = self.metabolites[i]
 
@@ -363,8 +374,8 @@ class ThermoModel(LCSBModel, Model):
             )
 
         elif (
-            "seed_id" in met.annotation
-            and met.annotation["seed_id"] == "cpd11416"
+            self.annotation_key in met.annotation
+            and met.annotation[self.annotation_key] == "cpd11416"
         ):
             # we do not create the thermo variables for biomass enzyme
             pass
@@ -421,7 +432,7 @@ class ThermoModel(LCSBModel, Model):
         H2OtRxns = False
         if rxn.thermo["isTrans"] and len(rxn.reactants) == 1:
             try:
-                if rxn.reactants[0].annotation["seed_id"] == "cpd00001":
+                if rxn.reactants[0].annotation[self.annotation_key] == "cpd00001":
                     H2OtRxns = True
             except KeyError:
                 pass
@@ -460,7 +471,7 @@ class ThermoModel(LCSBModel, Model):
                 # enzyme. This will be added to the constraint on the Right
                 # Hand Side (RHS)
 
-                transportedMets = find_transported_mets(rxn)
+                transportedMets = find_transported_mets(rxn, self.annotation_key)
 
                 # Chemical coefficient, it is the enzyme's coefficient...
                 # + transport coeff for reactants
@@ -564,6 +575,7 @@ class ThermoModel(LCSBModel, Model):
                     "generating only use constraints for drain reaction"
                     + rxn.id
                 )
+                pass
             else:
                 self.logger.debug(
                     "generating only use constraints for reaction" + rxn.id
@@ -630,7 +642,7 @@ class ThermoModel(LCSBModel, Model):
             for reaction in self.reactions:
                 if not "isTrans" in reaction.thermo:
                     reaction.thermo["isTrans"] = check_transport_reaction(
-                        reaction
+                        reaction, self.annotation_key
                     )
         except:
             raise Exception(

@@ -103,7 +103,7 @@ class LumpGEM:
             elif is_exchange(rxn):
                 self._exchanges.append(rxn)
             # If it is a transport reaction
-            elif check_transport_reaction(rxn):
+            elif check_transport_reaction(rxn, tfa_model.annotation_key):
                 self._transports.append(rxn)
             # If it's a core reaction
             elif rxn.subsystem in self.core_subsystems:

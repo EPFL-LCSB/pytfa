@@ -13,6 +13,34 @@ import re
 
 Formula_regex = re.compile("([A-Z][a-z]*)([0-9]*)")
 
+# idenfifiers of water metabolite in different databases
+PROTON = {
+    "h",  "15378", "10744", "13357", "5584", "24636", "29233", "29234",
+    "MNXM104313", "MNXM113751", "MNXM145872", "MNXM89553", "HMDB59597",
+    "C00080", "PROTON", "1132304", "113529", "1470067", "156540", "163953",
+    "193465", "194688", "2000349", "2872447", "351626", "372511", "374900",
+    "425969", "425978", "425999", "427899", "428040", "428548", "5668577",
+    "70106", "74722",  "39",  "cpd00067",  "MNXM1"
+}
+
+# idenfifiers of water metabolite in different databases
+WATER = {
+    "h2o", "oh1", "15377", "10743", "13352", "27313", "42043", "42857",
+    "43228", "44292", "44701", "44819", "5585", "16234", "13365", "13419",
+    "44641", "5594", "29356", "29374", "29375", "29412", "30490", "33806",
+    "33811", "33813", "41981", "29373", "41979", "MNXM114710", "MNXM114753",
+    "MNXM11838", "MNXM124004", "MNXM124324", "MNXM124831", "MNXM125045",
+    "MNXM126600", "MNXM128935", "MNXM131091", "MNXM145357", "MNXM49218",
+    "MNXM56889", "MNXM89551", "5882df9c-dae1-4d80-a40e-db4724271456\/compound\/969d0227-3069-4e44-9525-7ae7bad84170",
+    "650babc9-9d68-4b73-9332-11972ca26f7b\/compound\/799908db-b8c9-4982-86cb-1f225e2ad08c",
+    "650babc9-9d68-4b73-9332-11972ca26f7b\/compound\/e7f34a8e-cded-4793-b6d5-792335b38636",
+    "HMDB02111", "C00001", "D00001", "C01328", "C18714", "D03703", "D06322",
+    "CPD-15815", "HYDROXYL-GROUP", "OH", "OXONIUM", "WATER", "109276",
+    "1130930", "113518", "113519", "113521", "141343", "1605715", "189422",
+    "2022884", "29356", "351603", "5278291", "5668574", "5693747", "8851517",
+    "40", "cpd00001", "cpd15275", "cpd27222", "MNXM2"
+}
+
 
 def check_reaction_balance(reaction, proton = None):
     """
@@ -105,7 +133,7 @@ def check_reaction_balance(reaction, proton = None):
     return 'missing atoms'
 
 
-def find_transported_mets(reaction):
+def find_transported_mets(reaction, annotation_key="seed_id"):
     """
     Get a list of the transported metabolites of the reaction.
 
@@ -135,7 +163,7 @@ def find_transported_mets(reaction):
     reactants_coeffs = {}
 
     for met in reaction.reactants:
-        reactants_coeffs[met.annotation['seed_id']] = {
+        reactants_coeffs[met.annotation[annotation_key]] = {
             'coeff':reaction.metabolites[met],
             'met':met
         }
@@ -144,7 +172,7 @@ def find_transported_mets(reaction):
     trans_coeffs = {}
 
     for met in reaction.products:
-        seed_id = met.annotation['seed_id']
+        seed_id = met.annotation[annotation_key]
 
         # If the seed_id also corresponds to a reactant, we add it to the result
         if seed_id in reactants_coeffs:
@@ -160,7 +188,7 @@ def find_transported_mets(reaction):
     return trans_coeffs
 
 
-def check_transport_reaction(reaction):
+def check_transport_reaction(reaction, annotation_key="seed_id"):
     """
 
     Check if a reaction is a transport reaction
@@ -179,10 +207,10 @@ def check_transport_reaction(reaction):
     seed_ids = {}
     try:
         for reactant in reaction.reactants:
-            seed_ids[reactant.annotation['seed_id']] = True
+            seed_ids[reactant.annotation[annotation_key]] = True
 
         for product in reaction.products:
-            if product.annotation['seed_id'] in seed_ids:
+            if product.annotation[annotation_key] in seed_ids:
                 return True
     except KeyError:
         reactants_ids = [x.id.replace(x.compartment,'') for x in reaction.reactants]
