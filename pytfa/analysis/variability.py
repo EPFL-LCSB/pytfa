@@ -21,11 +21,11 @@ from optlang.exceptions import SolverError
 from optlang.interface import INFEASIBLE
 from tqdm import tqdm
 
-from ..optim import DeltaG
-from ..optim.constraints import ForbiddenProfile
-from ..optim.utils import get_direction_use_variables
-from ..optim.variables import ForwardUseVariable
-from ..utils.logger import get_bistream_logger
+from pytfa.optim import DeltaG
+from pytfa.optim.constraints import ForbiddenProfile
+from pytfa.optim.utils import get_direction_use_variables, get_active_use_variables
+from pytfa.optim.variables import ForwardUseVariable
+from pytfa.utils.logger import get_bistream_logger
 
 CPU_COUNT = cpu_count()
 BEST_THREAD_RATIO = int(CPU_COUNT/(4*2))    # Four proc per MILP instance,
@@ -49,7 +49,7 @@ def find_bidirectional_reactions(va, tolerance = 1e-8):
 
 
 def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
-                                 solver = 'optlang-glpk'):
+                                 solver = 'optlang-glpk', tolerance = 1e-9):
     """
     Takes a ThermoModel and performs enumeration of the directionality profiles
 
@@ -58,15 +58,37 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
     :return:
     """
 
-    raise(NotImplementedError)
+    #raise(NotImplementedError)
 
-    this_tmodel = deepcopy(tmodel)
+    this_tmodel = tmodel.copy()
     this_tmodel.solver = solver
+
+    tmodel.solver.configuration.tolerances.feasibility = tolerance
+    tmodel.solver.configuration.tolerances.integrality = tolerance
+
     profiles = dict()
 
     iter_count = 0
 
+    epsilon = tmodel.solver.configuration.tolerances.feasibility
+
     bidirectional_reactions = this_tmodel.reactions.get_by_any(bidirectional)
+
+    this_tmodel.repair()
+
+    #   FU + BU variables
+    bu_vars = [v.variable for v in this_tmodel.backward_use_variable.get_by_any(bidirectional)]
+    fu_vars = [v.variable for v in this_tmodel.forward_use_variable.get_by_any(bidirectional)]
+
+    # Sum of all FU + BU vars
+    expr = sum(bu_vars) + sum(fu_vars)
+    this_tmodel.add_constraint(ForbiddenProfile,
+                               hook = this_tmodel,
+                               expr = expr,
+                               id_ = 'BRDS_active',
+                               lb = len(bidirectional_reactions),
+                               ub = len(bidirectional_reactions)+1,)
+
 
     while this_tmodel.solver.status != INFEASIBLE and iter_count < max_iter:
 
@@ -74,8 +96,10 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
             solution = this_tmodel.optimize()
         except SolverError:
             break
+            print('inf')
 
         profiles[iter_count] = solution.raw
+
         if iter_count > 0:
             sse = sum((profiles[iter_count-1] - profiles[iter_count])**2)
         else:
@@ -84,7 +108,7 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
         tmodel.logger.debug(str(iter_count) + ' - ' + str(sse))
 
         # active_use_variables = get_active_use_variables(this_tmodel,solution)
-        active_use_variables = get_direction_use_variables(this_tmodel,solution)
+        active_use_variables = get_direction_use_variables(this_tmodel, solution)
         bidirectional_use_variables = [x for x in active_use_variables \
                                        if x.reaction in bidirectional_reactions]
         bool_id = ''.join('1' if isinstance(x,ForwardUseVariable) else '0' \
@@ -96,13 +120,14 @@ def find_directionality_profiles(tmodel, bidirectional, max_iter = 1e4,
         this_tmodel.add_constraint(ForbiddenProfile,
                                    hook = this_tmodel,
                                    expr = expr,
-                                   id = str(iter_count) + '_' + bool_id,
+                                   id_ = str(iter_count) + '_' + bool_id,
                                    lb = 0,
-                                   ub = len(bidirectional_use_variables)-1)
+                                   ub = len(bidirectional_use_variables) - 1
+                                        - 2*epsilon*len(bidirectional_use_variables))
 
         iter_count += 1
 
-    return profiles,this_tmodel
+    return profiles, this_tmodel
 
 
 
