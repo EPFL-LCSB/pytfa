@@ -338,24 +338,24 @@ class ThermoModel(LCSBModel, Model):
             if add_potentials:
                 DGOF = self.add_variable(DeltaGFormstd,
                                       met,
-                                      lb=-1e6,
-                                      ub=1e3, )
+                                      lb= -BIGM,
+                                      ub=  BIGM)
 
                 self.DGoF_vars[met] = DGOF
 
-                # P = self.add_variable(ThermoPotential,
-                #                       met,
-                #                       lb=P_lb,
-                #                       ub=P_ub)
-                #
-                # self.P_vars[met] = P
-                # # Formulate the constraint
-                # expr = self.RT * LC + DGOF - P
-                # self.add_constraint(
-                #                PotentialConstraint,
-                #                met,
-                #                expr,
-                #                lb=0, ub=0)
+                P = self.add_variable(ThermoPotential,
+                                      met,
+                                      lb=P_lb,
+                                      ub=P_ub)
+
+                self.P_vars[met] = P
+                # Formulate the constraint
+                expr = self.RT * LC + DGOF - P
+                self.add_constraint(
+                               PotentialConstraint,
+                               met,
+                               expr,
+                               lb=0, ub=0)
 
         else:
             self.logger.debug('NOT generating thermo variables for {}'.format(met.id))

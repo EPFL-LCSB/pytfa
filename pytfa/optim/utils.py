@@ -220,7 +220,8 @@ def get_direction_use_variables(tmodel,solution):
 
     epsilon = tmodel.solver.configuration.tolerances.feasibility
 
-    return [fwd_use_variables.get_by_id(x.id) if solution.raw[x.id] > epsilon
+    return [fwd_use_variables.get_by_id(x.id)
+            if abs(solution.raw[fwd_use_variables.get_by_id(x.id).variable.name]-1) < epsilon
             else bwd_use_variables.get_by_id(x.id)
             for x in tmodel.reactions ]
 
