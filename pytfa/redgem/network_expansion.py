@@ -37,7 +37,7 @@ class NetworkExpansion:
         # calling NetworkExpansion
         self._redgem = gem
         #self._redgem.name = 'redgem'
-        self._graph = nx.DiGraph()
+        self._graph = nx.Graph()
 
         # Subsystems
         self._core_subsystems = core_subsystems
@@ -160,7 +160,14 @@ class NetworkExpansion:
         for rxn in kept_rxns:
             for reactant in rxn.reactants:
                 for product in rxn.products:
-                    self._graph.add_edge(reactant.id, product.id, rxn_id=rxn.id, weight=1)
+
+                    if self._graph.has_edge(reactant.id, product.id):
+
+                        self._graph[reactant.id][product.id]['rxn_id'].append(rxn.id)
+                    else:
+                        self._graph.add_edge(reactant.id, product.id, rxn_id=[rxn.id,], weight=1)
+
+
         return self._graph
 
     def breadth_search_subsystems_paths_length_d(self, subsystem_i, subsystem_j, d):
@@ -273,8 +280,8 @@ class NetworkExpansion:
         """
         for path in paths:
             for i in range(len(path)-1):
-                reaction = self._graph[path[i]][path[i+1]]['rxn_id']
-                self._intermediate_reactions_id[subsystem_i][subsystem_j][d].add(reaction)
+                reactions = self._graph[path[i]][path[i+1]]['rxn_id']
+                self._intermediate_reactions_id[subsystem_i][subsystem_j][d].update(reactions)
                 if i > 0:
                     self._intermediate_metabolites_id[subsystem_i][subsystem_j][d].add(path[i])
 
@@ -379,8 +386,8 @@ class NetworkExpansion:
         """
         for path in paths:
             for i in range(len(path) - 1):
-                reaction = self._graph[path[i]][path[i + 1]]['rxn_id']
-                self._intermediate_extracellular_reactions_id[subsystem][n-1].add(reaction)
+                reactions = self._graph[path[i]][path[i + 1]]['rxn_id']
+                self._intermediate_extracellular_reactions_id[subsystem][n-1].update(reactions)
                 if i > 0:
                     self._intermediate_extracellular_metabolites_id[subsystem][n-1].add(path[i])
 
@@ -409,7 +416,7 @@ class NetworkExpansion:
             for k in range(self._n + 1):
                 self.breadth_search_extracellular_system_paths(subsystem, k)
 
-    def extract_sub_network(self):
+    def extract_sub_network(self,additional_reactions):
         """
         Extracts the reduced gem.
 
@@ -445,9 +452,12 @@ class NetworkExpansion:
                 to_remove_metabolites = to_remove_metabolites \
                                         - self._intermediate_extracellular_metabolites_id[i][k]
 
+        # Keep custom chosen reactions
+        to_remove_reactions = to_remove_reactions - set(additional_reactions)
+
         self._redgem.remove_reactions(to_remove_reactions, True)
 
-    def run(self):
+    def run(self, additional_reactions=[]):
         """
         Runs RedGEM.
 
@@ -456,6 +466,6 @@ class NetworkExpansion:
         self.create_new_stoichiometric_matrix()
         self.run_between_all_subsystems()
         self.run_extracellular_system()
-        self.extract_sub_network()
+        self.extract_sub_network(additional_reactions)
 
         return self._redgem

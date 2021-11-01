@@ -50,7 +50,12 @@ def annotate_from_lexicon(model,lexicon):
     :param lexicon:
     :return:
     """
+
+    # Drop non annotated rows
+    lexicon = lexicon.dropna()
+
     annotations = lexicon.to_dict(orient = 'index')
+
 
     for this_metabolite in model.metabolites:
         try:

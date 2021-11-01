@@ -17,7 +17,6 @@ from pytfa.redgem.lumpgem import LumpGEM
 from cobra import Reaction
 from .utils import remove_blocked_reactions, set_medium
 import yaml
-from collections import defaultdict
 
 class RedGEM():
     def __init__(self, gem, parameters_path, inplace=False):
@@ -37,9 +36,6 @@ class RedGEM():
 
         self.set_solver()
 
-        self.expander = None
-        self.lumper = None
-
     def read_parameters(self, parameters_path):
         with open(parameters_path, 'r') as stream:
             try:
@@ -58,8 +54,6 @@ class RedGEM():
             obj_val = self._source_gem.slim_optimize()
             self.logger.info("Setting minimal growth rate to {}".format(obj_val))
             self.params["growth_rate"] = 0.95*obj_val
-        if "bigM" not in self.params:
-            self.params["bigM"] = 100
         if "force_solve" not in self.params:
             self.params["force_solve"] = False
         if "timeout" not in self.params:
@@ -114,39 +108,51 @@ class RedGEM():
         lump_method = self.params["lump_method"]
 
         force_solve = self.params["force_solve"]
-        timeout = self.params['solver_config']["timeout"]
-        self._gem.solver.configuration.tolerances.feasibility = float(self.params['solver_config']["feasibility"])
-        # self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"] *100
-        self._source_gem.solver.configuration.tolerances.feasibility = float(self.params['solver_config']["feasibility"])
-        # self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"] *100
-        self._solver_params = self.params['solver_config']
+        timeout = self.params["timeout"]
+        try:
+            self._gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
+            self._gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        except AttributeError as e:
+            self.logger.error('Solver {} is not compatible with tolerance parameters'.format(self._gem.solver))
+        try:
+            self._source_gem.solver.configuration.tolerances.feasibility = self.params["feasibility"]
+            self._source_gem.solver.configuration.tolerances.integrality = self.params["feasibility"]
+        except AttributeError as e:
+            self.logger.error('Solver {} is not compatible with tolerance parameters'.format(self._source_gem.solver))
 
         self.logger.info("Computing network expansion...")
-        self.expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
+        expander = NetworkExpansion(self._gem, core_subsystems, extracellular_system,
                                     cofactors, small_metabolites, inorganics,
                                     d, n)
-        self._expanded_gem = self.expander.run()
-        reduced_gem = self._expanded_gem
+        reduced_gem = expander.run(self.params["additional_reactions"])
+
         self.logger.info("Done.")
+
+        # For debugging purposes
+        self.expander = expander
 
         # Add the expansion to core reactions
         core_reactions = reduced_gem.reactions
 
         self.logger.info("Computing lumps...")
-        lumper = LumpGEM(self._source_gem, core_reactions, self.params, bigM=self.params['bigM'])
-
-        # For debugging purposes
-        self.lumper = lumper
-
+        lumper = LumpGEM(self._source_gem, core_reactions, self.params)
         lumps = lumper.compute_lumps(force_solve, method = lump_method)
         self.logger.info("Done.")
 
         self.logger.info("Create final network...")
+
+        # if self.params['transports_in_lump']:
+        #     to_add = [x for x in biomass_rxns
+        #               + lumper._exchanges
+        #               + lumper._rcore
+        #               if not x.id in reduced_gem.reactions]
+        # else:
         to_add = [x for x in biomass_rxns
-                            +lumper._exchanges
-                            +lumper._transports
-                            +lumper._rcore
-                  if not x.id in reduced_gem.reactions]
+                        +lumper._exchanges
+                        +lumper._transports
+                        +lumper._rcore
+              if not x.id in reduced_gem.reactions]
+
         reduced_gem.add_reactions(to_add)
 
         for rxns in lumps.values():
@@ -156,7 +162,13 @@ class RedGEM():
         self.logger.info("Done.")
 
         reduced_gem.objective = main_bio_rxn
-        reduced_gem.reactions.get_by_id(main_bio_rxn.id).lower_bound = growth_rate
+        self.logger.info('Testing reduced model')
+        sol = reduced_gem.optimize()
+        self.logger.info('Reduced model growth with {}'.format(sol.objective_value) )
+        if sol.objective_value == 0:
+            raise ValueError("Reduced model doesn't grow")
+        # I dont think we want this... avoid tivial solution
+        reduced_gem.reactions.get_by_id(main_bio_rxn.id).lower_bound = 0
 
         if self.params['remove_blocked_reactions']:
             self.logger.info('Detecting blocked reactions')
@@ -171,6 +183,8 @@ class RedGEM():
             raise RuntimeError('Main Biomass reaction appears blocked')
 
 
+        # For debugging purposes
+        self.lumper = lumper
         main_bio_rxn.lower_bound = 0
 
         return reduced_gem
@@ -193,16 +207,7 @@ class RedGEM():
 
 def add_lump(model, lump_object, id_suffix=''):
     new = Reaction(id = lump_object.id_+id_suffix)
-    model.add_reactions([new])
-
-    # Check that all metabolites in the lump are in the model
-    for the_met_id, stoich in list(lump_object.metabolites.items()):
-        if not the_met_id in model.metabolites:
-            model.logger.warning('Metabolite {} with stoichiometry {} '
-                              'is not in the model. If the stoichiometry is low,'
-                              'it is probably a simple numerical arror.'
-                                 .format(the_met_id, stoich))
-            lump_object.metabolites.pop(the_met_id)
+    model.add_reaction(new)
     new.add_metabolites(lump_object.metabolites)
     new.gene_reaction_rule = lump_object.gene_reaction_rule
     new.subnetwork = lump_object.subnetwork

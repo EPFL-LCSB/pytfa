@@ -54,7 +54,7 @@ def test_io():
     sol_orig = small_tmodel.slim_optimize()
     sol_new = new.slim_optimize()
 
-    epsilon = new.solver.configuration.tolerances.optimality
+    epsilon = 1e-5 # new.solver.configuration.tolerances.optimality is deprecated in GLPK now, see opencobra/optlang/issues/223
 
     assert(abs(sol_new - sol_orig) < epsilon)
 
