@@ -14,10 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         less            \
     && rm -rf /var/lib/apt/lists/*
 
+ARG UID=1000
+ARG GID=1000
 ENV USER pytfa
 ENV HOME /home/$USER
 
-RUN useradd -ms "/bin/bash" "$USER"
+RUN groupadd -g "${GID}" "$USER" && useradd -u "${UID}" -g "$USER" -ms "/bin/bash" "$USER"
 USER $USER
 WORKDIR $HOME
 
