@@ -231,7 +231,7 @@ class MetaboliteConstraint(GenericConstraint):
         GenericConstraint.__init__(self,
                                    expr=expr,
                                    model=model,
-                                   hook=metabolite
+                                   hook=metabolite,
                                    **kwargs)
 
     @property
