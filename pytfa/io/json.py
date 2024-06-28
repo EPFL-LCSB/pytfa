@@ -54,3 +54,27 @@ def load_json_model(filepath):
 
     model = model_from_dict(obj)
     return model
+
+
+def json_dumps_model(model):
+    """
+    Returns a JSON dump as a string
+
+    :param model:
+    :return:
+    """
+
+    obj = model_to_dict(model)
+
+    return json.dumps(obj,cls=MyEncoder)
+
+
+def json_loads_model(s):
+    """
+    Loads a model from a string JSON dump
+
+    :param s: JSON string
+    :return:
+    """
+    obj = json.loads(s)
+    return model_from_dict(obj)

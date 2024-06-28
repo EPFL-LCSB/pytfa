@@ -75,7 +75,10 @@ def check_reaction_balance(reaction, proton = None):
                 'Ca', 'Mn', 'Fe', 'Ni', 'Co', 'Cu', 'Zn', 'As', 'Se', 'Ag',
                 'Cd', 'W', 'Hg', 'R', 'Mo', 'X'].index(atom[0])
             except ValueError:
-                print('Warning : ' + metabolite.formula + '/' + atom[0])
+                # Jorge Carrasco: Can we use warnings here?
+                reaction.model.logger.warning(
+                    'Warning : ' + metabolite.formula + '/' + atom[0]
+                )
                 continue
 
             Atoms_sum[id_] += metCoeff * (int(atom[1]) if atom[1] else 1)
@@ -198,3 +201,14 @@ def is_same_stoichiometry(this_reaction, that_reaction):
 
 def is_exchange(rxn):
     return len(rxn.metabolites) == 1
+
+
+def get_reaction_compartment(reaction):
+    """Get the compartment of a reaction to then prepare it for conversion."""
+    comp = None
+    for met in reaction.metabolites:
+        if comp is None:
+            comp = met.compartment
+        elif met.compartment != comp:
+            comp = 'c'
+    return comp

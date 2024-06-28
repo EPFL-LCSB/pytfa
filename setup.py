@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 #     return reqs
 
 
-version_tag = '0.9.0-b2'
+version_tag = '0.9.4'
 
 setup(name='pytfa',
       version=version_tag,
@@ -63,5 +63,6 @@ setup(name='pytfa',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
       ],
      )

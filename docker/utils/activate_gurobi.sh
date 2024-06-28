@@ -4,7 +4,9 @@
 export GHOME_702="/opt/gurobi702/linux64"
 export GHOME_752="/opt/gurobi752/linux64"
 export GHOME_800="/opt/gurobi800/linux64"
-export GHOME=$GHOME_800
+export GHOME_811="/opt/gurobi811/linux64"
+export GHOME_901="/opt/gurobi901/linux64"
+export GHOME=$GHOME_901
 
 if [ -d $GHOME ]; then \
 	#$GHOME/bin/grbgetkey $LICENSE_KEY	&& \

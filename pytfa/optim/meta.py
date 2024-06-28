@@ -9,6 +9,9 @@
 Metaclass declarations to force the definition of prefixes in GenericVariable
 and GeneriConstraint subclasses
 
+Based on SethMMorton's answer on StackOverflow
+https://stackoverflow.com/questions/45248243/most-pythonic-way-to-declare-an-abstract-class-property
+https://stackoverflow.com/a/45250114
 """
 from abc import ABCMeta
 

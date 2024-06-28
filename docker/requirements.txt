@@ -1,8 +1,10 @@
 bokeh>=0.12.1
-# Cobrapy has been making many changes lately
-cobra==0.11.3
+cobra>0.13
+equilibrator-api
+equilibrator-cache
 ipdb
 lxml
+networkx
 openpyxl
 pymysql
 pytest

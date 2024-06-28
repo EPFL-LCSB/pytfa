@@ -178,6 +178,12 @@ class LCSBModel(ABC):
 
     def _remove_associated_consvar(self, all_cons_subclasses, all_var_subclasses,
                                    collection):
+        """
+        Removes both the constraints and variables associated to an element,
+        as long as it was used as a hook in the cons/var declaration.
+        For example, upon removing a reaction, also removes its associated
+        deltaG variables and coupling constraints
+        """
 
         if not hasattr(collection, '__iter__'):
             collection = [collection]
@@ -239,6 +245,11 @@ class LCSBModel(ABC):
 
         self.add_cons_vars(self._var_queue, sloppy=self.sloppy)
         self.add_cons_vars(self._cons_queue, sloppy = self.sloppy)
+
+        if len(self._var_queue) > 0:
+            self.regenerate_variables()
+        if len(self._cons_queue) > 0:
+            self.regenerate_constraints()
 
         self._var_queue = list()
         self._cons_queue = list()
@@ -407,8 +418,11 @@ class LCSBModel(ABC):
         :param constraint_type:
         :return:
         """
-
-        constraint_key = constraint_type.__name__
+        if isinstance(constraint_type,str):
+            constraint_key = constraint_type
+        else:
+            #it is a class
+            constraint_key = constraint_type.__name__
         return self._cons_kinds[constraint_key]
 
     def get_variables_of_type(self, variable_type):
@@ -419,6 +433,9 @@ class LCSBModel(ABC):
         :param variable_type:
         :return:
         """
-
-        variable_key = variable_type.__name__
+        if isinstance(variable_type,str):
+            variable_key = variable_type
+        else:
+            #it is a class
+            variable_key = variable_type.__name__
         return self._var_kinds[variable_key]

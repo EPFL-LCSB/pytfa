@@ -231,7 +231,7 @@ class MetaboliteConstraint(GenericConstraint):
         GenericConstraint.__init__(self,
                                    expr=expr,
                                    model=model,
-                                   hook=metabolite
+                                   hook=metabolite,
                                    **kwargs)
 
     @property
@@ -349,3 +349,20 @@ class ForbiddenProfile(GenericConstraint):
                                    **kwargs)
 
     prefix = 'FP_'
+
+
+class LinearizationConstraint(ModelConstraint):
+    """
+    Class to represent a variable attached to a reaction
+    """
+    @staticmethod
+    def from_constraints(cons, model):
+        return LinearizationConstraint(
+            name = cons.name,
+            expr = cons.expr,
+            model = model,
+            ub = cons.ub,
+            lb = cons.lb,
+        )
+
+    prefix = 'LC_'

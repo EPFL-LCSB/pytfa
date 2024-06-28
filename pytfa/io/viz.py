@@ -37,7 +37,7 @@ def export_variable_for_escher(tmodel,variable_type,data,filename):
         var_values = data[var_dict.keys()]
 
     var_values.index = varnames2ids(tmodel, var_values.index)
-    var_values.to_csv(filename)
+    var_values.to_csv(filename, header=True)
 
 
 def get_reaction_data(tmodel, data):

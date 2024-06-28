@@ -3,6 +3,9 @@ bokeh>=0.12.1
 networkx
 optlang
 sympy
+networkx
 pytest
 scipy
 tqdm
+equilibrator-cache==0.2.6
+equilibrator_api
