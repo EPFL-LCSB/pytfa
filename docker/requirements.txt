@@ -8,7 +8,7 @@ networkx
 openpyxl
 pymysql
 pytest
-python-libsbml
+python-libsbml==5.11.4
 scipy
 sqlalchemy
 tabulate
