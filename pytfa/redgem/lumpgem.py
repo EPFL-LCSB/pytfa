@@ -60,7 +60,12 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, additional_core_reactions, params):
+    def __init__(self, tfa_model, additional_core_reactions, params,
+                 min_transport=False,
+                 min_exchange=False,
+                 bigM = 1000
+                 ):
+
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
         :type tfa_model: pytfa model
@@ -76,9 +81,28 @@ class LumpGEM:
 
         :param timeout_limit: the maximum amount of time allowed to compute each optimization. Default is 3600s (1 hour)
         :type timeout_limit: float (seconds)
+
+        :param constraint_method: the method used to constraint the carbon intake of non-core reactions. Default is 'both'
+        :type constraint_method: string
+
+        :param additional_core_reactions: list of additional core reactions
+        :type additional_core_reactions: [GEM.reaction.id]
+
+        :param min_transport: if True, the transport reactions are considered as core reactions
+        :type min_transport: boolean
+
+        :param min_exchange: if True, the exchange reactions are considered as core reactions
+        :type min_exchange: boolean
+
+        :param bigM: the bigM value used to constraint the carbon intake of non-core reactions. Default is 100
+        :type bigM: float
+
+
         """
 
         self._tfa_model = tfa_model
+
+        self.bigM = bigM
 
         self._param_dict = params
         self.init_params()
@@ -100,10 +124,10 @@ class LumpGEM:
             if rxn.id in self.biomass_rxns:
                 self._rBBB.append(rxn)
             # If it is an exchange reaction
-            elif is_exchange(rxn):
+            elif is_exchange(rxn) and not min_exchange:
                 self._exchanges.append(rxn)
             # If it is a transport reaction
-            elif check_transport_reaction(rxn):
+            elif check_transport_reaction(rxn) and not min_transport:
                 self._transports.append(rxn)
             # If it's a core reaction
             elif rxn.subsystem in self.core_subsystems:
