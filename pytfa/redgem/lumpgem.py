@@ -60,9 +60,11 @@ class LumpGEM:
     """
     A class encapsulating the LumpGEM algorithm
     """
-    def __init__(self, tfa_model, additional_core_reactions, params, 
-                 min_transport=False, 
-                 min_exchange=False,bigM = 100):
+    def __init__(self, tfa_model, additional_core_reactions, params,
+                 min_transport=False,
+                 min_exchange=False,
+                 bigM = 1000
+                 ):
 
         """
         :param tfa_model: The GEM (associated with the thermodynamics constraints) that lumpGEM must work on
