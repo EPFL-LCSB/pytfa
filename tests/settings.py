@@ -14,7 +14,13 @@ import pytfa.io
 
 from pytfa.io.enrichment import read_lexicon, annotate_from_lexicon, \
     read_compartment_data, apply_compartment_data
-from cobra.test import create_test_model
+try:
+    from cobra.test import create_test_model
+except ImportError:
+    # For newer versions of cobra
+    from cobra.io import load_model
+    def create_test_model(model_name):
+        return load_model(model_name)
 
 ############
 # SETTINGS #
@@ -46,7 +52,6 @@ tmodel.convert()
 
 
 # Small model for simpler tests
-
 small_model = create_test_model('textbook')
 
 # Make your computations on it

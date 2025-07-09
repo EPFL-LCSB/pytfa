@@ -24,7 +24,13 @@ if is_travis or DEBUG:
     #                          enumerate(bio_rxn.metabolites.items())
     #                          if e != 1})
     #                          # if e%10 != 0})
-    from cobra.test import create_test_model
+    try:
+        from cobra.test import create_test_model
+    except ImportError:
+        # For newer versions of cobra
+        from cobra.io import load_model
+        def create_test_model(model_name):
+            return load_model(model_name)
     model = create_test_model('textbook')
     gly_rxns = ['ENO','FBA','FBP','GAPD','PDH','PFK','PGI','PGK','PGM','PPS',
                 'PYK','TPI']
