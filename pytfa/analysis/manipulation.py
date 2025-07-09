@@ -18,8 +18,18 @@ def apply_reaction_variability(tmodel, va, inplace = True):
         if this_reaction.id not in va.index:
             continue
 
-        this_reaction.lower_bound = va.loc[this_reaction.id,'minimum']
-        this_reaction.upper_bound = va.loc[this_reaction.id,'maximum']
+        min_bound = va.loc[this_reaction.id,'minimum']
+        max_bound = va.loc[this_reaction.id,'maximum']
+        
+        # Handle numerical precision issues where min > max by a tiny amount
+        if min_bound > max_bound:
+            # Use the average of the two values
+            avg_bound = (min_bound + max_bound) / 2
+            min_bound = avg_bound
+            max_bound = avg_bound
+
+        this_reaction.lower_bound = min_bound
+        this_reaction.upper_bound = max_bound
 
     return _tmodel
 

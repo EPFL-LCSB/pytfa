@@ -76,5 +76,7 @@ def json_loads_model(s):
     :param s: JSON string
     :return:
     """
+    if s is None:
+        return None
     obj = json.loads(s)
     return model_from_dict(obj)

@@ -14,7 +14,7 @@ import equilibrator_cache.compatibility as compat
 # triggers the loading of eQuilbrator
 from equilibrator_api import ComponentContribution, Q_
 from equilibrator_api.phased_reaction import PhasedReaction
-from equilibrator_cache import create_compound_cache_from_quilt
+from equilibrator_cache import create_compound_cache_from_zenodo
 from .std import TEMPERATURE_0
 from ..utils.numerics import BIGM_DG
 from ..utils.logger import get_bistream_logger
@@ -37,7 +37,7 @@ def build_thermo_from_equilibrator(model, T=TEMPERATURE_0):
     """
     global ccache
     if ccache is None:
-        ccache = create_compound_cache_from_quilt()
+        ccache = create_compound_cache_from_zenodo()
         logger.debug("eQuilibrator compound cache is loaded.")
 
     cc = ComponentContribution()

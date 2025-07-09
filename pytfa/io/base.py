@@ -260,7 +260,7 @@ def create_thermo_dict(tmodel):
                 continue
 
         if column == 'metSEEDID':
-            mat[column] = np.array(the_data, dtype=np.object)
+            mat[column] = np.array(the_data, dtype=object)
         else:
             mat[column] = np.array(the_data)
 
@@ -294,8 +294,8 @@ def create_thermo_dict(tmodel):
     CompartmentDB['compMinConc'] = np.array([x['c_min'] for x in compartments])
 
     #Write symbols and names in collumn cell arrays
-    CompartmentDB['compSymbolList'] = np.zeros((1, len(compartments)), dtype=np.object)
-    CompartmentDB['compNameList'] =  np.zeros((1, len(compartments)), dtype=np.object)
+    CompartmentDB['compSymbolList'] = np.zeros((1, len(compartments)), dtype=object)
+    CompartmentDB['compNameList'] =  np.zeros((1, len(compartments)), dtype=object)
 
     mat_to_python_string = [('compSymbolList', 'symbol'),
                             ('compNameList', 'name')]
@@ -365,8 +365,8 @@ def create_problem_dict(tmodel):
 
     mat['var_lb'] = np.array([x.lb for x in tmodel.variables]) * 1.
     mat['var_ub'] = np.array([x.ub for x in tmodel.variables]) * 1.
-    vname = np.full(len(tmodel.variables),'', dtype=np.object)
-    vtype = np.full(len(tmodel.variables),'', dtype=np.object)
+    vname = np.full(len(tmodel.variables),'', dtype=object)
+    vtype = np.full(len(tmodel.variables),'', dtype=object)
 
     for e, this_var in enumerate(tmodel.variables):
         this_name = this_var.name
@@ -389,8 +389,8 @@ def create_problem_dict(tmodel):
     # Constraints
 
     rhs = np.empty(len(tmodel.constraints))
-    ctype = np.full(len(tmodel.constraints),'', dtype=np.object)
-    cname = np.full(len(tmodel.constraints),'', dtype=np.object)
+    ctype = np.full(len(tmodel.constraints),'', dtype=object)
+    cname = np.full(len(tmodel.constraints),'', dtype=object)
 
     for e,this_cons in enumerate(tmodel.constraints):
         if   this_cons.lb is None and this_cons.ub is not None:

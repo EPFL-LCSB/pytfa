@@ -189,7 +189,7 @@ class RedGEM():
 
 def add_lump(model, lump_object, id_suffix=''):
     new = Reaction(id = lump_object.id_+id_suffix)
-    model.add_reaction(new)
+    model.add_reactions([new])
     new.add_metabolites(lump_object.metabolites)
     new.gene_reaction_rule = lump_object.gene_reaction_rule
     new.subnetwork = lump_object.subnetwork
