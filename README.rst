@@ -36,17 +36,6 @@ properly. The installer should take care of that for you. You might also
 want to install a dedicated solver. GLPK, CPLEX and Gurobi are
 supported.
 
-Container-based install
------------------------
-
-You might want to use this program inside of a container. The
-|docker|_
-subfolder has all the necessary information and source files to set it
-up.
-
-.. |docker| replace:: ``docker/``
-.. _docker: https://github.com/EPFL-LCSB/pytfa/tree/master/docker
-
 Setup
 =====
 
@@ -108,6 +97,19 @@ You can then generate the documentation with this command:
     cd work/pytfa/doc && make html
 
 The resulting HTML files will be located in ``work/pytfa/doc/_build``.
+
+
+DEPRECATEDL: Container-based install
+-----------------------
+
+You might want to use this program inside of a container. The
+|docker|_
+subfolder has all the necessary information and source files to set it
+up.
+
+.. |docker| replace:: ``docker/``
+.. _docker: https://github.com/EPFL-LCSB/pytfa/tree/master/docker
+
 
 Testing the code
 ----------------
