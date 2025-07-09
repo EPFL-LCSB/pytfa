@@ -10,7 +10,13 @@ Tests of the optimization routines of pytfa
 
 """
 
-from cobra.test import create_test_model
+try:
+    from cobra.test import create_test_model
+except ImportError:
+    # For newer versions of cobra
+    from cobra.io import load_model
+    def create_test_model(model_name):
+        return load_model(model_name)
 import os
 import sys
 import pytfa
