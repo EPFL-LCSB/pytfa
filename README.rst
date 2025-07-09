@@ -1,6 +1,6 @@
 pyTFA
 =====
-|PyPI| |Documentation Status| |Build Status| |Codecov| |Codacy branch grade| |license| 
+|PyPI| |Documentation Status| |license| 
 
 Thermodynamics-based Flux Analysis, in Python.
 Paper : Pierre Salvy, Georgios Fengos, Meric Ataman, Thomas Pathier, Keng C Soh, Vassily Hatzimanikatis. "pyTFA and matTFA: a Python package and a Matlab toolbox for Thermodynamics-based Flux Analysis"
