@@ -21,7 +21,12 @@ from cobra import Model
 from ..core.model import LCSBModel
 from . import std
 from .metabolite import MetaboliteThermo
-from .reaction import calcDGtpt_rhs, calcDGR_cues, get_debye_huckel_b
+from .reaction import (
+    calcDGtpt_rhs,
+    calcDGR_cues,
+    calcDGR_err,
+    get_debye_huckel_b,
+)
 from .utils import (
     check_reaction_balance,
     check_transport_reaction,
@@ -100,6 +105,9 @@ class ThermoModel(LCSBModel, Model):
         self.reaction_cues_data = self.thermo_data['cues']
         self.compounds_data = self.thermo_data['metabolites']
         self.Debye_Huckel_B = get_debye_huckel_b(self.TEMPERATURE)
+        # Compartment whose proton balances multi-compartment reactions, set
+        # for the model in prepare()
+        self._transport_compartment = "c"
 
         self.logger = get_bistream_logger('thermomodel_' + str(self.name))
 
@@ -202,7 +210,9 @@ class ThermoModel(LCSBModel, Model):
         reaction.thermo = {"isTrans": False}
 
         # also check if rxn and enzyme compartments match
-        reaction.compartment = get_reaction_compartment(reaction)
+        reaction.compartment = get_reaction_compartment(
+            reaction, self._transport_compartment
+        )
 
         # Make sure the reaction is balanced...
 
@@ -263,15 +273,16 @@ class ThermoModel(LCSBModel, Model):
                         DeltaGrxn += (
                             reaction.metabolites[met] * met.thermo.deltaGf_tr
                         )
-                        DeltaGRerr += abs(
-                            reaction.metabolites[met] * met.thermo.deltaGf_err
-                        )
 
                 reaction.thermo["deltaGR"] = DeltaGrxn
 
-            (tmp1, DeltaGRerr, tmp2, tmp3) = calcDGR_cues(
-                reaction, self.reaction_cues_data
-            )
+            if self.reaction_cues_data:
+                (tmp1, DeltaGRerr, tmp2, tmp3) = calcDGR_cues(
+                    reaction, self.reaction_cues_data
+                )
+            else:
+                # Databases without structural cues, e.g. ModelSEED
+                DeltaGRerr = calcDGR_err(reaction)
 
             if DeltaGRerr == 0 and null_error_override:
                 DeltaGRerr = null_error_override  # default value for DeltaGRerr
@@ -320,6 +331,17 @@ class ThermoModel(LCSBModel, Model):
             raise Exception("Cannot find proton")
         else:
             self._proton_of = proton
+
+        # Reactions spanning several compartments are balanced with the proton
+        # of the cytosol, 'c' in BiGG models and 'c0' in ModelSEED models. A
+        # community model has one cytosol per member, 'c1', 'c2', ..., and each
+        # reaction is then balanced with the proton of its own compartment.
+        if "c" in proton:
+            self._transport_compartment = "c"
+        elif "c0" in proton:
+            self._transport_compartment = "c0"
+        else:
+            self._transport_compartment = None
 
         # Iterate over each reaction
         for i in range(num_rxns):

@@ -28,6 +28,38 @@ with :any:`zlib.decompress` then load the result into memory with
   calling :any:`open` with the ``b`` flag, otherwise Python will try to
   decode it as unicode and raise an exception !
 
+Building a database from the ModelSEEDDatabase
+----------------------------------------------
+
+:mod:`pytfa.thermo.modelseed` builds a thermodynamic database from a local
+clone of the `ModelSEEDDatabase <https://github.com/ModelSEED/ModelSEEDDatabase>`_,
+located with the ``db_path`` argument, the ``MODELSEED_DB_PATH`` environment
+variable, or the configuration of modelseedpy (``pip install .[modelseed]``)::
+
+  from pytfa.io import apply_compartment_data
+  from pytfa.thermo.modelseed import annotate_seed_ids, \
+      build_thermo_from_modelseed, build_compartment_data
+
+  annotate_seed_ids(cobra_model)
+  thermo_data = build_thermo_from_modelseed(cobra_model)
+  tmodel = pytfa.ThermoModel(thermo_data, cobra_model)
+  apply_compartment_data(tmodel, build_compartment_data(tmodel))
+
+* ``annotate_seed_ids`` sets the ``seed_id`` annotation from ModelSEED
+  metabolite ids (``cpd00002_c0``) or from ``seed.compound`` annotations.
+* The energies are the ``Group contribution`` estimates of the compounds, in
+  kcal/mol. Each is paired with the protonation state of the metabolite in the
+  model, shifted along the compound's pKas so that its transformed energy is
+  unchanged. :meth:`~pytfa.ThermoModel.prepare` then leaves the reactions as the
+  model balances them.
+* The pKas are Marvin's acidic pKas.
+* There are no cues: reaction errors combine the compound errors in quadrature.
+* ``build_compartment_data`` defaults to modelseedpy's values: pH 7 and -160 mV
+  in the cytosol, pH 6.5 and 0 mV in the extracellular space, and
+  concentrations between 1e-6 and 0.02 M.
+
+See ``tutorials/tutorial_modelseed.py``.
+
 Structure of a thermodynamic database
 -------------------------------------
 

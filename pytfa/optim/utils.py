@@ -105,8 +105,9 @@ def symbol_sum(variables):
     :return:
     """
 
-    from sympy import Add
-    
+    # optlang's add builds symengine expressions when optlang uses symengine
+    from optlang.symbolics import add, Basic
+
     k=0
     # If we encounter a zero, which is a special type, increase k
     while isinstance(variables[k], Zero) and k<len(variables):
@@ -119,12 +120,11 @@ def symbol_sum(variables):
         return 0
 
     if isinstance(variables[k], GenericVariable):
-        return Add(*[x.variable for x in variables])
+        return add([x.variable for x in variables])
     elif isinstance(variables[k], optlang.interface.Variable) or    \
-         isinstance(variables[k], sympy.Mul) or \
-         isinstance(variables[k], sympy.Add) or \
+         isinstance(variables[k], (Basic, sympy.Basic)) or \
          isinstance(variables[k], Number):
-        return Add(*variables)
+        return add(variables)
     else:
         raise ValueError('Arguments should be of type Number, sympy.Add, or sympy.Mul, '
                          'or optlang.Variable, or GenericVariable')

@@ -165,8 +165,10 @@ def get_solver_string(model):
 
 def obj_to_dict(model):
     if model.objective.expression:
+        # The coefficients dict of the expression also holds its constant term
         return {x.name: float(v)
-                for x,v in model.objective.expression.as_coefficients_dict().items()}
+                for x,v in model.objective.get_linear_coefficients(
+                    model.objective.variables).items()}
     else:
         return 0
 

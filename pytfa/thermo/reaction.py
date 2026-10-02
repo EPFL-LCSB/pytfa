@@ -10,6 +10,7 @@ Thermodynamic computations for reactions
 
 
 """
+from collections import defaultdict
 from functools import reduce
 from math import log, sqrt
 
@@ -206,6 +207,32 @@ def calcDGR_cues(reaction, reaction_cues_data):
     deltaGR_err = sqrt(deltaGR_err)
 
     return (deltaGR, deltaGR_err, cues, error)
+
+
+def calcDGR_err(reaction):
+    """ Calculates the error on the deltaG of the reaction by combining the
+    errors on the Gibbs energies of formation of its metabolites in quadrature.
+    The metabolites are grouped by seed_id, so that the errors of transported
+    metabolites cancel out.
+
+    Used when the thermodynamic database has no cues to compute the error from.
+
+    :param cobra.thermo.reaction.Reaction reaction: The reaction to compute the
+        error for
+
+    :returns: error on deltaGR
+    :rtype: float
+
+    """
+    net_stoich = defaultdict(float)
+    errors = {}
+
+    for met, coeff in reaction.metabolites.items():
+        seed_id = met.annotation.get('seed_id', met.id)
+        net_stoich[seed_id] += coeff
+        errors[seed_id] = met.thermo.deltaGf_err
+
+    return sqrt(sum((net_stoich[x] * errors[x]) ** 2 for x in net_stoich))
 
 
 def calcDGF_cues(cues, reaction_cues_data):

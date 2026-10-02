@@ -91,7 +91,8 @@ class LCSBModel(ABC):
 
         info = pd.DataFrame(columns=['value'])
         info.loc['name'] = self.name
-        info.loc['description'] = self.description
+        # cobra models no longer have a description
+        info.loc['description'] = getattr(self, 'description', '')
         info.loc['num constraints'] = n_constraints
         info.loc['num variables'] = n_variables
         info.loc['num metabolites'] = n_metabolites
